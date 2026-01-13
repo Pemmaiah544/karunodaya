@@ -39,6 +39,13 @@ class Transaction(models.Model):
         default='INITIATED'
     )
 
+    # Payment Method (captured from Razorpay)
+    payment_method = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Payment method used (card, netbanking, upi, etc.)"
+    )
+
     # Provider Response (for debugging)
     provider_response = models.JSONField(
         default=dict,

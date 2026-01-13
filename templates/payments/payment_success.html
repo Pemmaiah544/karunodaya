@@ -1,0 +1,96 @@
+{% extends "portal/base.html" %}
+{% load static %}
+
+{% block title %}Payment Successful - Karunodaya{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Success Card -->
+        <div class="bg-white rounded-lg shadow p-8 text-center">
+            <!-- Success Icon -->
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
+            <p class="text-gray-600 mb-6">
+                Your order has been confirmed and payment received.
+            </p>
+
+            <!-- Transaction Details -->
+            <div class="bg-gray-50 rounded-lg p-6 mb-6 text-left">
+                <h2 class="font-semibold text-gray-900 mb-4">Transaction Details</h2>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Order ID:</span>
+                        <span class="font-medium">#{{ order.id }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Transaction ID:</span>
+                        <span class="font-medium">{{ transaction.razorpay_payment_id }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Order Type:</span>
+                        <span class="font-medium">{{ order.get_order_type_display }}</span>
+                    </div>
+                    {% if order.child %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Child:</span>
+                        <span class="font-medium">{{ order.child.name }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between text-lg font-bold mt-4 pt-4 border-t">
+                        <span>Amount Paid:</span>
+                        <span class="text-green-600">₹{{ transaction.amount }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            {% if order.order_type == 'SUBSCRIPTION' %}
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6 text-left">
+                <h3 class="font-semibold text-purple-900 mb-2">📚 What's Next?</h3>
+                <ul class="text-sm text-purple-800 space-y-1">
+                    <li>• Your subscription has been activated</li>
+                    <li>• Curated books have been assigned to {{ order.child.name }}</li>
+                    <li>• Your book box will be dispatched within 2-3 business days</li>
+                    <li>• You'll receive a tracking notification via email</li>
+                </ul>
+            </div>
+            {% else %}
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">
+                <h3 class="font-semibold text-blue-900 mb-2">📦 What's Next?</h3>
+                <ul class="text-sm text-blue-800 space-y-1">
+                    <li>• Your order has been confirmed</li>
+                    <li>• Items will be dispatched within 2-3 business days</li>
+                    <li>• You'll receive a tracking notification via email</li>
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a href="{% url 'portal:order_detail' order.id %}"
+                   class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg text-center">
+                    View Order Details
+                </a>
+                <a href="{% url 'portal:dashboard' %}"
+                   class="flex-1 border border-gray-300 text-gray-700 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 text-center">
+                    Go to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Help Section -->
+        <div class="text-center mt-6">
+            <p class="text-sm text-gray-600">
+                Need help? Contact us at support@karunodaya.com
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

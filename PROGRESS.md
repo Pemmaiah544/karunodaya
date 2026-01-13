@@ -332,13 +332,96 @@ karunodaya/
 
 ---
 
-## Phase 6: Payment Integration
+## Phase 6: Payment Integration ✅ COMPLETED
 
-### Tasks:
-- [ ] Setup Razorpay integration
-- [ ] Create payment flow views
-- [ ] Implement webhook handler
-- [ ] Add signature verification
+### Completed Tasks:
+- [x] Setup Razorpay integration
+  - Installed razorpay==1.4.2 and setuptools==80.9.0
+  - Configured RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET in settings
+  - Added payment URLs to main URLconf
+  - Created apps/payments/urls.py with 5 URL patterns
+- [x] Create payment flow views (apps/payments/views.py)
+  - initiate_payment - Creates Razorpay order and Transaction record
+  - payment_callback - Handles payment success/failure with signature verification
+  - payment_success - Success page with transaction details
+  - payment_failure - Failure page with retry option
+  - verify_razorpay_signature - HMAC SHA256 signature verification
+- [x] Implement webhook handler
+  - razorpay_webhook - Handles Razorpay webhook events (payment.captured, payment.failed)
+  - handle_payment_captured - Updates order and assigns books on successful payment
+  - handle_payment_failed - Updates transaction status on payment failure
+  - Webhook signature verification with HMAC SHA256
+- [x] Add signature verification
+  - verify_razorpay_signature function using hmac.compare_digest
+  - Webhook signature verification
+  - Protects against payment tampering and replay attacks
+- [x] Create payment templates
+  - templates/payments/payment_page.html - Razorpay checkout integration
+  - templates/payments/payment_success.html - Success page with order details
+  - templates/payments/payment_failure.html - Failure page with retry
+- [x] Add payment_method field to Transaction model
+  - Tracks payment method (card, netbanking, UPI, etc.)
+  - Created and applied migration 0002_transaction_payment_method
+- [x] Integrate with subscription workflow
+  - Auto-assigns books on successful subscription payment
+  - Uses assign_subscription_books from curation service
+
+### Payment Features:
+- **Razorpay Checkout Integration:**
+  - Embedded checkout modal
+  - Auto-capture payment
+  - Prefilled user details (name, email, phone)
+  - Custom purple theme matching portal
+- **Security:**
+  - HMAC SHA256 signature verification
+  - CSRF protection on callbacks
+  - Webhook signature verification
+  - Amount validation in paise (Indian currency)
+- **Transaction Tracking:**
+  - Unique razorpay_order_id and razorpay_payment_id
+  - Payment method capture
+  - Full provider response stored for debugging
+  - Transaction status: INITIATED → PENDING → SUCCESS/FAILED
+- **User Experience:**
+  - Mobile-responsive payment page
+  - Clear success/failure messages
+  - Order details on success page
+  - Retry option on failure page
+  - Next steps guidance (subscription book assignment, dispatch timeline)
+- **Subscription Integration:**
+  - Automatic book assignment on payment success
+  - Order status update to PAID
+  - SubscriptionCycle activation
+  - Graceful error handling if book assignment fails
+
+### Payment Flow:
+1. User initiates payment from order detail page
+2. System creates Razorpay order and Transaction record (status: INITIATED)
+3. Razorpay checkout modal opens
+4. User completes payment
+5. Razorpay sends callback with payment_id, order_id, signature
+6. System verifies signature using HMAC SHA256
+7. On success:
+   - Transaction status → SUCCESS
+   - Order status → PAID
+   - Books assigned to subscription (if applicable)
+   - User redirected to success page
+8. On failure:
+   - Transaction status → FAILED
+   - User redirected to failure page with retry option
+9. Webhook receives async confirmation from Razorpay
+10. Webhook verifies signature and updates records if needed
+
+### Webhook Events Handled:
+- **payment.captured** - Updates transaction and order, assigns books
+- **payment.failed** - Updates transaction status
+
+### URLs Created:
+- `/payments/initiate/<order_id>/` - Start payment flow
+- `/payments/callback/` - Handle Razorpay callback
+- `/payments/success/<transaction_id>/` - Success page
+- `/payments/failure/<transaction_id>/` - Failure page
+- `/payments/webhook/` - Razorpay webhook endpoint (CSRF exempt)
 
 ---
 

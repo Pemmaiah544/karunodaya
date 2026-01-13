@@ -1,0 +1,92 @@
+{% extends "portal/base.html" %}
+{% load static %}
+
+{% block title %}Payment Failed - Karunodaya{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Failure Card -->
+        <div class="bg-white rounded-lg shadow p-8 text-center">
+            <!-- Failure Icon -->
+            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Payment Failed</h1>
+            <p class="text-gray-600 mb-6">
+                We couldn't process your payment. Please try again.
+            </p>
+
+            <!-- Transaction Details -->
+            <div class="bg-gray-50 rounded-lg p-6 mb-6 text-left">
+                <h2 class="font-semibold text-gray-900 mb-4">Order Details</h2>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Order ID:</span>
+                        <span class="font-medium">#{{ order.id }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Order Type:</span>
+                        <span class="font-medium">{{ order.get_order_type_display }}</span>
+                    </div>
+                    {% if order.child %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Child:</span>
+                        <span class="font-medium">{{ order.child.name }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between text-lg font-bold mt-4 pt-4 border-t">
+                        <span>Amount:</span>
+                        <span class="text-gray-900">₹{{ order.total_amount }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Failure Reasons -->
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-left">
+                <h3 class="font-semibold text-red-900 mb-2">⚠️ Possible Reasons</h3>
+                <ul class="text-sm text-red-800 space-y-1">
+                    <li>• Insufficient funds in your account</li>
+                    <li>• Card expired or blocked</li>
+                    <li>• Incorrect card details or OTP</li>
+                    <li>• Network or bank server issue</li>
+                    <li>• Payment cancelled by user</li>
+                </ul>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a href="{% url 'payments:initiate_payment' order.id %}"
+                   class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg text-center">
+                    Try Again
+                </a>
+                <a href="{% url 'portal:orders' %}"
+                   class="flex-1 border border-gray-300 text-gray-700 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 text-center">
+                    View All Orders
+                </a>
+            </div>
+
+            <!-- Support -->
+            <div class="mt-6">
+                <p class="text-sm text-gray-600">
+                    If you continue to face issues, please contact our support team.
+                </p>
+            </div>
+        </div>
+
+        <!-- Help Section -->
+        <div class="text-center mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 class="font-semibold text-blue-900 mb-2">Need Help?</h3>
+            <p class="text-sm text-blue-800">
+                Email: support@karunodaya.com<br>
+                Phone: +91-XXXX-XXXXXX<br>
+                Hours: Mon-Fri 9:00 AM - 6:00 PM IST
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

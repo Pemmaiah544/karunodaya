@@ -9,6 +9,7 @@ django-htmx==1.19.0
 
 # Payment Gateway
 razorpay==1.4.2
+setuptools==80.9.0
 
 # Image handling
 Pillow==10.4.0
