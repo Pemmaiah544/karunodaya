@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from apps.profiles.models import ParentProfile, Child
 from apps.inventory.models import PhysicalCopy
+from apps.catalog.models import Book
 
 
 class SubscriptionPlan(models.Model):
@@ -177,3 +178,47 @@ class SubscriptionCycle(models.Model):
     def books_count(self):
         """Number of books in this cycle."""
         return self.physical_copies.count()
+
+
+class OrderItem(models.Model):
+    """
+    Individual items in a purchase order.
+    Tracks books and quantities for purchase orders.
+    """
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='items'
+    )
+    book = models.ForeignKey(
+        Book,
+        on_delete=models.CASCADE,
+        related_name='order_items'
+    )
+    quantity = models.IntegerField(
+        validators=[MinValueValidator(1)],
+        help_text="Number of copies"
+    )
+    price_per_unit = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        help_text="Price per book at time of order"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Order Item"
+        verbose_name_plural = "Order Items"
+        ordering = ['order', 'book']
+        indexes = [
+            models.Index(fields=['order']),
+        ]
+
+    def __str__(self):
+        return f"Order #{self.order.id} - {self.book.title} x{self.quantity}"
+
+    @property
+    def subtotal(self):
+        """Calculate subtotal for this item."""
+        return self.quantity * self.price_per_unit

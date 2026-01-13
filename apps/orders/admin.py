@@ -1,6 +1,6 @@
 from django.contrib import admin
-from unfold.admin import ModelAdmin
-from .models import SubscriptionPlan, Order, SubscriptionCycle
+from unfold.admin import ModelAdmin, TabularInline
+from .models import SubscriptionPlan, Order, SubscriptionCycle, OrderItem
 
 
 @admin.register(SubscriptionPlan)
@@ -11,6 +11,14 @@ class SubscriptionPlanAdmin(ModelAdmin):
     list_editable = ('is_active',)
 
 
+class OrderItemInline(TabularInline):
+    """Inline for OrderItem (purchase orders)."""
+    model = OrderItem
+    extra = 0
+    readonly_fields = ('subtotal',)
+    fields = ('book', 'quantity', 'price_per_unit', 'subtotal')
+
+
 @admin.register(Order)
 class OrderAdmin(ModelAdmin):
     list_display = ('id', 'parent', 'order_type', 'status', 'total_amount', 'created_at')
@@ -18,6 +26,7 @@ class OrderAdmin(ModelAdmin):
     search_fields = ('parent__user__username', 'parent__phone_number')
     readonly_fields = ('created_at', 'updated_at')
     actions = ['mark_as_dispatched', 'mark_as_delivered']
+    inlines = [OrderItemInline]
 
     def mark_as_dispatched(self, request, queryset):
         """Mark selected orders as dispatched."""
@@ -68,7 +77,11 @@ class SubscriptionCycleAdmin(ModelAdmin):
         count = 0
         for cycle in queryset:
             if cycle.status in ['ACTIVE', 'OVERDUE']:
-                success, message = return_subscription_books(cycle, returned_by=request.user)
+                success, message = return_subscription_books(
+                    cycle,
+                    condition_notes='Returned via admin action',
+                    returned_by=request.user
+                )
                 if success:
                     count += 1
 

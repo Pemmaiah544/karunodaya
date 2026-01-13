@@ -113,13 +113,23 @@
                 <p class="text-sm text-gray-600">Price</p>
                 <p class="text-2xl font-bold text-primary-600">₹{{ book.mrp }}</p>
             </div>
-            <form method="post" action="#">
-                {% csrf_token %}
-                <button type="submit"
-                        class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-8 rounded-lg">
-                    Add to Cart
-                </button>
-            </form>
+            <div class="flex items-center gap-3">
+                <a href="{% url 'portal:cart' %}"
+                   class="flex items-center text-primary-600 hover:text-primary-700 font-medium">
+                    <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                    </svg>
+                    View Cart
+                </a>
+                <form method="post" action="{% url 'portal:add_to_cart' book.id %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-8 rounded-lg">
+                        Add to Cart
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
     {% endif %}

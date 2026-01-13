@@ -34,4 +34,19 @@ urlpatterns = [
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('profile/child/add/', views.AddChildView.as_view(), name='add_child'),
     path('profile/child/<int:child_id>/edit/', views.EditChildView.as_view(), name='edit_child'),
+
+    # Subscriptions
+    path('subscribe/', views.SubscribeView.as_view(), name='subscribe'),
+    path('subscribe/<int:child_id>/', views.SubscribeView.as_view(), name='subscribe_child'),
+
+    # Returns
+    path('my-books/', views.MyBooksView.as_view(), name='my_books'),
+    path('return/<int:cycle_id>/', views.initiate_return, name='initiate_return'),
+
+    # Shopping Cart
+    path('cart/', views.CartView.as_view(), name='cart'),
+    path('cart/add/<int:book_id>/', views.add_to_cart, name='add_to_cart'),
+    path('cart/remove/<int:book_id>/', views.remove_from_cart, name='remove_from_cart'),
+    path('cart/update/<int:book_id>/', views.update_cart_quantity, name='update_cart_quantity'),
+    path('checkout/', views.checkout, name='checkout'),
 ]

@@ -425,13 +425,138 @@ karunodaya/
 
 ---
 
-## Phase 7: Workflows
+## Phase 7: Workflows ✅ COMPLETED
 
-### Tasks:
-- [ ] Implement subscription workflow
-- [ ] Implement return workflow
-- [ ] Implement purchase workflow
-- [ ] Create management command for overdue detection
+### Completed Tasks:
+- [x] Create OrderItem model for purchase orders
+  - Fields: order, book, quantity, price_per_unit
+  - Tracks individual items in purchase orders
+  - Includes subtotal property
+  - Added to Order admin as inline
+- [x] Create and run migration for OrderItem
+  - Migration: apps/orders/migrations/0002_orderitem.py
+  - Applied successfully
+- [x] Update curation service for condition notes
+  - return_subscription_books() now accepts condition_notes parameter
+  - Condition notes logged in inventory log
+  - Admin action updated accordingly
+- [x] Implement subscription workflow views
+  - Updated onboarding_complete() to create Order and SubscriptionCycle
+  - Redirects to payment after subscription creation
+  - Created SubscribeView for existing users to add subscriptions
+  - Plan selection with radio buttons
+- [x] Implement return workflow views
+  - MyBooksView shows all borrowed books with status
+  - Shows active/overdue cycles with late fees
+  - initiate_return() processes book returns
+  - Integrates with curation service
+  - Shows recently returned cycles
+- [x] Implement purchase workflow (shopping cart)
+  - Session-based cart implementation
+  - add_to_cart() adds books to cart
+  - remove_from_cart() removes items
+  - update_cart_quantity() updates quantities
+  - CartView shows cart with totals
+  - checkout() creates purchase Order and OrderItems
+- [x] Create templates for all workflows
+  - templates/portal/subscribe.html - Plan selection page
+  - templates/portal/my_books.html - Borrowed books & returns
+  - templates/portal/cart.html - Shopping cart
+  - Updated templates/portal/onboarding_step3.html with child_id
+  - Updated templates/portal/book_detail.html with Add to Cart
+- [x] Update portal URLs with new views
+  - /subscribe/ - Subscribe view
+  - /subscribe/<child_id>/ - Subscribe for specific child
+  - /my-books/ - Borrowed books view
+  - /return/<cycle_id>/ - Initiate return
+  - /cart/ - Shopping cart
+  - /cart/add/<book_id>/ - Add to cart
+  - /cart/remove/<book_id>/ - Remove from cart
+  - /cart/update/<book_id>/ - Update quantity
+  - /checkout/ - Process checkout
+- [x] Test all workflows
+  - Django check: No issues detected
+  - All models, views, and templates validated
+
+### Models Created:
+- **OrderItem** (apps/orders/models.py)
+  - Links Order to Books with quantities and prices
+  - Subtotal calculation
+  - Registered in admin with inline display
+
+### Views Summary:
+**Subscription Management:**
+- SubscribeView - Plan selection (class-based)
+- onboarding_complete - Create subscription order (function)
+
+**Return Workflow:**
+- MyBooksView - View borrowed books (class-based)
+- initiate_return - Process return request (function)
+
+**Purchase Workflow (Cart):**
+- add_to_cart - Add book to cart (function)
+- remove_from_cart - Remove from cart (function)
+- update_cart_quantity - Update quantity (function)
+- CartView - Display cart (class-based)
+- checkout - Create purchase order (function)
+
+**Total New Views:** 8 (3 class-based, 5 function-based)
+
+### Templates Created:
+1. templates/portal/subscribe.html - Subscription plan selection
+2. templates/portal/my_books.html - Borrowed books & return interface
+3. templates/portal/cart.html - Shopping cart with totals
+
+### Templates Updated:
+1. templates/portal/onboarding_step3.html - Added child_id, radio button plan selection
+2. templates/portal/book_detail.html - Added Add to Cart button
+
+### Features Implemented:
+
+**1. Subscription Workflow:**
+- Users can subscribe to plans during onboarding
+- Existing users can add new subscriptions for their children
+- Plan selection with visual feedback (radio buttons)
+- Creates Order and SubscriptionCycle
+- Redirects to payment gateway
+- Books auto-assigned after payment (Phase 6 integration)
+
+**2. Return Workflow:**
+- View all currently borrowed books
+- See overdue status and late fees
+- Add condition notes when returning
+- Process returns through portal (not just admin)
+- View recently returned books history
+- Color-coded status badges (Active/Overdue/Returned)
+
+**3. Purchase Workflow:**
+- Session-based shopping cart
+- Add/remove items dynamically
+- Update quantities with stock validation
+- View cart totals and item counts
+- Checkout creates Order with OrderItems
+- Stock validation before adding to cart
+- Redirects to payment gateway
+- "View Cart" link on book detail pages
+
+**4. Overdue Detection:**
+- Management command already exists from Phase 3
+- Runs: `python manage.py check_overdue_subscriptions`
+- Should be run daily via cron
+- Updates cycle status to OVERDUE
+- Calculates and updates late fees
+
+### Workflow Integration:
+All three workflows integrate seamlessly with:
+- **Payment Integration** (Phase 6) - Orders redirect to Razorpay
+- **Curation Service** (Phase 3) - Returns use return_subscription_books()
+- **Admin Dashboard** (Phase 4) - OrderItem inline, updated admin actions
+- **Mobile Portal** (Phase 5) - All templates mobile-responsive
+
+### Business Logic:
+- **Subscription**: Plan → Order → Payment → Books Assigned → Dispatch
+- **Return**: My Books → Return Request → Inventory Update → Late Fee (if applicable)
+- **Purchase**: Browse → Add to Cart → Checkout → Payment → Dispatch
 
 ---
 

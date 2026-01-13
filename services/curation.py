@@ -174,19 +174,20 @@ def assign_subscription_books(subscription_cycle, auto_select=True):
     return (True, message, assigned_copies)
 
 
-def return_subscription_books(subscription_cycle, returned_by=None):
+def return_subscription_books(subscription_cycle, condition_notes='', returned_by=None):
     """
     Process return of all books in a subscription cycle.
 
     Args:
         subscription_cycle: SubscriptionCycle instance
+        condition_notes: Optional notes about book condition on return
         returned_by: User who processed the return (for audit log)
 
     Returns:
         tuple: (success: bool, message: str)
     """
-    if subscription_cycle.status != 'ACTIVE':
-        return (False, f"Cycle is {subscription_cycle.get_status_display()}, not Active")
+    if subscription_cycle.status not in ['ACTIVE', 'OVERDUE']:
+        return (False, f"Cycle is {subscription_cycle.get_status_display()}, cannot be returned")
 
     returned_count = 0
 
@@ -197,11 +198,15 @@ def return_subscription_books(subscription_cycle, returned_by=None):
 
             # Create inventory log
             from apps.inventory.models import InventoryLog
+            notes = f"Returned from {subscription_cycle.child.name} (Cycle {subscription_cycle.id})"
+            if condition_notes:
+                notes += f" - Condition: {condition_notes}"
+
             InventoryLog.objects.create(
                 physical_copy=copy,
                 action='RETURNED',
                 performed_by=returned_by,
-                notes=f"Returned from {subscription_cycle.child.name} (Cycle {subscription_cycle.id})"
+                notes=notes
             )
             returned_count += 1
 

@@ -117,13 +117,47 @@ def onboarding_step3(request):
 
 @login_required
 def onboarding_complete(request):
-    """HTMX handler for onboarding completion."""
+    """HTMX handler for onboarding completion - create subscription order."""
     if request.method == 'POST':
         plan_id = request.POST.get('plan_id')
+        child_id = request.POST.get('child_id')
 
-        # In a real app, would create order and redirect to payment
-        # For now, just redirect to dashboard
-        return redirect('portal:dashboard')
+        if not plan_id or not child_id:
+            return HttpResponse('Missing required fields', status=400)
+
+        try:
+            parent_profile = request.user.parent_profile
+            plan = get_object_or_404(SubscriptionPlan, id=plan_id, is_active=True)
+            child = get_object_or_404(Child, id=child_id, parent=parent_profile)
+
+            # Create subscription order
+            order = Order.objects.create(
+                parent=parent_profile,
+                order_type='SUBSCRIPTION',
+                status='PENDING',
+                total_amount=plan.price_per_month
+            )
+
+            # Create subscription cycle (books will be assigned after payment)
+            from datetime import date, timedelta
+            issue_date = date.today()
+            expected_return = issue_date + timedelta(days=30)
+
+            SubscriptionCycle.objects.create(
+                parent=parent_profile,
+                child=child,
+                plan=plan,
+                order=order,
+                issue_date=issue_date,
+                expected_return_date=expected_return,
+                status='ACTIVE'
+            )
+
+            # Redirect to payment
+            return redirect('payments:initiate_payment', order_id=order.id)
+
+        except ParentProfile.DoesNotExist:
+            return HttpResponse('Parent profile not found', status=404)
 
     return HttpResponse('Method not allowed', status=405)
 
@@ -333,3 +367,276 @@ class EditChildView(LoginRequiredMixin, DetailView):
         child.save()
 
         return redirect('portal:profile')
+
+
+# ===========================
+# Subscription Management
+# ===========================
+
+class SubscribeView(LoginRequiredMixin, TemplateView):
+    """Subscribe to a plan for a child."""
+    template_name = 'portal/subscribe.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        child_id = self.kwargs.get('child_id')
+
+        if child_id:
+            child = get_object_or_404(Child, id=child_id, parent__user=self.request.user)
+            context['child'] = child
+
+        context['children'] = Child.objects.filter(parent__user=self.request.user)
+        context['subscription_plans'] = SubscriptionPlan.objects.filter(is_active=True)
+        return context
+
+    def post(self, request, child_id=None):
+        """Create subscription order and redirect to payment."""
+        plan_id = request.POST.get('plan_id')
+        child_id = request.POST.get('child_id', child_id)
+
+        if not plan_id or not child_id:
+            return render(request, self.template_name, {
+                'error': 'Please select both a child and a plan',
+                'children': Child.objects.filter(parent__user=request.user),
+                'subscription_plans': SubscriptionPlan.objects.filter(is_active=True)
+            })
+
+        parent_profile = request.user.parent_profile
+        plan = get_object_or_404(SubscriptionPlan, id=plan_id, is_active=True)
+        child = get_object_or_404(Child, id=child_id, parent=parent_profile)
+
+        # Create subscription order
+        order = Order.objects.create(
+            parent=parent_profile,
+            order_type='SUBSCRIPTION',
+            status='PENDING',
+            total_amount=plan.price_per_month
+        )
+
+        # Create subscription cycle (books will be assigned after payment)
+        from datetime import date, timedelta
+        issue_date = date.today()
+        expected_return = issue_date + timedelta(days=30)
+
+        SubscriptionCycle.objects.create(
+            parent=parent_profile,
+            child=child,
+            plan=plan,
+            order=order,
+            issue_date=issue_date,
+            expected_return_date=expected_return,
+            status='ACTIVE'
+        )
+
+        # Redirect to payment
+        return redirect('payments:initiate_payment', order_id=order.id)
+
+
+# ===========================
+# Return Workflow
+# ===========================
+
+class MyBooksView(LoginRequiredMixin, TemplateView):
+    """View all borrowed books and their return status."""
+    template_name = 'portal/my_books.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        parent_profile = self.request.user.parent_profile
+
+        # Get all active and overdue subscriptions
+        context['active_cycles'] = SubscriptionCycle.objects.filter(
+            parent=parent_profile,
+            status__in=['ACTIVE', 'OVERDUE']
+        ).select_related('child', 'plan').prefetch_related('physical_copies')
+
+        # Get returned cycles (last 5)
+        context['returned_cycles'] = SubscriptionCycle.objects.filter(
+            parent=parent_profile,
+            status='RETURNED'
+        ).select_related('child', 'plan').prefetch_related('physical_copies')[:5]
+
+        return context
+
+
+@login_required
+def initiate_return(request, cycle_id):
+    """Initiate return request for a subscription cycle."""
+    if request.method == 'POST':
+        parent_profile = request.user.parent_profile
+        cycle = get_object_or_404(
+            SubscriptionCycle,
+            id=cycle_id,
+            parent=parent_profile,
+            status__in=['ACTIVE', 'OVERDUE']
+        )
+
+        # Get condition notes from form
+        condition_notes = request.POST.get('condition_notes', '')
+
+        # Process return using curation service
+        from services.curation import return_subscription_books
+        success, message = return_subscription_books(cycle, condition_notes)
+
+        if success:
+            return redirect('portal:my_books')
+        else:
+            return render(request, 'portal/my_books.html', {
+                'error': message,
+                'active_cycles': SubscriptionCycle.objects.filter(
+                    parent=parent_profile,
+                    status__in=['ACTIVE', 'OVERDUE']
+                )
+            })
+
+    return HttpResponse('Method not allowed', status=405)
+
+
+# ===========================
+# Purchase Workflow (Cart)
+# ===========================
+
+@login_required
+def add_to_cart(request, book_id):
+    """Add a book to the shopping cart (session-based)."""
+    if request.method == 'POST':
+        book = get_object_or_404(Book, id=book_id, is_purchase_eligible=True, is_active=True)
+
+        # Get or create cart in session
+        cart = request.session.get('cart', {})
+
+        # Add book to cart (or increment quantity)
+        book_id_str = str(book_id)
+        if book_id_str in cart:
+            # Check stock before incrementing
+            if cart[book_id_str]['quantity'] < book.stock_count:
+                cart[book_id_str]['quantity'] += 1
+        else:
+            cart[book_id_str] = {
+                'quantity': 1,
+                'title': book.title,
+                'price': float(book.mrp),
+                'cover_image': book.cover_image.url if book.cover_image else None
+            }
+
+        request.session['cart'] = cart
+        request.session.modified = True
+
+        # Return HTMX response or redirect
+        if request.headers.get('HX-Request'):
+            return HttpResponse(f'<div class="text-green-600">Added to cart!</div>')
+        else:
+            return redirect('portal:cart')
+
+    return HttpResponse('Method not allowed', status=405)
+
+
+@login_required
+def remove_from_cart(request, book_id):
+    """Remove a book from the cart."""
+    if request.method == 'POST':
+        cart = request.session.get('cart', {})
+        book_id_str = str(book_id)
+
+        if book_id_str in cart:
+            del cart[book_id_str]
+            request.session['cart'] = cart
+            request.session.modified = True
+
+        return redirect('portal:cart')
+
+    return HttpResponse('Method not allowed', status=405)
+
+
+@login_required
+def update_cart_quantity(request, book_id):
+    """Update quantity of a book in cart."""
+    if request.method == 'POST':
+        cart = request.session.get('cart', {})
+        book_id_str = str(book_id)
+        quantity = int(request.POST.get('quantity', 1))
+
+        if book_id_str in cart and quantity > 0:
+            book = get_object_or_404(Book, id=book_id)
+            # Check stock
+            if quantity <= book.stock_count:
+                cart[book_id_str]['quantity'] = quantity
+                request.session['cart'] = cart
+                request.session.modified = True
+
+        return redirect('portal:cart')
+
+    return HttpResponse('Method not allowed', status=405)
+
+
+class CartView(LoginRequiredMixin, TemplateView):
+    """Shopping cart view."""
+    template_name = 'portal/cart.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cart = self.request.session.get('cart', {})
+
+        # Calculate totals
+        cart_items = []
+        total = 0
+        for book_id, item in cart.items():
+            subtotal = item['price'] * item['quantity']
+            cart_items.append({
+                'book_id': book_id,
+                'title': item['title'],
+                'price': item['price'],
+                'quantity': item['quantity'],
+                'subtotal': subtotal,
+                'cover_image': item.get('cover_image')
+            })
+            total += subtotal
+
+        context['cart_items'] = cart_items
+        context['cart_total'] = total
+        context['cart_count'] = sum(item['quantity'] for item in cart.values())
+
+        return context
+
+
+@login_required
+def checkout(request):
+    """Process checkout and create purchase order."""
+    if request.method == 'POST':
+        cart = request.session.get('cart', {})
+
+        if not cart:
+            return redirect('portal:cart')
+
+        parent_profile = request.user.parent_profile
+
+        # Calculate total
+        total = sum(item['price'] * item['quantity'] for item in cart.values())
+
+        # Create purchase order
+        order = Order.objects.create(
+            parent=parent_profile,
+            order_type='PURCHASE',
+            status='PENDING',
+            total_amount=total
+        )
+
+        # Create order items (we'll need to create OrderItem model)
+        from apps.orders.models import OrderItem
+        for book_id, item in cart.items():
+            book = Book.objects.get(id=book_id)
+            OrderItem.objects.create(
+                order=order,
+                book=book,
+                quantity=item['quantity'],
+                price_per_unit=item['price']
+            )
+
+        # Clear cart
+        request.session['cart'] = {}
+        request.session.modified = True
+
+        # Redirect to payment
+        return redirect('payments:initiate_payment', order_id=order.id)
+
+    return HttpResponse('Method not allowed', status=405)
