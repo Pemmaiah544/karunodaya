@@ -12,6 +12,20 @@ from apps.inventory.models import PhysicalCopy
 from apps.orders.models import SubscriptionCycle
 from datetime import date, timedelta
 
+# Grade ordering for range checking
+GRADE_ORDER = {
+    'PRE_K': 0,
+    'KINDERGARTEN': 1,
+    'GRADE_1': 2,
+    'GRADE_2': 3,
+    'GRADE_3': 4,
+    'GRADE_4': 5,
+    'GRADE_5': 6,
+    'GRADE_6': 7,
+    'GRADE_7': 8,
+    'GRADE_8': 9,
+}
+
 
 def get_curated_books(child_id, limit=20, exclude_currently_issued=True):
     """
@@ -46,13 +60,21 @@ def get_curated_books(child_id, limit=20, exclude_currently_issued=True):
     # Filter by difficulty rating matching child's reading level
     books = books.filter(difficulty_rating=child.reading_difficulty_level)
 
-    # Filter by grade range
-    # Note: This is simplified - in production, you'd need to convert grades to numeric values
-    # For now, we'll match exactly or within a range
-    books = books.filter(
-        Q(recommended_grade_min=child.grade) |
-        Q(recommended_grade_max=child.grade)
-    )
+    # Filter by grade range - check if child's grade falls within book's grade range
+    child_grade_value = GRADE_ORDER.get(child.grade)
+
+    if child_grade_value is not None:
+        # Get all books and filter in Python (since we can't do grade range comparison in DB easily)
+        matching_books = []
+        for book in books:
+            book_min_value = GRADE_ORDER.get(book.recommended_grade_min, 0)
+            book_max_value = GRADE_ORDER.get(book.recommended_grade_max, 9)
+
+            # Check if child's grade falls within the book's grade range
+            if book_min_value <= child_grade_value <= book_max_value:
+                matching_books.append(book.id)
+
+        books = books.filter(id__in=matching_books) if matching_books else Book.objects.none()
 
     # Exclude books currently issued to this child
     if exclude_currently_issued:
