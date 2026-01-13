@@ -31,13 +31,13 @@
             <!-- Tags -->
             <div class="flex flex-wrap gap-2 mb-4">
                 <span class="px-3 py-1 text-sm rounded-full
-                    {% if book.difficulty_level == 'BEGINNER' %}bg-green-100 text-green-800
-                    {% elif book.difficulty_level == 'INTERMEDIATE' %}bg-blue-100 text-blue-800
+                    {% if book.difficulty_rating == 'BEGINNER' %}bg-green-100 text-green-800
+                    {% elif book.difficulty_rating == 'INTERMEDIATE' %}bg-blue-100 text-blue-800
                     {% else %}bg-purple-100 text-purple-800{% endif %}">
-                    {{ book.get_difficulty_level_display }}
+                    {{ book.get_difficulty_rating_display }}
                 </span>
                 <span class="px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-800">
-                    Ages {{ book.recommended_age_min }}-{{ book.recommended_age_max }}
+                    Grades: {{ book.get_recommended_grade_min_display }} - {{ book.get_recommended_grade_max_display }}
                 </span>
                 {% if book.low_stock %}
                 <span class="px-3 py-1 text-sm rounded-full bg-orange-100 text-orange-800">
@@ -57,21 +57,19 @@
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <p class="text-gray-600">Publisher</p>
-                        <p class="font-medium">{{ book.publisher.name }}</p>
+                        <p class="font-medium">{{ book.publisher.name|default:"Unknown" }}</p>
                     </div>
                     <div>
                         <p class="text-gray-600">ISBN</p>
                         <p class="font-medium">{{ book.isbn|default:"N/A" }}</p>
                     </div>
-                    {% if book.publication_year %}
                     <div>
-                        <p class="text-gray-600">Published</p>
-                        <p class="font-medium">{{ book.publication_year }}</p>
+                        <p class="text-gray-600">Price (MRP)</p>
+                        <p class="font-medium">₹{{ book.mrp }}</p>
                     </div>
-                    {% endif %}
                     <div>
-                        <p class="text-gray-600">Pages</p>
-                        <p class="font-medium">{{ book.page_count|default:"N/A" }}</p>
+                        <p class="text-gray-600">Stock Available</p>
+                        <p class="font-medium">{{ book.stock_count }} copies</p>
                     </div>
                 </div>
             </div>

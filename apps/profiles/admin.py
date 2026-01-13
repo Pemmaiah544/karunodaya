@@ -1,12 +1,13 @@
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 from .models import ParentProfile, Child
 
 
-class ChildInline(admin.TabularInline):
+class ChildInline(TabularInline):
     model = Child
     extra = 0
-    fields = ('name', 'age', 'grade', 'reading_difficulty_level')
+    fields = ('name', 'age', 'grade', 'reading_difficulty_level', 'date_of_birth')
+    readonly_fields = []
 
 
 @admin.register(ParentProfile)

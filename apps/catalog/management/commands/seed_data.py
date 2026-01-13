@@ -32,8 +32,83 @@ class Command(BaseCommand):
         # Publisher.objects.all().delete()
         # SubscriptionPlan.objects.all().delete()
 
+        # Create Test Users and Parent Profiles
+        self.stdout.write('Creating test users and parent profiles...')
+        users_data = [
+            {
+                'username': 'test_parent1',
+                'email': 'parent1@example.com',
+                'password': 'Test@123',
+                'first_name': 'Rajesh',
+                'last_name': 'Kumar',
+                'phone': '9876543210',
+                'address': '123 MG Road',
+                'city': 'Bangalore',
+                'state': 'Karnataka',
+                'pincode': '560001'
+            },
+            {
+                'username': 'test_parent2',
+                'email': 'parent2@example.com',
+                'password': 'Test@123',
+                'first_name': 'Priya',
+                'last_name': 'Sharma',
+                'phone': '9876543211',
+                'address': '456 Park Street',
+                'city': 'Mumbai',
+                'state': 'Maharashtra',
+                'pincode': '400001'
+            },
+        ]
+
+        for data in users_data:
+            user, created = User.objects.get_or_create(
+                username=data['username'],
+                defaults={
+                    'email': data['email'],
+                    'first_name': data['first_name'],
+                    'last_name': data['last_name']
+                }
+            )
+            if created:
+                user.set_password(data['password'])
+                user.save()
+                self.stdout.write(f'  ✓ Created user: {user.username}')
+
+                # Create parent profile
+                parent, _ = ParentProfile.objects.get_or_create(
+                    user=user,
+                    defaults={
+                        'phone_number': data['phone'],
+                        'address': data['address'],
+                        'city': data['city'],
+                        'state': data['state'],
+                        'pincode': data['pincode']
+                    }
+                )
+                self.stdout.write(f'    → Created parent profile')
+
+                # Create children for each parent
+                children_data = [
+                    {'name': 'Aarav', 'age': 5, 'grade': 'KINDERGARTEN', 'level': 'BEGINNER', 'dob': date(2019, 3, 15)},
+                    {'name': 'Diya', 'age': 9, 'grade': 'GRADE_4', 'level': 'INTERMEDIATE', 'dob': date(2015, 7, 22)},
+                ]
+
+                for child_data in children_data:
+                    child, _ = Child.objects.get_or_create(
+                        parent=parent,
+                        name=child_data['name'],
+                        defaults={
+                            'age': child_data['age'],
+                            'grade': child_data['grade'],
+                            'reading_difficulty_level': child_data['level'],
+                            'date_of_birth': child_data['dob']
+                        }
+                    )
+                    self.stdout.write(f'      → Created child: {child.name}')
+
         # Create Publishers
-        self.stdout.write('Creating publishers...')
+        self.stdout.write('\nCreating publishers...')
         publishers = []
         publisher_data = [
             {'name': 'Penguin Books India', 'email': 'contact@penguin.in', 'phone': '9876543210', 'address': 'Mumbai, Maharashtra'},
@@ -248,8 +323,14 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f'\n✅ Seed complete!'
+            f'\n   Users: {User.objects.filter(username__startswith="test_").count()}'
+            f'\n   Parent Profiles: {ParentProfile.objects.count()}'
+            f'\n   Children: {Child.objects.count()}'
             f'\n   Publishers: {Publisher.objects.count()}'
             f'\n   Books: {Book.objects.count()}'
             f'\n   Physical Copies: {PhysicalCopy.objects.count()}'
             f'\n   Subscription Plans: {SubscriptionPlan.objects.count()}'
+            f'\n\n📝 Test Credentials:'
+            f'\n   Username: test_parent1 | Password: Test@123'
+            f'\n   Username: test_parent2 | Password: Test@123'
         ))

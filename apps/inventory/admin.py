@@ -1,13 +1,14 @@
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 from .models import PhysicalCopy, InventoryLog
 
 
-class InventoryLogInline(admin.TabularInline):
+class InventoryLogInline(TabularInline):
     model = InventoryLog
     extra = 0
     readonly_fields = ('action', 'performed_by', 'notes', 'timestamp')
     can_delete = False
+    fields = ('action', 'performed_by', 'notes', 'timestamp')
 
     def has_add_permission(self, request, obj=None):
         return False
