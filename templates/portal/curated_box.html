@@ -16,9 +16,9 @@
     <!-- Curated Books Grid -->
     <h2 class="text-lg font-semibold mb-4">Curated Just for {{ child.name }}</h2>
 
-    {% if books %}
+    {% if curated_books %}
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {% for book in books %}
+        {% for book in curated_books %}
         <div class="bg-white rounded-lg shadow overflow-hidden">
             {% if book.cover_image %}
             <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="w-full h-48 object-cover">
@@ -32,13 +32,13 @@
                 <p class="text-xs text-gray-600 mb-2">{{ book.author }}</p>
                 <div class="flex items-center justify-between">
                     <span class="px-2 py-1 text-xs rounded-full
-                        {% if book.difficulty_level == 'BEGINNER' %}bg-green-100 text-green-800
-                        {% elif book.difficulty_level == 'INTERMEDIATE' %}bg-blue-100 text-blue-800
+                        {% if book.difficulty_rating == 'BEGINNER' %}bg-green-100 text-green-800
+                        {% elif book.difficulty_rating == 'INTERMEDIATE' %}bg-blue-100 text-blue-800
                         {% else %}bg-purple-100 text-purple-800{% endif %}">
-                        {{ book.get_difficulty_level_display }}
+                        {{ book.get_difficulty_rating_display }}
                     </span>
                     <a href="{% url 'portal:book_detail' book.id %}"
-                       class="text-primary-600 hover:text-primary-700 text-xs font-medium">
+                       class="text-purple-600 hover:text-purple-700 text-xs font-medium">
                         View →
                     </a>
                 </div>
@@ -51,7 +51,7 @@
         <span class="text-6xl mb-4 block">📚</span>
         <p class="text-gray-600">No curated books available at the moment.</p>
         <a href="{% url 'portal:marketplace' %}"
-           class="inline-block mt-4 text-primary-600 hover:text-primary-700 font-medium">
+           class="inline-block mt-4 text-purple-600 hover:text-purple-700 font-medium">
             Browse Marketplace →
         </a>
     </div>

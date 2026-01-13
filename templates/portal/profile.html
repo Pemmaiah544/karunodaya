@@ -67,7 +67,7 @@
             <h2 class="text-lg font-semibold text-gray-900">My Children</h2>
             {% if children|length < 5 %}
             <a href="{% url 'portal:add_child' %}"
-               class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+               class="text-purple-600 hover:text-purple-700 text-sm font-medium">
                 + Add Child
             </a>
             {% endif %}
@@ -83,7 +83,7 @@
                         <p class="text-sm text-gray-600">{{ child.age }} years • {{ child.get_grade_display }}</p>
                     </div>
                     <a href="{% url 'portal:edit_child' child.id %}"
-                       class="text-primary-600 hover:text-primary-700 text-sm">
+                       class="text-purple-600 hover:text-purple-700 text-sm">
                         Edit
                     </a>
                 </div>
@@ -98,7 +98,7 @@
                     </div>
                 </div>
                 <a href="{% url 'portal:curated_box' child.id %}"
-                   class="inline-block mt-2 text-primary-600 hover:text-primary-700 text-sm font-medium">
+                   class="inline-block mt-2 text-purple-600 hover:text-purple-700 text-sm font-medium">
                     View Curated Books →
                 </a>
             </div>
