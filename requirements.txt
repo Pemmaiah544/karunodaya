@@ -22,3 +22,6 @@ libsql-experimental==0.0.55
 
 # Development tools
 django-debug-toolbar==4.4.6
+
+# Production server
+gunicorn==21.2.0

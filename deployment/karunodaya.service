@@ -1,0 +1,25 @@
+[Unit]
+Description=Karunodaya Django Application
+After=network.target
+
+[Service]
+Type=notify
+User=karunodaya
+Group=www-data
+RuntimeDirectory=karunodaya
+WorkingDirectory=/home/karunodaya/app
+Environment="PATH=/home/karunodaya/app/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=karunodaya_project.settings_production"
+ExecStart=/home/karunodaya/app/venv/bin/gunicorn \
+    --config /home/karunodaya/app/gunicorn_config.py \
+    --bind 127.0.0.1:8000 \
+    karunodaya_project.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

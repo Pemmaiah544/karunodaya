@@ -1,0 +1,11 @@
+# Karunodaya Cron Jobs
+# Install with: crontab -u karunodaya /home/karunodaya/app/deployment/karunodaya_cron
+
+# Check for overdue subscriptions daily at 2 AM
+0 2 * * * cd /home/karunodaya/app && /home/karunodaya/app/venv/bin/python manage.py check_overdue_subscriptions >> /var/log/karunodaya/cron.log 2>&1
+
+# Cleanup old sessions weekly on Sunday at 3 AM
+0 3 * * 0 cd /home/karunodaya/app && /home/karunodaya/app/venv/bin/python manage.py clearsessions >> /var/log/karunodaya/cron.log 2>&1
+
+# Backup database daily at 1 AM
+0 1 * * * cd /home/karunodaya/app && /home/karunodaya/app/deployment/backup_database.sh >> /var/log/karunodaya/backup.log 2>&1
