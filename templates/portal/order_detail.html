@@ -1,0 +1,162 @@
+{% extends "portal/base.html" %}
+{% load static %}
+
+{% block title %}Order #{{ order.id }} - Karunodaya{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-4">
+    <!-- Back Button -->
+    <a href="{% url 'portal:orders' %}" class="inline-flex items-center text-primary-600 hover:text-primary-700 mb-4">
+        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Orders
+    </a>
+
+    <!-- Order Header -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Order #{{ order.id }}</h1>
+                <p class="text-sm text-gray-600">Placed on {{ order.created_at|date:"d M Y, h:i A" }}</p>
+            </div>
+            <span class="px-3 py-1 text-sm font-semibold rounded-full
+                {% if order.status == 'PAID' %}bg-green-100 text-green-800
+                {% elif order.status == 'PENDING' %}bg-yellow-100 text-yellow-800
+                {% elif order.status == 'DELIVERED' %}bg-blue-100 text-blue-800
+                {% elif order.status == 'CANCELLED' %}bg-red-100 text-red-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ order.get_status_display }}
+            </span>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="border-t pt-4">
+            <div class="flex justify-between text-sm mb-2">
+                <span class="text-gray-600">Order Type:</span>
+                <span class="font-medium">{{ order.get_order_type_display }}</span>
+            </div>
+            {% if order.order_type == 'SUBSCRIPTION' %}
+            <div class="flex justify-between text-sm mb-2">
+                <span class="text-gray-600">Child:</span>
+                <span class="font-medium">{{ order.child.name }}</span>
+            </div>
+            {% endif %}
+            <div class="flex justify-between text-lg font-bold mt-4">
+                <span>Total Amount:</span>
+                <span class="text-primary-600">₹{{ order.total_amount }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscription Details -->
+    {% if order.order_type == 'SUBSCRIPTION' and subscription_cycle %}
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Subscription Details</h2>
+
+        <div class="space-y-3 mb-4">
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-600">Plan:</span>
+                <span class="font-medium">{{ subscription_cycle.plan.name }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-600">Period:</span>
+                <span class="font-medium">{{ subscription_cycle.start_date|date:"d M Y" }} - {{ subscription_cycle.end_date|date:"d M Y" }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-600">Status:</span>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full
+                    {% if subscription_cycle.status == 'ACTIVE' %}bg-green-100 text-green-800
+                    {% elif subscription_cycle.status == 'OVERDUE' %}bg-red-100 text-red-800
+                    {% elif subscription_cycle.status == 'RETURNED' %}bg-blue-100 text-blue-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ subscription_cycle.get_status_display }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Books in Box -->
+        {% if books %}
+        <h3 class="font-semibold text-gray-900 mb-3">Books in this Box</h3>
+        <div class="space-y-2">
+            {% for copy in books %}
+            <div class="flex items-center border border-gray-200 rounded-lg p-3">
+                {% if copy.book.cover_image %}
+                <img src="{{ copy.book.cover_image.url }}" alt="{{ copy.book.title }}" class="w-16 h-20 object-cover rounded mr-3">
+                {% else %}
+                <div class="w-16 h-20 bg-gray-200 flex items-center justify-center rounded mr-3">
+                    <span class="text-2xl">📚</span>
+                </div>
+                {% endif %}
+                <div class="flex-1">
+                    <p class="font-medium text-sm">{{ copy.book.title }}</p>
+                    <p class="text-xs text-gray-600">{{ copy.book.author }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Barcode: {{ copy.barcode }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-600">Books not yet assigned to this subscription.</p>
+        {% endif %}
+
+        <!-- Overdue Warning -->
+        {% if subscription_cycle.is_overdue %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+            <h4 class="font-semibold text-red-900 mb-2">⚠️ Overdue Return</h4>
+            <p class="text-sm text-red-800 mb-2">
+                Books were due on {{ subscription_cycle.expected_return_date|date:"d M Y" }}
+            </p>
+            {% if subscription_cycle.late_fee > 0 %}
+            <p class="text-sm text-red-800">
+                Current late fee: <strong>₹{{ subscription_cycle.late_fee }}</strong>
+            </p>
+            <p class="text-xs text-red-700 mt-1">
+                (₹50/day, max ₹500 after 7-day grace period)
+            </p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Purchase Items -->
+    {% if order.order_type == 'PURCHASE' %}
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Purchased Items</h2>
+        <p class="text-sm text-gray-600">Items details will be displayed here once purchase flow is complete.</p>
+    </div>
+    {% endif %}
+
+    <!-- Payment Information -->
+    {% if transaction %}
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Payment Information</h2>
+        <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+                <span class="text-gray-600">Transaction ID:</span>
+                <span class="font-medium">{{ transaction.razorpay_payment_id|default:"Pending" }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Payment Method:</span>
+                <span class="font-medium">{{ transaction.payment_method|default:"N/A" }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Payment Status:</span>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full
+                    {% if transaction.status == 'SUCCESS' %}bg-green-100 text-green-800
+                    {% elif transaction.status == 'PENDING' %}bg-yellow-100 text-yellow-800
+                    {% elif transaction.status == 'FAILED' %}bg-red-100 text-red-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ transaction.get_status_display }}
+                </span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Payment Date:</span>
+                <span class="font-medium">{{ transaction.created_at|date:"d M Y, h:i A" }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

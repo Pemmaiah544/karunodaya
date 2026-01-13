@@ -1,0 +1,141 @@
+{% extends "portal/base.html" %}
+{% load static %}
+
+{% block title %}My Orders - Karunodaya{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-4">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">My Orders & Subscriptions</h1>
+
+    <!-- Tab Navigation -->
+    <div class="flex border-b mb-6">
+        <button class="tab-btn active px-4 py-2 font-medium border-b-2 border-primary-600 text-primary-600"
+                hx-get="{% url 'portal:orders' %}?tab=subscriptions"
+                hx-target="#orders-content"
+                hx-swap="innerHTML">
+            Subscriptions
+        </button>
+        <button class="tab-btn px-4 py-2 font-medium border-b-2 border-transparent text-gray-600 hover:text-gray-900"
+                hx-get="{% url 'portal:orders' %}?tab=purchases"
+                hx-target="#orders-content"
+                hx-swap="innerHTML">
+            Purchases
+        </button>
+    </div>
+
+    <!-- Orders Content -->
+    <div id="orders-content">
+        {% if tab == 'purchases' %}
+        <!-- Purchase Orders -->
+        {% if orders %}
+        <div class="space-y-4">
+            {% for order in orders %}
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <p class="font-semibold text-gray-900">Order #{{ order.id }}</p>
+                        <p class="text-sm text-gray-600">{{ order.created_at|date:"d M Y, h:i A" }}</p>
+                    </div>
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full
+                        {% if order.status == 'PAID' %}bg-green-100 text-green-800
+                        {% elif order.status == 'PENDING' %}bg-yellow-100 text-yellow-800
+                        {% elif order.status == 'DELIVERED' %}bg-blue-100 text-blue-800
+                        {% elif order.status == 'CANCELLED' %}bg-red-100 text-red-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+                <p class="text-lg font-bold text-primary-600 mb-3">₹{{ order.total_amount }}</p>
+                <a href="{% url 'portal:order_detail' order.id %}"
+                   class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                    View Details →
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bg-gray-50 rounded-lg p-8 text-center">
+            <span class="text-6xl mb-4 block">🛒</span>
+            <p class="text-gray-600 mb-4">No purchase orders yet.</p>
+            <a href="{% url 'portal:marketplace' %}"
+               class="inline-block bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-6 rounded-lg">
+                Browse Marketplace
+            </a>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- Subscription Cycles -->
+        {% if subscription_cycles %}
+        <div class="space-y-4">
+            {% for cycle in subscription_cycles %}
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <p class="font-semibold text-gray-900">{{ cycle.child.name }} - {{ cycle.plan.name }}</p>
+                        <p class="text-sm text-gray-600">{{ cycle.start_date|date:"d M Y" }} - {{ cycle.end_date|date:"d M Y" }}</p>
+                    </div>
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full
+                        {% if cycle.status == 'ACTIVE' %}bg-green-100 text-green-800
+                        {% elif cycle.status == 'OVERDUE' %}bg-red-100 text-red-800
+                        {% elif cycle.status == 'RETURNED' %}bg-blue-100 text-blue-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ cycle.get_status_display }}
+                    </span>
+                </div>
+
+                <!-- Books Count -->
+                <div class="flex items-center text-sm text-gray-600 mb-3">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+                    </svg>
+                    {{ cycle.books_count }} book{{ cycle.books_count|pluralize }}
+                </div>
+
+                <!-- Late Fee if Overdue -->
+                {% if cycle.is_overdue %}
+                <div class="bg-red-50 border border-red-200 rounded p-3 mb-3">
+                    <p class="text-sm text-red-800">
+                        <strong>Overdue:</strong> Expected return {{ cycle.expected_return_date|date:"d M Y" }}
+                        {% if cycle.late_fee > 0 %}
+                        <br>Late fee: ₹{{ cycle.late_fee }}
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+
+                <a href="{% url 'portal:order_detail' cycle.order.id %}"
+                   class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                    View Details →
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bg-gray-50 rounded-lg p-8 text-center">
+            <span class="text-6xl mb-4 block">📦</span>
+            <p class="text-gray-600 mb-4">No active subscriptions yet.</p>
+            <a href="{% url 'portal:dashboard' %}"
+               class="inline-block bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-6 rounded-lg">
+                Start Subscription
+            </a>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Simple tab switching without HTMX for demo
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('active', 'border-primary-600', 'text-primary-600');
+            b.classList.add('border-transparent', 'text-gray-600');
+        });
+        this.classList.add('active', 'border-primary-600', 'text-primary-600');
+        this.classList.remove('border-transparent', 'text-gray-600');
+    });
+});
+</script>
+{% endblock %}

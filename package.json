@@ -1,0 +1,12 @@
+{
+  "name": "karunodaya",
+  "version": "1.0.0",
+  "description": "Book subscription and marketplace platform",
+  "scripts": {
+    "dev": "tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch",
+    "build": "tailwindcss -i ./static/css/input.css -o ./static/css/output.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

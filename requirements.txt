@@ -1,0 +1,23 @@
+# Core Django
+Django==5.0.9
+
+# Admin UI
+django-unfold==0.38.0
+
+# Frontend Integration
+django-htmx==1.19.0
+
+# Payment Gateway
+razorpay==1.4.2
+
+# Image handling
+Pillow==10.4.0
+
+# Environment variables
+python-decouple==3.8
+
+# Database (for production)
+libsql-experimental==0.0.55
+
+# Development tools
+django-debug-toolbar==4.4.6
