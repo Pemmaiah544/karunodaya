@@ -24,16 +24,22 @@ razorpay_client = razorpay.Client(
 @login_required
 def initiate_payment(request, order_id):
     """
-    Initiate Razorpay payment for an order.
-    Creates Razorpay order and Transaction record.
+    Initiate payment for an order.
+    For COD orders: Redirect to COD confirmation page.
+    For online orders: Create Razorpay order and Transaction record.
     """
-    order = get_object_or_404(Order, id=order_id, parent=request.user)
+    order = get_object_or_404(Order, id=order_id, parent__user=request.user)
 
     # Check if order is already paid
     if order.status in ['PAID', 'DISPATCHED', 'DELIVERED']:
         messages.warning(request, 'This order has already been paid.')
         return redirect('portal:order_detail', order_id=order.id)
 
+    # Handle COD orders
+    if order.payment_method == 'COD':
+        return redirect('payments:cod_confirmation', order_id=order.id)
+
+    # Handle online payment orders
     try:
         # Create Razorpay order
         razorpay_order = razorpay_client.order.create({
@@ -65,7 +71,7 @@ def initiate_payment(request, order_id):
             'currency': 'INR',
             'user_name': request.user.get_full_name() or request.user.username,
             'user_email': request.user.email,
-            'user_phone': getattr(request.user.parentprofile, 'phone_number', ''),
+            'user_phone': getattr(request.user.parent_profile, 'phone_number', ''),
         }
 
         return render(request, 'payments/payment_page.html', context)
@@ -73,6 +79,7 @@ def initiate_payment(request, order_id):
     except Exception as e:
         messages.error(request, f'Failed to initiate payment: {str(e)}')
         return redirect('portal:order_detail', order_id=order.id)
+
 
 
 @login_required
@@ -144,6 +151,57 @@ def payment_callback(request):
     except Exception as e:
         messages.error(request, f'Payment processing error: {str(e)}')
         return redirect('portal:orders')
+
+
+@login_required
+def cod_confirmation(request, order_id):
+    """
+    Display COD order confirmation page.
+    Automatically marks order as PAID and ready for dispatch.
+    For subscriptions, assign books immediately.
+    """
+    order = get_object_or_404(Order, id=order_id, parent__user=request.user)
+
+    # Mark COD order as PAID immediately (payment will be collected on delivery)
+    if order.payment_method == 'COD' and order.status == 'PENDING':
+        order.status = 'PAID'
+        order.save()
+        
+        # Create transaction record for audit trail
+        Transaction.objects.create(
+            order=order,
+            razorpay_order_id=f'COD-{order.id}',
+            amount=order.total_amount,
+            status='SUCCESS',
+            payment_method='COD',
+            provider_response={
+                'payment_type': 'cash_on_delivery',
+                'note': 'Payment to be collected on delivery'
+            }
+        )
+
+    # Assign books for subscription COD orders
+    if order.order_type == 'SUBSCRIPTION':
+        try:
+            subscription_cycle = SubscriptionCycle.objects.get(order=order)
+            # Assign books immediately for COD subscriptions
+            success, message = assign_subscription_books(subscription_cycle)
+            if not success:
+                messages.warning(request, f'Order confirmed but book assignment issue: {message}')
+        except SubscriptionCycle.DoesNotExist:
+            messages.warning(request, 'Subscription cycle not found.')
+
+    context = {
+        'order': order,
+        'is_subscription': order.order_type == 'SUBSCRIPTION',
+    }
+
+    # Get order items for purchase orders
+    if order.order_type == 'PURCHASE':
+        context['order_items'] = order.items.all()
+
+    return render(request, 'payments/cod_confirmation.html', context)
+
 
 
 @login_required

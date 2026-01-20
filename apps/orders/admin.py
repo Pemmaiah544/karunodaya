@@ -21,11 +21,11 @@ class OrderItemInline(TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(ModelAdmin):
-    list_display = ('id', 'parent', 'order_type', 'status', 'total_amount', 'created_at')
-    list_filter = ('order_type', 'status', 'created_at')
+    list_display = ('id', 'parent', 'order_type', 'payment_method', 'status', 'total_amount', 'created_at')
+    list_filter = ('order_type', 'payment_method', 'status', 'created_at')
     search_fields = ('parent__user__username', 'parent__phone_number')
     readonly_fields = ('created_at', 'updated_at')
-    actions = ['mark_as_dispatched', 'mark_as_delivered']
+    actions = ['mark_as_dispatched', 'mark_as_delivered', 'confirm_cod_payment']
     inlines = [OrderItemInline]
 
     def mark_as_dispatched(self, request, queryset):
@@ -39,6 +39,30 @@ class OrderAdmin(ModelAdmin):
         count = queryset.filter(status='DISPATCHED').update(status='DELIVERED')
         self.message_user(request, f"{count} order(s) marked as delivered.")
     mark_as_delivered.short_description = "Mark as Delivered"
+
+    def confirm_cod_payment(self, request, queryset):
+        """Confirm COD payment received and mark order as paid."""
+        from apps.payments.models import Transaction
+        count = 0
+        for order in queryset:
+            if order.payment_method == 'COD' and order.status == 'PENDING':
+                # Update order status
+                order.status = 'PAID'
+                order.save()
+                
+                # Create transaction record for audit trail
+                Transaction.objects.create(
+                    order=order,
+                    razorpay_order_id=f'COD-{order.id}',
+                    amount=order.total_amount,
+                    status='SUCCESS',
+                    payment_method='COD',
+                    provider_response={'payment_type': 'cash_on_delivery', 'confirmed_by': request.user.username}
+                )
+                count += 1
+        
+        self.message_user(request, f"{count} COD order(s) confirmed as paid.")
+    confirm_cod_payment.short_description = "Confirm COD Payment Received"
 
 
 @admin.register(SubscriptionCycle)

@@ -393,6 +393,7 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
         """Create subscription order and redirect to payment."""
         plan_id = request.POST.get('plan_id')
         child_id = request.POST.get('child_id', child_id)
+        payment_method = request.POST.get('payment_method', 'ONLINE')  # Get payment method
 
         if not plan_id or not child_id:
             return render(request, self.template_name, {
@@ -405,11 +406,12 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
         plan = get_object_or_404(SubscriptionPlan, id=plan_id, is_active=True)
         child = get_object_or_404(Child, id=child_id, parent=parent_profile)
 
-        # Create subscription order
+        # Create subscription order with payment method
         order = Order.objects.create(
             parent=parent_profile,
             order_type='SUBSCRIPTION',
             status='PENDING',
+            payment_method=payment_method,
             total_amount=plan.price_per_month
         )
 
@@ -430,6 +432,7 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
 
         # Redirect to payment
         return redirect('payments:initiate_payment', order_id=order.id)
+
 
 
 # ===========================
@@ -609,15 +612,17 @@ def checkout(request):
             return redirect('portal:cart')
 
         parent_profile = request.user.parent_profile
+        payment_method = request.POST.get('payment_method', 'ONLINE')  # Get payment method
 
         # Calculate total
         total = sum(item['price'] * item['quantity'] for item in cart.values())
 
-        # Create purchase order
+        # Create purchase order with payment method
         order = Order.objects.create(
             parent=parent_profile,
             order_type='PURCHASE',
             status='PENDING',
+            payment_method=payment_method,
             total_amount=total
         )
 
@@ -640,3 +645,4 @@ def checkout(request):
         return redirect('payments:initiate_payment', order_id=order.id)
 
     return HttpResponse('Method not allowed', status=405)
+

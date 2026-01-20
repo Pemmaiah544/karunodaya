@@ -58,6 +58,11 @@ class Order(models.Model):
         ('CANCELLED', 'Cancelled'),
     ]
 
+    PAYMENT_METHOD_CHOICES = [
+        ('ONLINE', 'Online Payment'),
+        ('COD', 'Cash on Delivery'),
+    ]
+
     parent = models.ForeignKey(
         ParentProfile,
         on_delete=models.CASCADE,
@@ -68,6 +73,12 @@ class Order(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='PENDING'
+    )
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        default='ONLINE',
+        help_text='Payment method: Online or Cash on Delivery'
     )
     total_amount = models.DecimalField(
         max_digits=10,

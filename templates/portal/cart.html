@@ -16,13 +16,12 @@
                 <div class="flex items-start gap-4">
                     <!-- Book Cover -->
                     {% if item.cover_image %}
-                    <img src="{{ item.cover_image }}"
-                         alt="{{ item.title }}"
-                         class="w-20 h-28 object-cover rounded">
+                    <img src="{{ item.cover_image }}" alt="{{ item.title }}" class="w-20 h-28 object-cover rounded">
                     {% else %}
                     <div class="w-20 h-28 bg-gray-200 rounded flex items-center justify-center">
                         <svg class="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+                            <path
+                                d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                         </svg>
                     </div>
                     {% endif %}
@@ -34,22 +33,20 @@
 
                         <!-- Quantity Controls -->
                         <div class="flex items-center gap-4">
-                            <form method="POST" action="{% url 'portal:update_cart_quantity' item.book_id %}" class="flex items-center gap-2">
+                            <form method="POST" action="{% url 'portal:update_cart_quantity' item.book_id %}"
+                                class="flex items-center gap-2">
                                 {% csrf_token %}
                                 <label class="text-sm text-gray-600">Qty:</label>
-                                <input type="number" name="quantity" value="{{ item.quantity }}"
-                                       min="1" max="10"
-                                       class="w-16 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-600 focus:border-transparent">
-                                <button type="submit"
-                                        class="text-sm text-purple-600 hover:text-purple-700 font-medium">
+                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="10"
+                                    class="w-16 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+                                <button type="submit" class="text-sm text-purple-600 hover:text-purple-700 font-medium">
                                     Update
                                 </button>
                             </form>
 
                             <form method="POST" action="{% url 'portal:remove_from_cart' item.book_id %}">
                                 {% csrf_token %}
-                                <button type="submit"
-                                        class="text-sm text-red-600 hover:text-red-700 font-medium">
+                                <button type="submit" class="text-sm text-red-600 hover:text-red-700 font-medium">
                                     Remove
                                 </button>
                             </form>
@@ -87,16 +84,49 @@
                     </div>
                 </div>
 
+                <!-- Payment Method Selection -->
+                <div class="mb-6 pb-6 border-b border-gray-200">
+                    <h3 class="font-semibold text-gray-900 mb-3">Payment Method</h3>
+                    <div class="space-y-2">
+                        <label
+                            class="flex items-center cursor-pointer p-3 border-2 border-gray-200 rounded-lg hover:border-purple-400 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-50">
+                            <input type="radio" name="payment_method" value="ONLINE" checked class="mr-3">
+                            <div class="flex-1">
+                                <p class="font-medium text-sm">Online Payment</p>
+                                <p class="text-xs text-gray-600">Card/UPI/Net Banking</p>
+                            </div>
+                        </label>
+                        <label
+                            class="flex items-center cursor-pointer p-3 border-2 border-gray-200 rounded-lg hover:border-purple-400 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-50">
+                            <input type="radio" name="payment_method" value="COD" class="mr-3">
+                            <div class="flex-1">
+                                <p class="font-medium text-sm">Cash on Delivery</p>
+                                <p class="text-xs text-gray-600">Pay when you receive</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
                 <form method="POST" action="{% url 'portal:checkout' %}">
                     {% csrf_token %}
+                    <input type="hidden" name="payment_method" id="selected_payment_method" value="ONLINE">
                     <button type="submit"
-                            class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg mb-3">
+                        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg mb-3">
                         Proceed to Checkout
                     </button>
                 </form>
 
+                <script>
+                    // Update hidden field when payment method changes
+                    document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+                        radio.addEventListener('change', function () {
+                            document.getElementById('selected_payment_method').value = this.value;
+                        });
+                    });
+                </script>
+
                 <a href="{% url 'portal:marketplace' %}"
-                   class="block text-center text-purple-600 hover:text-purple-700 font-medium">
+                    class="block text-center text-purple-600 hover:text-purple-700 font-medium">
                     Continue Shopping
                 </a>
 
@@ -105,26 +135,38 @@
                     <h3 class="font-semibold text-gray-900 mb-3">Why Buy from Us?</h3>
                     <ul class="space-y-2 text-sm text-gray-600">
                         <li class="flex items-start">
-                            <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                            <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clip-rule="evenodd" />
                             </svg>
                             Free shipping on all orders
                         </li>
                         <li class="flex items-start">
-                            <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                            <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clip-rule="evenodd" />
                             </svg>
                             Curated quality books for children
                         </li>
                         <li class="flex items-start">
-                            <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                            <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clip-rule="evenodd" />
                             </svg>
                             Secure payment via Razorpay
                         </li>
                         <li class="flex items-start">
-                            <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                            <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clip-rule="evenodd" />
                             </svg>
                             Fast delivery (3-5 business days)
                         </li>
@@ -139,12 +181,12 @@
         <div class="bg-white rounded-lg shadow p-12 text-center">
             <svg class="w-24 h-24 text-gray-400 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
             <h2 class="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
             <p class="text-gray-600 mb-6">Looks like you haven't added any books yet.</p>
             <a href="{% url 'portal:marketplace' %}"
-               class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-8 rounded-lg">
+                class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-8 rounded-lg">
                 Browse Books
             </a>
         </div>
