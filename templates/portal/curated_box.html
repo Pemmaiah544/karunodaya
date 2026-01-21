@@ -5,6 +5,14 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-4">
+    <!-- Back Button -->
+    <a href="{% url 'portal:dashboard' %}"
+        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md text-purple-600 hover:bg-purple-50 mb-6 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+    </a>
+
     <!-- Child Info Header -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
         <h1 class="text-2xl font-bold text-gray-900">{{ child.name }}'s Book Box</h1>
@@ -38,7 +46,7 @@
                         {{ book.get_difficulty_rating_display }}
                     </span>
                     <a href="{% url 'portal:book_detail' book.id %}"
-                       class="text-purple-600 hover:text-purple-700 text-xs font-medium">
+                        class="text-purple-600 hover:text-purple-700 text-xs font-medium">
                         View →
                     </a>
                 </div>
@@ -51,7 +59,7 @@
         <span class="text-6xl mb-4 block">📚</span>
         <p class="text-gray-600">No curated books available at the moment.</p>
         <a href="{% url 'portal:marketplace' %}"
-           class="inline-block mt-4 text-purple-600 hover:text-purple-700 font-medium">
+            class="inline-block mt-4 text-purple-600 hover:text-purple-700 font-medium">
             Browse Marketplace →
         </a>
     </div>

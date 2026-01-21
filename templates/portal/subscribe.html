@@ -5,6 +5,14 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
+    <!-- Back Button -->
+    <a href="{% url 'portal:dashboard' %}"
+        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md text-purple-600 hover:bg-purple-50 mb-6 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+    </a>
+
     <h1 class="text-3xl font-bold text-gray-900 mb-2">Start a New Subscription</h1>
     <p class="text-gray-600 mb-8">Choose a plan for your child</p>
 
