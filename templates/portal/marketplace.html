@@ -1,46 +1,198 @@
 {% extends "portal/base.html" %}
 {% load static %}
 
-{% block title %}Marketplace - Karunodaya{% endblock %}
+{% block title %}Books - Karunodaya{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-4">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">Book Marketplace</h1>
-
-    <!-- Search Bar with HTMX Live Search -->
+    <!-- Header -->
     <div class="mb-6">
-        <input type="text"
-               placeholder="Search books by title, author..."
-               hx-get="{% url 'portal:marketplace_search' %}"
-               hx-trigger="keyup changed delay:500ms"
-               hx-target="#book-results"
-               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+        <h1 class="text-2xl font-bold text-gray-900 mb-1">Browse Books</h1>
+        <p class="text-sm text-gray-500">Discover and purchase books for your children</p>
+    </div>
+
+    <!-- Search and Filters Row -->
+    <div class="mb-4 flex gap-3">
+        <!-- Search Bar -->
+        <div class="flex-1 relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+            <input type="text" name="q" id="search-input" placeholder="Search books..."
+                hx-get="{% url 'portal:marketplace_search' %}" hx-trigger="keyup changed delay:300ms, search"
+                hx-target="#book-results" hx-include="[name='q'], [name='difficulty'], [name='grade'], [name='sort']"
+                class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm">
+        </div>
+
+        <!-- Filter Dropdown -->
+        <div class="relative">
+            <button type="button" id="filter-button" onclick="toggleFilterDropdown()"
+                class="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm font-medium text-gray-700 flex items-center gap-2 whitespace-nowrap">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filters
+                <span id="filter-count" class="hidden bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full"></span>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div id="filter-dropdown"
+                class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                <div class="p-4 space-y-4">
+                    <!-- Difficulty Filter -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-2">Difficulty Level</label>
+                        <select name="difficulty" id="difficulty-filter" onchange="applyFilters()"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm">
+                            <option value="">All Levels</option>
+                            {% for value, label in difficulty_levels %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Grade Filter -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-2">Grade</label>
+                        <select name="grade" id="grade-filter" onchange="applyFilters()"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm">
+                            <option value="">All Grades</option>
+                            {% for value, label in grades %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Clear Filters Button -->
+                    <button type="button" onclick="clearFilters()"
+                        class="w-full px-3 py-2 text-sm text-purple-600 hover:bg-purple-50 rounded-lg font-medium">
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sort Dropdown -->
+        <select name="sort" id="sort-select" hx-get="{% url 'portal:marketplace_search' %}" hx-trigger="change"
+            hx-target="#book-results" hx-include="[name='q'], [name='difficulty'], [name='grade'], [name='sort']"
+            class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm whitespace-nowrap">
+            <option value="title">A-Z</option>
+            <option value="-title">Z-A</option>
+            <option value="mrp">Price ↑</option>
+            <option value="-mrp">Price ↓</option>
+            <option value="-created_at">Newest</option>
+        </select>
+    </div>
+
+    <!-- Results Count -->
+    <div class="mb-4">
+        <p class="text-sm text-gray-600">
+            <span id="results-count">{{ books.count }}</span> books found
+        </p>
     </div>
 
     <!-- Book Grid -->
     <div id="book-results" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {% for book in books %}
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-200 overflow-hidden">
             {% if book.cover_image %}
             <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="w-full h-48 object-cover">
             {% else %}
-            <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-                <span class="text-4xl">📚</span>
+            <div class="w-full h-48 bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
+                <svg class="w-16 h-16 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                        d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                </svg>
             </div>
             {% endif %}
             <div class="p-4">
-                <h3 class="font-semibold text-sm mb-1">{{ book.title|truncatechars:30 }}</h3>
-                <p class="text-xs text-gray-600 mb-2">{{ book.author }}</p>
-                <p class="text-lg font-bold text-primary-600">₹{{ book.mrp }}</p>
+                <h3 class="font-semibold text-sm text-gray-900 mb-1 line-clamp-2">{{ book.title }}</h3>
+                <p class="text-xs text-gray-600 mb-2">by {{ book.author }}</p>
+
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-lg font-bold text-purple-600">₹{{ book.mrp }}</p>
+                    {% if book.stock_count > 0 %}
+                    <span class="text-xs text-green-600 font-medium">{{ book.stock_count }} in stock</span>
+                    {% else %}
+                    <span class="text-xs text-red-600 font-medium">Out of stock</span>
+                    {% endif %}
+                </div>
+
                 <a href="{% url 'portal:book_detail' book.id %}"
-                   class="block mt-2 text-center bg-primary-600 hover:bg-primary-700 text-white text-sm py-2 rounded">
+                    class="block text-center bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 rounded-lg transition-colors duration-200">
                     View Details
                 </a>
             </div>
         </div>
         {% empty %}
-        <p class="col-span-full text-center text-gray-500 py-8">No books found.</p>
+        <div class="col-span-full text-center py-12">
+            <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <p class="text-gray-500 text-lg font-medium">No books found</p>
+            <p class="text-gray-400 text-sm mt-1">Try adjusting your filters or search terms</p>
+        </div>
         {% endfor %}
     </div>
 </div>
+
+<script>
+    // Toggle filter dropdown
+    function toggleFilterDropdown() {
+        const dropdown = document.getElementById('filter-dropdown');
+        dropdown.classList.toggle('hidden');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function (event) {
+        const dropdown = document.getElementById('filter-dropdown');
+        const button = document.getElementById('filter-button');
+
+        if (!dropdown.contains(event.target) && !button.contains(event.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    // Apply filters and update count badge
+    function applyFilters() {
+        const difficulty = document.getElementById('difficulty-filter').value;
+        const grade = document.getElementById('grade-filter').value;
+
+        // Update filter count badge
+        let count = 0;
+        if (difficulty) count++;
+        if (grade) count++;
+
+        const badge = document.getElementById('filter-count');
+        if (count > 0) {
+            badge.textContent = count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+
+        // Trigger HTMX search
+        htmx.trigger('#search-input', 'search');
+    }
+
+    // Clear all filters
+    function clearFilters() {
+        document.getElementById('search-input').value = '';
+        document.getElementById('difficulty-filter').value = '';
+        document.getElementById('grade-filter').value = '';
+        document.getElementById('sort-select').value = 'title';
+        document.getElementById('filter-count').classList.add('hidden');
+
+        // Close dropdown
+        document.getElementById('filter-dropdown').classList.add('hidden');
+
+        // Trigger search to reload
+        htmx.trigger('#search-input', 'search');
+    }
+</script>
 {% endblock %}

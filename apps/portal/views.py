@@ -178,7 +178,20 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context['active_subscriptions'] = SubscriptionCycle.objects.filter(
                 parent=parent_profile,
                 status__in=['ACTIVE', 'OVERDUE']
-            ).select_related('child', 'plan')
+            ).select_related('child', 'plan').prefetch_related('physical_copies__book')
+
+            # Get borrowed books (from active subscriptions)
+            borrowed_books = []
+            for cycle in context['active_subscriptions']:
+                for physical_copy in cycle.physical_copies.all():
+                    borrowed_books.append({
+                        'book': physical_copy.book,
+                        'child': cycle.child,
+                        'due_date': cycle.expected_return_date,
+                        'is_overdue': cycle.is_overdue,
+                        'cycle': cycle
+                    })
+            context['borrowed_books'] = borrowed_books
 
             # Get recent orders
             context['recent_orders'] = Order.objects.filter(
@@ -252,8 +265,11 @@ class MarketplaceView(LoginRequiredMixin, ListView):
 
 @login_required
 def marketplace_search(request):
-    """HTMX handler for live marketplace search."""
-    query = request.GET.get('q', '')
+    """HTMX handler for live marketplace search with filters and sorting."""
+    query = request.GET.get('q', '').strip()
+    difficulty = request.GET.get('difficulty', '').strip()
+    grade = request.GET.get('grade', '').strip()
+    sort = request.GET.get('sort', 'title').strip()
 
     books = Book.objects.filter(
         is_purchase_eligible=True,
@@ -261,14 +277,31 @@ def marketplace_search(request):
         stock_count__gt=0
     )
 
+    # Apply search query
     if query:
         books = books.filter(
             Q(title__icontains=query) |
             Q(author__icontains=query) |
-            Q(description__icontains=query)
+            Q(description__icontains=query) |
+            Q(publisher__name__icontains=query) |
+            Q(isbn__icontains=query)
+        ).distinct()
+
+    # Apply difficulty filter
+    if difficulty:
+        books = books.filter(difficulty_rating=difficulty)
+
+    # Apply grade filter
+    if grade:
+        books = books.filter(
+            Q(recommended_grade_min=grade) | Q(recommended_grade_max=grade)
         )
 
-    books = books.order_by('title')[:12]
+    # Apply sorting
+    if sort:
+        books = books.order_by(sort)
+    else:
+        books = books.order_by('title')
 
     return render(request, 'portal/components/book_grid.html', {'books': books})
 
