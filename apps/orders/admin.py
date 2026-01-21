@@ -1,6 +1,12 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 from .models import SubscriptionPlan, Order, SubscriptionCycle, OrderItem
+from services.email_service import (
+    send_order_confirmation_email,
+    send_order_dispatched_email,
+    send_order_delivered_email,
+    send_order_out_for_delivery_email
+)
 
 
 @admin.register(SubscriptionPlan)
@@ -49,7 +55,7 @@ class OrderAdmin(ModelAdmin):
     inlines = [OrderItemInline]
     
     def save_model(self, request, obj, form, change):
-        """Auto-update timestamps when status changes."""
+        """Auto-update timestamps when status changes and send email notifications."""
         from django.utils import timezone
         
         if change:  # Existing order
@@ -73,11 +79,45 @@ class OrderAdmin(ModelAdmin):
                     self.message_user(request, "✓ COD order auto-marked as PAID after delivery", level='SUCCESS')
         
         super().save_model(request, obj, form, change)
+        
+        # Send email notifications after save
+        if change:
+            old_obj = Order.objects.get(pk=obj.pk)
+            
+            # Send confirmation email when order is PAID or CONFIRMED
+            if obj.status in ['PAID', 'CONFIRMED'] and old_obj.status not in ['PAID', 'CONFIRMED']:
+                if send_order_confirmation_email(obj):
+                    self.message_user(request, f"📧 Order confirmation email sent to {obj.parent.user.email}", level='SUCCESS')
+                else:
+                    self.message_user(request, "⚠️ Failed to send order confirmation email", level='WARNING')
+            
+            # Send dispatched email when status changes to DISPATCHED
+            if obj.status == 'DISPATCHED' and old_obj.status != 'DISPATCHED':
+                if send_order_dispatched_email(obj):
+                    self.message_user(request, f"📧 Order dispatched email sent to {obj.parent.user.email}", level='SUCCESS')
+                else:
+                    self.message_user(request, "⚠️ Failed to send order dispatched email", level='WARNING')
+            
+            # Send out for delivery email when status changes to OUT_FOR_DELIVERY
+            if obj.status == 'OUT_FOR_DELIVERY' and old_obj.status != 'OUT_FOR_DELIVERY':
+                if send_order_out_for_delivery_email(obj):
+                    self.message_user(request, f"📧 Out for delivery email sent to {obj.parent.user.email}", level='SUCCESS')
+                else:
+                    self.message_user(request, "⚠️ Failed to send out for delivery email", level='WARNING')
+            
+            # Send delivered email when status changes to DELIVERED or PAID (after delivery)
+            if obj.status in ['DELIVERED', 'PAID'] and old_obj.status in ['DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED']:
+                if obj.delivered_at and old_obj.status != 'PAID':  # Only send once
+                    if send_order_delivered_email(obj):
+                        self.message_user(request, f"📧 Order delivered email sent to {obj.parent.user.email}", level='SUCCESS')
+                    else:
+                        self.message_user(request, "⚠️ Failed to send order delivered email", level='WARNING')
 
     def mark_as_dispatched(self, request, queryset):
         """Mark selected orders as dispatched with timestamp."""
         from django.utils import timezone
         count = 0
+        email_count = 0
         for order in queryset:
             if order.status in ['PAID', 'CONFIRMED']:
                 order.status = 'DISPATCHED'
@@ -85,27 +125,41 @@ class OrderAdmin(ModelAdmin):
                     order.dispatched_at = timezone.now()
                 order.save()
                 count += 1
+                
+                # Send dispatch email
+                if send_order_dispatched_email(order):
+                    email_count += 1
         
         self.message_user(request, f"✓ {count} order(s) marked as DISPATCHED. Don't forget to add tracking number!", level='WARNING')
+        if email_count > 0:
+            self.message_user(request, f"📧 {email_count} dispatch email(s) sent successfully", level='SUCCESS')
     mark_as_dispatched.short_description = "📦 Mark as Dispatched"
     
     def mark_as_out_for_delivery(self, request, queryset):
         """Mark selected orders as out for delivery."""
         from django.utils import timezone
         count = 0
+        email_count = 0
         for order in queryset:
             if order.status == 'DISPATCHED':
                 order.status = 'OUT_FOR_DELIVERY'
                 order.save()
                 count += 1
+                
+                # Send out for delivery email
+                if send_order_out_for_delivery_email(order):
+                    email_count += 1
         
         self.message_user(request, f"✓ {count} order(s) marked as OUT FOR DELIVERY", level='SUCCESS')
+        if email_count > 0:
+            self.message_user(request, f"📧 {email_count} out for delivery email(s) sent successfully", level='SUCCESS')
     mark_as_out_for_delivery.short_description = "🚚 Mark as Out for Delivery"
 
     def mark_as_delivered(self, request, queryset):
         """Mark selected orders as delivered with timestamp."""
         from django.utils import timezone
         count = 0
+        email_count = 0
         for order in queryset:
             if order.status in ['DISPATCHED', 'OUT_FOR_DELIVERY']:
                 order.status = 'DELIVERED'
@@ -118,8 +172,14 @@ class OrderAdmin(ModelAdmin):
                 
                 order.save()
                 count += 1
+                
+                # Send delivered email
+                if send_order_delivered_email(order):
+                    email_count += 1
         
         self.message_user(request, f"✓ {count} order(s) marked as DELIVERED", level='SUCCESS')
+        if email_count > 0:
+            self.message_user(request, f"📧 {email_count} delivery confirmation email(s) sent successfully", level='SUCCESS')
     mark_as_delivered.short_description = "✅ Mark as Delivered"
 
     def confirm_cod_payment(self, request, queryset):
