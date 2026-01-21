@@ -350,6 +350,26 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         return Order.objects.filter(parent__user=self.request.user)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        order = self.get_object()
+        
+        # Add subscription cycle data for subscription orders
+        if order.order_type == 'SUBSCRIPTION':
+            try:
+                subscription_cycle = SubscriptionCycle.objects.select_related(
+                    'child', 'plan'
+                ).prefetch_related(
+                    'physical_copies__book'
+                ).get(order=order)
+                context['subscription_cycle'] = subscription_cycle
+                context['subscription_books'] = subscription_cycle.physical_copies.all()
+            except SubscriptionCycle.DoesNotExist:
+                context['subscription_cycle'] = None
+                context['subscription_books'] = []
+        
+        return context
 
 
 class ProfileView(LoginRequiredMixin, TemplateView):

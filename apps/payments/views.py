@@ -28,7 +28,7 @@ def initiate_payment(request, order_id):
     For COD orders: Redirect to COD confirmation page.
     For online orders: Create Razorpay order and Transaction record.
     """
-    order = get_object_or_404(Order, id=order_id, parent__user=request.user)
+    order = get_object_or_404(Order, id=order_id, parent=request.user.parent_profile)
 
     # Check if order is already paid
     if order.status in ['PAID', 'DISPATCHED', 'DELIVERED']:
@@ -130,7 +130,7 @@ def payment_callback(request):
                 if order.order_type == 'SUBSCRIPTION':
                     try:
                         subscription_cycle = SubscriptionCycle.objects.get(order=order)
-                        success, message = assign_subscription_books(subscription_cycle)
+                        success, message, assigned_copies = assign_subscription_books(subscription_cycle)
                         if not success:
                             # Log the issue but don't fail the payment
                             print(f"Book assignment failed: {message}")
@@ -160,7 +160,7 @@ def cod_confirmation(request, order_id):
     Marks order as CONFIRMED (not PAID - payment collected on delivery).
     For subscriptions, assign books immediately.
     """
-    order = get_object_or_404(Order, id=order_id, parent__user=request.user)
+    order = get_object_or_404(Order, id=order_id, parent=request.user.parent_profile)
 
     # Mark COD order as CONFIRMED (payment will be collected on delivery)
     if order.payment_method == 'COD' and order.status == 'PENDING':
@@ -185,7 +185,7 @@ def cod_confirmation(request, order_id):
         try:
             subscription_cycle = SubscriptionCycle.objects.get(order=order)
             # Assign books immediately for COD subscriptions
-            success, message = assign_subscription_books(subscription_cycle)
+            success, message, assigned_copies = assign_subscription_books(subscription_cycle)
             if not success:
                 messages.warning(request, f'Order confirmed but book assignment issue: {message}')
         except SubscriptionCycle.DoesNotExist:
@@ -210,7 +210,7 @@ def payment_success(request, transaction_id):
     transaction = get_object_or_404(
         Transaction,
         id=transaction_id,
-        order__parent=request.user
+        order__parent=request.user.parent_profile
     )
 
     return render(request, 'payments/payment_success.html', {
@@ -225,7 +225,7 @@ def payment_failure(request, transaction_id):
     transaction = get_object_or_404(
         Transaction,
         id=transaction_id,
-        order__parent=request.user
+        order__parent=request.user.parent_profile
     )
 
     return render(request, 'payments/payment_failure.html', {
@@ -334,7 +334,7 @@ def handle_payment_captured(payment_entity):
                     if order.order_type == 'SUBSCRIPTION':
                         try:
                             subscription_cycle = SubscriptionCycle.objects.get(order=order)
-                            assign_subscription_books(subscription_cycle)
+                            success, message, assigned_copies = assign_subscription_books(subscription_cycle)
                         except SubscriptionCycle.DoesNotExist:
                             pass
     except Exception as e:

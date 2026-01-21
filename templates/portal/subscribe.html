@@ -64,53 +64,69 @@
         <div class="bg-white rounded-lg shadow p-6 mb-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">Choose Your Plan</h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {% for plan in subscription_plans %}
-                <label class="relative cursor-pointer">
+                <label class="relative cursor-pointer group">
                     <input type="radio" name="plan_id" value="{{ plan.id }}" required class="peer sr-only">
                     <div
-                        class="border-2 border-gray-200 rounded-lg p-6 peer-checked:border-purple-600 peer-checked:bg-purple-50 hover:border-purple-400 transition">
-                        <h3 class="font-bold text-xl text-gray-900 mb-2">{{ plan.name }}</h3>
-                        <div class="mb-4">
-                            <span class="text-3xl font-bold text-purple-600">₹{{ plan.price_per_month }}</span>
-                            <span class="text-gray-600">/month</span>
+                        class="h-full border-2 border-gray-200 rounded-xl p-6 peer-checked:border-purple-600 peer-checked:bg-gradient-to-br peer-checked:from-purple-50 peer-checked:to-blue-50 peer-checked:shadow-lg hover:border-purple-400 hover:shadow-md transition-all duration-200">
+                        <!-- Selected Badge -->
+                        <div class="absolute top-4 right-4 opacity-0 peer-checked:opacity-100 transition-opacity">
+                            <div class="bg-purple-600 text-white rounded-full p-1">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
                         </div>
-                        <ul class="text-sm text-gray-700 space-y-2">
-                            <li class="flex items-center">
-                                <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+
+                        <h3 class="font-bold text-xl text-gray-900 mb-3">{{ plan.name }}</h3>
+                        <div class="mb-6">
+                            <span class="text-4xl font-bold text-purple-600">₹{{ plan.price_per_month }}</span>
+                            <span class="text-gray-600 text-sm">/month</span>
+                        </div>
+                        <ul class="text-sm text-gray-700 space-y-3">
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor"
+                                    viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                         clip-rule="evenodd" />
                                 </svg>
-                                {{ plan.books_per_month }} book{{ plan.books_per_month|pluralize }} per month
+                                <span>{{ plan.books_per_month }} book{{ plan.books_per_month|pluralize }} per
+                                    month</span>
                             </li>
-                            <li class="flex items-center">
-                                <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor"
+                                    viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                         clip-rule="evenodd" />
                                 </svg>
-                                Ages {{ plan.age_group_min }}-{{ plan.age_group_max }}
+                                <span>Ages {{ plan.age_group_min }}-{{ plan.age_group_max }}</span>
                             </li>
-                            <li class="flex items-center">
-                                <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor"
+                                    viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                         clip-rule="evenodd" />
                                 </svg>
-                                Curated recommendations
+                                <span>Curated recommendations</span>
                             </li>
-                            <li class="flex items-center">
-                                <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor"
+                                    viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                         clip-rule="evenodd" />
                                 </svg>
-                                Free returns
+                                <span>Free returns</span>
                             </li>
                         </ul>
                         {% if plan.description %}
-                        <p class="text-sm text-gray-600 mt-4">{{ plan.description }}</p>
+                        <p class="text-sm text-gray-600 mt-4 pt-4 border-t border-gray-200">{{ plan.description }}</p>
                         {% endif %}
                     </div>
                 </label>

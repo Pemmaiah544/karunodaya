@@ -80,7 +80,6 @@
     </div>
 
     <!-- Tracking Timeline -->
-    {% if order.order_type == 'PURCHASE' %}
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 class="text-lg font-bold text-gray-900 mb-6">Order Tracking</h2>
 
@@ -220,7 +219,6 @@
         </div>
         {% endif %}
     </div>
-    {% endif %}
 
     <!-- Delivery Address -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -267,7 +265,56 @@
             {% endfor %}
         </div>
         {% elif order.order_type == 'SUBSCRIPTION' %}
-        <p class="text-sm text-gray-600">Subscription order - books will be assigned based on your plan</p>
+        {% if subscription_books %}
+        <div class="space-y-4">
+            {% for physical_copy in subscription_books %}
+            <div class="flex items-start gap-4 pb-4 border-b last:border-0">
+                {% if physical_copy.book.cover_image %}
+                <img src="{{ physical_copy.book.cover_image.url }}" alt="{{ physical_copy.book.title }}"
+                    class="w-16 h-20 object-cover rounded">
+                {% else %}
+                <div
+                    class="w-16 h-20 bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center rounded">
+                    <svg class="w-8 h-8 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                    </svg>
+                </div>
+                {% endif %}
+                <div class="flex-1">
+                    <p class="font-semibold text-gray-900">{{ physical_copy.book.title }}</p>
+                    <p class="text-sm text-gray-600">by {{ physical_copy.book.author }}</p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                            Subscription Book
+                        </span>
+                    </p>
+                    {% if physical_copy.book.isbn %}
+                    <p class="text-xs text-gray-400 mt-1">ISBN: {{ physical_copy.book.isbn }}</p>
+                    {% endif %}
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-600">Copy #{{ physical_copy.copy_number }}</p>
+                    <p class="text-xs text-gray-500">{{ physical_copy.get_condition_display }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if subscription_cycle %}
+        <div class="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+            <p class="text-sm text-purple-900">
+                <strong>📚 Subscription Details:</strong> {{ subscription_cycle.plan.name }} for {{
+                subscription_cycle.child.name }}
+            </p>
+            <p class="text-xs text-purple-700 mt-1">
+                Return by: {{ subscription_cycle.expected_return_date|date:"d M Y" }}
+            </p>
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="text-sm text-gray-600">Books will be assigned and dispatched soon based on your subscription plan.</p>
+        {% endif %}
         {% else %}
         <p class="text-sm text-gray-500">No items found</p>
         {% endif %}

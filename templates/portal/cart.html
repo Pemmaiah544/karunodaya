@@ -38,7 +38,8 @@
 
                     <!-- Book Details -->
                     <div class="flex-1 min-w-0">
-                        <h3 class="font-semibold text-gray-900 text-base leading-tight line-clamp-2 mb-1">{{ item.title }}</h3>
+                        <h3 class="font-semibold text-gray-900 text-base leading-tight line-clamp-2 mb-1">{{ item.title
+                            }}</h3>
                         <p class="text-sm text-gray-500 mb-2">₹{{ item.price }} × {{ item.quantity }}</p>
 
                         <!-- Price - Prominent -->
@@ -91,8 +92,7 @@
                     <div class="text-sm text-gray-700 space-y-1">
                         <p class="font-medium">{{ user.get_full_name|default:user.username }}</p>
                         <p class="text-gray-600">{{ user.parent_profile.address }}</p>
-                        <p class="text-gray-600">{{ user.parent_profile.city }}, {{ user.parent_profile.state }} - {{
-                            user.parent_profile.pincode }}</p>
+                        <p class="text-gray-600">{{ user.parent_profile.city }}, {{ user.parent_profile.state }} - {{ user.parent_profile.pincode }}</p>
                         <p class="text-gray-600">📞 {{ user.parent_profile.phone_number }}</p>
                     </div>
                     {% else %}
