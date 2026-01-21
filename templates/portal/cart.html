@@ -67,6 +67,26 @@
             <div class="bg-white rounded-lg shadow p-6 sticky top-4">
                 <h2 class="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
 
+                <!-- Delivery Address -->
+                <div class="mb-6 pb-6 border-b border-gray-200">
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="font-semibold text-gray-900 text-sm">Deliver to:</h3>
+                        <a href="{% url 'portal:profile' %}"
+                            class="text-xs text-purple-600 hover:text-purple-700 font-medium">Change</a>
+                    </div>
+                    {% if user.parent_profile %}
+                    <div class="text-sm text-gray-700 space-y-1">
+                        <p class="font-medium">{{ user.get_full_name|default:user.username }}</p>
+                        <p class="text-gray-600">{{ user.parent_profile.address }}</p>
+                        <p class="text-gray-600">{{ user.parent_profile.city }}, {{ user.parent_profile.state }} - {{
+                            user.parent_profile.pincode }}</p>
+                        <p class="text-gray-600">📞 {{ user.parent_profile.phone_number }}</p>
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-red-600">⚠️ Please add your address in profile</p>
+                    {% endif %}
+                </div>
+
                 <div class="space-y-3 mb-6">
                     <div class="flex justify-between text-gray-600">
                         <span>Items ({{ cart_count }}):</span>

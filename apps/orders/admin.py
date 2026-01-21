@@ -21,31 +21,113 @@ class OrderItemInline(TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(ModelAdmin):
-    list_display = ('id', 'parent', 'order_type', 'payment_method', 'status', 'total_amount', 'created_at')
-    list_filter = ('order_type', 'payment_method', 'status', 'created_at')
-    search_fields = ('parent__user__username', 'parent__phone_number')
+    list_display = ('id', 'parent', 'order_type', 'status', 'payment_method', 'total_amount', 'tracking_number', 'created_at')
+    list_filter = ('order_type', 'status', 'payment_method', 'created_at')
+    search_fields = ('id', 'parent__user__username', 'parent__user__email', 'tracking_number')
     readonly_fields = ('created_at', 'updated_at')
-    actions = ['mark_as_dispatched', 'mark_as_delivered', 'confirm_cod_payment']
+    
+    fieldsets = (
+        ('Order Information', {
+            'fields': ('parent', 'order_type', 'status', 'payment_method', 'total_amount')
+        }),
+        ('Delivery Address', {
+            'fields': ('delivery_name', 'delivery_phone', 'delivery_address', 
+                      'delivery_city', 'delivery_state', 'delivery_pincode'),
+            'classes': ('collapse',)
+        }),
+        ('Tracking Information', {
+            'fields': ('tracking_number', 'courier_partner', 'estimated_delivery_date',
+                      'dispatched_at', 'delivered_at'),
+            'description': 'Fill tracking details when marking order as DISPATCHED',
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    actions = ['mark_as_dispatched', 'mark_as_out_for_delivery', 'mark_as_delivered', 'confirm_cod_payment']
     inlines = [OrderItemInline]
+    
+    def save_model(self, request, obj, form, change):
+        """Auto-update timestamps when status changes."""
+        from django.utils import timezone
+        
+        if change:  # Existing order
+            old_obj = Order.objects.get(pk=obj.pk)
+            
+            # Auto-set dispatched_at when status changes to DISPATCHED
+            if obj.status == 'DISPATCHED' and old_obj.status != 'DISPATCHED':
+                if not obj.dispatched_at:
+                    obj.dispatched_at = timezone.now()
+                    self.message_user(request, f"✓ Dispatched timestamp auto-set to {obj.dispatched_at.strftime('%d %b %Y, %I:%M %p')}", level='SUCCESS')
+            
+            # Auto-set delivered_at when status changes to DELIVERED
+            if obj.status == 'DELIVERED' and old_obj.status != 'DELIVERED':
+                if not obj.delivered_at:
+                    obj.delivered_at = timezone.now()
+                    self.message_user(request, f"✓ Delivered timestamp auto-set to {obj.delivered_at.strftime('%d %b %Y, %I:%M %p')}", level='SUCCESS')
+                
+                # Auto-mark COD as PAID when delivered
+                if obj.payment_method == 'COD' and obj.status == 'DELIVERED':
+                    obj.status = 'PAID'
+                    self.message_user(request, "✓ COD order auto-marked as PAID after delivery", level='SUCCESS')
+        
+        super().save_model(request, obj, form, change)
 
     def mark_as_dispatched(self, request, queryset):
-        """Mark selected orders as dispatched."""
-        count = queryset.filter(status='PAID').update(status='DISPATCHED')
-        self.message_user(request, f"{count} order(s) marked as dispatched.")
-    mark_as_dispatched.short_description = "Mark as Dispatched"
+        """Mark selected orders as dispatched with timestamp."""
+        from django.utils import timezone
+        count = 0
+        for order in queryset:
+            if order.status in ['PAID', 'CONFIRMED']:
+                order.status = 'DISPATCHED'
+                if not order.dispatched_at:
+                    order.dispatched_at = timezone.now()
+                order.save()
+                count += 1
+        
+        self.message_user(request, f"✓ {count} order(s) marked as DISPATCHED. Don't forget to add tracking number!", level='WARNING')
+    mark_as_dispatched.short_description = "📦 Mark as Dispatched"
+    
+    def mark_as_out_for_delivery(self, request, queryset):
+        """Mark selected orders as out for delivery."""
+        from django.utils import timezone
+        count = 0
+        for order in queryset:
+            if order.status == 'DISPATCHED':
+                order.status = 'OUT_FOR_DELIVERY'
+                order.save()
+                count += 1
+        
+        self.message_user(request, f"✓ {count} order(s) marked as OUT FOR DELIVERY", level='SUCCESS')
+    mark_as_out_for_delivery.short_description = "🚚 Mark as Out for Delivery"
 
     def mark_as_delivered(self, request, queryset):
-        """Mark selected orders as delivered."""
-        count = queryset.filter(status='DISPATCHED').update(status='DELIVERED')
-        self.message_user(request, f"{count} order(s) marked as delivered.")
-    mark_as_delivered.short_description = "Mark as Delivered"
+        """Mark selected orders as delivered with timestamp."""
+        from django.utils import timezone
+        count = 0
+        for order in queryset:
+            if order.status in ['DISPATCHED', 'OUT_FOR_DELIVERY']:
+                order.status = 'DELIVERED'
+                if not order.delivered_at:
+                    order.delivered_at = timezone.now()
+                
+                # Auto-mark COD as PAID
+                if order.payment_method == 'COD':
+                    order.status = 'PAID'
+                
+                order.save()
+                count += 1
+        
+        self.message_user(request, f"✓ {count} order(s) marked as DELIVERED", level='SUCCESS')
+    mark_as_delivered.short_description = "✅ Mark as Delivered"
 
     def confirm_cod_payment(self, request, queryset):
         """Confirm COD payment received and mark order as paid."""
         from apps.payments.models import Transaction
         count = 0
         for order in queryset:
-            if order.payment_method == 'COD' and order.status == 'PENDING':
+            if order.payment_method == 'COD' and order.status == 'CONFIRMED':
                 # Update order status
                 order.status = 'PAID'
                 order.save()
@@ -61,8 +143,8 @@ class OrderAdmin(ModelAdmin):
                 )
                 count += 1
         
-        self.message_user(request, f"{count} COD order(s) confirmed as paid.")
-    confirm_cod_payment.short_description = "Confirm COD Payment Received"
+        self.message_user(request, f"✓ {count} COD order(s) confirmed as PAID", level='SUCCESS')
+    confirm_cod_payment.short_description = "💰 Confirm COD Payment"
 
 
 @admin.register(SubscriptionCycle)

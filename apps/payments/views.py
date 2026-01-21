@@ -157,14 +157,14 @@ def payment_callback(request):
 def cod_confirmation(request, order_id):
     """
     Display COD order confirmation page.
-    Automatically marks order as PAID and ready for dispatch.
+    Marks order as CONFIRMED (not PAID - payment collected on delivery).
     For subscriptions, assign books immediately.
     """
     order = get_object_or_404(Order, id=order_id, parent__user=request.user)
 
-    # Mark COD order as PAID immediately (payment will be collected on delivery)
+    # Mark COD order as CONFIRMED (payment will be collected on delivery)
     if order.payment_method == 'COD' and order.status == 'PENDING':
-        order.status = 'PAID'
+        order.status = 'CONFIRMED'
         order.save()
         
         # Create transaction record for audit trail
@@ -172,7 +172,7 @@ def cod_confirmation(request, order_id):
             order=order,
             razorpay_order_id=f'COD-{order.id}',
             amount=order.total_amount,
-            status='SUCCESS',
+            status='PENDING',  # Payment pending until delivery
             payment_method='COD',
             provider_response={
                 'payment_type': 'cash_on_delivery',

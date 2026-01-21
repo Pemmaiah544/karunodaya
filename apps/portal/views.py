@@ -314,16 +314,32 @@ class BookDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'book'
 
 
-class OrdersView(LoginRequiredMixin, ListView):
-    """Orders history view."""
+class OrdersView(LoginRequiredMixin, TemplateView):
+    """Orders history view with tabs for subscriptions and purchases."""
     template_name = 'portal/orders.html'
-    context_object_name = 'orders'
-    paginate_by = 10
 
-    def get_queryset(self):
-        return Order.objects.filter(
-            parent__user=self.request.user
-        ).order_by('-created_at')
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get the active tab from query parameter
+        tab = self.request.GET.get('tab', 'subscriptions')
+        context['tab'] = tab
+        
+        parent_profile = self.request.user.parent_profile
+        
+        if tab == 'purchases':
+            # Get purchase orders only
+            context['orders'] = Order.objects.filter(
+                parent=parent_profile,
+                order_type='PURCHASE'
+            ).order_by('-created_at')
+        else:
+            # Get subscription cycles
+            context['subscription_cycles'] = SubscriptionCycle.objects.filter(
+                parent=parent_profile
+            ).select_related('child', 'plan', 'order').order_by('-created_at')
+        
+        return context
 
 
 class OrderDetailView(LoginRequiredMixin, DetailView):
@@ -445,7 +461,14 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
             order_type='SUBSCRIPTION',
             status='PENDING',
             payment_method=payment_method,
-            total_amount=plan.price_per_month
+            total_amount=plan.price_per_month,
+            # Save delivery address snapshot
+            delivery_name=request.user.get_full_name() or request.user.username,
+            delivery_phone=parent_profile.phone_number,
+            delivery_address=parent_profile.address,
+            delivery_city=parent_profile.city,
+            delivery_state=parent_profile.state,
+            delivery_pincode=parent_profile.pincode
         )
 
         # Create subscription cycle (books will be assigned after payment)
@@ -656,7 +679,14 @@ def checkout(request):
             order_type='PURCHASE',
             status='PENDING',
             payment_method=payment_method,
-            total_amount=total
+            total_amount=total,
+            # Save delivery address snapshot
+            delivery_name=request.user.get_full_name() or request.user.username,
+            delivery_phone=parent_profile.phone_number,
+            delivery_address=parent_profile.address,
+            delivery_city=parent_profile.city,
+            delivery_state=parent_profile.state,
+            delivery_pincode=parent_profile.pincode
         )
 
         # Create order items (we'll need to create OrderItem model)
