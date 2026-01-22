@@ -65,12 +65,11 @@
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-lg font-semibold text-gray-900">My Children</h2>
-            {% if children|length < 5 %}
-            <a href="{% url 'portal:add_child' %}"
-               class="text-purple-600 hover:text-purple-700 text-sm font-medium">
+            {% if children|length < 5 %} <a href="{% url 'portal:add_child' %}"
+                class="text-purple-600 hover:text-purple-700 text-sm font-medium">
                 + Add Child
-            </a>
-            {% endif %}
+                </a>
+                {% endif %}
         </div>
 
         {% if children %}
@@ -83,7 +82,7 @@
                         <p class="text-sm text-gray-600">{{ child.age }} years • {{ child.get_grade_display }}</p>
                     </div>
                     <a href="{% url 'portal:edit_child' child.id %}"
-                       class="text-purple-600 hover:text-purple-700 text-sm">
+                        class="text-purple-600 hover:text-purple-700 text-sm">
                         Edit
                     </a>
                 </div>
@@ -98,7 +97,7 @@
                     </div>
                 </div>
                 <a href="{% url 'portal:curated_box' child.id %}"
-                   class="inline-block mt-2 text-purple-600 hover:text-purple-700 text-sm font-medium">
+                    class="inline-block mt-2 text-purple-600 hover:text-purple-700 text-sm font-medium">
                     View Curated Books →
                 </a>
             </div>
@@ -111,20 +110,35 @@
         {% if children|length >= 5 %}
         <p class="text-sm text-amber-600 mt-4 flex items-center">
             <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                <path fill-rule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clip-rule="evenodd" />
             </svg>
             Maximum of 5 children reached
         </p>
         {% endif %}
     </div>
-
-    <!-- Logout Button -->
-    <form method="post" action="{% url 'portal:logout' %}">
-        {% csrf_token %}
-        <button type="submit"
-                class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg">
-            Logout
-        </button>
-    </form>
 </div>
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const btn = document.getElementById('settings-btn');
+        const dropdown = document.getElementById('settings-dropdown');
+
+        if (btn && dropdown) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
 {% endblock %}

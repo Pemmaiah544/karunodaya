@@ -10,7 +10,12 @@ from django.db.models import Q
 from apps.profiles.models import ParentProfile, Child
 from apps.catalog.models import Book
 from apps.orders.models import Order, SubscriptionCycle, SubscriptionPlan
-from services.curation import get_curated_books
+from django.contrib import messages
+from django.core.mail import send_mail
+from django.conf import settings
+from django.template.loader import render_to_string
+from .forms import ComplaintForm
+from .models import Complaint
 
 
 class RegisterView(TemplateView):
@@ -728,4 +733,62 @@ def checkout(request):
         return redirect('payments:initiate_payment', order_id=order.id)
 
     return HttpResponse('Method not allowed', status=405)
+
+
+class SupportView(LoginRequiredMixin, TemplateView):
+    """View for logging complaints and issues."""
+    template_name = 'portal/support.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        parent_profile = self.request.user.parent_profile
+        context['form'] = ComplaintForm(parent=parent_profile)
+        context['my_complaints'] = Complaint.objects.filter(parent=parent_profile).order_by('-created_at')
+        return context
+
+    def post(self, request, *args, **kwargs):
+        parent_profile = request.user.parent_profile
+        form = ComplaintForm(request.POST, parent=parent_profile)
+
+        if form.is_valid():
+            complaint = form.save(commit=False)
+            complaint.parent = parent_profile
+            complaint.save()
+
+            # Prepare email notification to admin
+            admin_email = getattr(settings, 'ADMIN_EMAIL', settings.DEFAULT_FROM_EMAIL)
+            subject = f"New Complaint: {complaint.get_category_display()} - {complaint.subject}"
+            
+            # Simple text message for email
+            message = f"""
+New complaint received from {request.user.get_full_name() or request.user.username}.
+
+Category: {complaint.get_category_display()}
+Subject: {complaint.subject}
+Description:
+{complaint.description}
+
+Order Reference: {complaint.order if complaint.order else 'N/A'}
+
+View in Admin: {request.build_absolute_uri('/admin/portal/complaint/' + str(complaint.id) + '/change/')}
+            """
+
+            try:
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [admin_email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                # Log error or notify user that email failed but complaint saved
+                pass
+
+            messages.success(request, "Your complaint has been submitted successfully. Our team will review it and get back to you shortly.")
+            return redirect('portal:support')
+
+        context = self.get_context_data()
+        context['form'] = form
+        return render(request, self.template_name, context)
 
