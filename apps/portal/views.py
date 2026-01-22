@@ -122,44 +122,65 @@ def onboarding_step3(request):
 
 @login_required
 def onboarding_complete(request):
-    """HTMX handler for onboarding completion - create subscription order."""
+    """HTMX handler for onboarding completion - handle subscription, purchase, or both."""
     if request.method == 'POST':
+        plan_type = request.POST.get('plan_type')
         plan_id = request.POST.get('plan_id')
         child_id = request.POST.get('child_id')
 
-        if not plan_id or not child_id:
+        if not plan_type or not child_id:
             return HttpResponse('Missing required fields', status=400)
 
         try:
             parent_profile = request.user.parent_profile
-            plan = get_object_or_404(SubscriptionPlan, id=plan_id, is_active=True)
             child = get_object_or_404(Child, id=child_id, parent=parent_profile)
 
-            # Create subscription order
-            order = Order.objects.create(
-                parent=parent_profile,
-                order_type='SUBSCRIPTION',
-                status='PENDING',
-                total_amount=plan.price_per_month
-            )
+            if plan_type in ['subscription', 'both']:
+                # Subscription requires a plan selection
+                if not plan_id:
+                    return HttpResponse('Please select a subscription plan', status=400)
+                
+                plan = get_object_or_404(SubscriptionPlan, id=plan_id, is_active=True)
 
-            # Create subscription cycle (books will be assigned after payment)
-            from datetime import date, timedelta
-            issue_date = date.today()
-            expected_return = issue_date + timedelta(days=30)
+                # Create subscription order
+                order = Order.objects.create(
+                    parent=parent_profile,
+                    order_type='SUBSCRIPTION',
+                    status='PENDING',
+                    total_amount=plan.price_per_month
+                )
 
-            SubscriptionCycle.objects.create(
-                parent=parent_profile,
-                child=child,
-                plan=plan,
-                order=order,
-                issue_date=issue_date,
-                expected_return_date=expected_return,
-                status='ACTIVE'
-            )
+                # Create subscription cycle (books will be assigned after payment)
+                from datetime import date, timedelta
+                issue_date = date.today()
+                expected_return = issue_date + timedelta(days=30)
 
-            # Redirect to payment
-            return redirect('payments:initiate_payment', order_id=order.id)
+                SubscriptionCycle.objects.create(
+                    parent=parent_profile,
+                    child=child,
+                    plan=plan,
+                    order=order,
+                    issue_date=issue_date,
+                    expected_return_date=expected_return,
+                    status='ACTIVE'
+                )
+
+                # Store order info for later payment and redirect to dashboard
+                request.session['pending_payment_order_id'] = order.id
+            
+            elif plan_type == 'purchase':
+                # For purchase-only, no order created yet
+                pass
+            
+            else:
+                return HttpResponse('Invalid plan type', status=400)
+
+            # Store plan preference in user profile for later
+            parent_profile.plan_preference = plan_type
+            parent_profile.save()
+
+            # Redirect to dashboard after setup completion
+            return redirect('portal:dashboard')
 
         except ParentProfile.DoesNotExist:
             return HttpResponse('Parent profile not found', status=404)

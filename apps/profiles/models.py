@@ -18,6 +18,17 @@ class ParentProfile(models.Model):
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=100)
     pincode = models.CharField(max_length=10)
+    plan_preference = models.CharField(
+        max_length=20,
+        choices=[
+            ('subscription', 'Subscription Only'),
+            ('purchase', 'Purchase Only'),
+            ('both', 'Subscription + Purchase')
+        ],
+        blank=True,
+        null=True,
+        help_text="User's preferred plan type from onboarding"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

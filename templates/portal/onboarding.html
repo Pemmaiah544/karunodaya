@@ -4,20 +4,74 @@
 {% block title %}Onboarding - Karunodaya{% endblock %}
 
 {% block content %}
+<script>
+// Save form data to local storage
+function saveFormData() {
+    const formData = new FormData(document.querySelector('form'));
+    const data = {};
+    formData.forEach((value, key) => {
+        data[key] = value;
+    });
+    localStorage.setItem('onboarding_step1_data', JSON.stringify(data));
+}
+
+// Load form data from local storage
+function loadFormData() {
+    const savedData = localStorage.getItem('onboarding_step1_data');
+    if (savedData) {
+        const data = JSON.parse(savedData);
+        
+        // Restore form fields
+        Object.keys(data).forEach(key => {
+            const input = document.querySelector(`[name="${key}"]`);
+            if (input) {
+                input.value = data[key];
+            }
+        });
+    }
+}
+
+// Clear onboarding data
+function clearOnboardingData() {
+    localStorage.removeItem('onboarding_step1_data');
+    localStorage.removeItem('onboarding_step2_data');
+    localStorage.removeItem('onboarding_step3_data');
+    localStorage.removeItem('onboarding_plan_type');
+}
+
+// Auto-save form data
+document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('input', saveFormData);
+});
+
+// Load saved data on page load
+document.addEventListener('DOMContentLoaded', loadFormData);
+</script>
+
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-2xl mx-auto">
         <h1 class="text-3xl font-bold text-gray-900 mb-8">Welcome to Karunodaya!</h1>
 
         <!-- Progress Steps -->
-        <div class="mb-8">
+        <div id="progress-bar" class="mb-8">
             <div class="flex items-center justify-between">
                 <div class="flex-1 border-t-2 border-primary-600"></div>
-                <span class="px-4 py-2 bg-primary-600 text-white rounded-full text-sm font-medium">1</span>
+                <span class="px-4 py-2 bg-primary-600 text-white rounded-full text-sm font-medium flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    1
+                </span>
                 <div class="flex-1 border-t-2 border-gray-300"></div>
                 <span class="px-4 py-2 bg-gray-300 text-gray-600 rounded-full text-sm font-medium">2</span>
                 <div class="flex-1 border-t-2 border-gray-300"></div>
                 <span class="px-4 py-2 bg-gray-300 text-gray-600 rounded-full text-sm font-medium">3</span>
                 <div class="flex-1 border-t-2 border-gray-300"></div>
+            </div>
+            <div class="flex justify-between mt-2 text-xs text-gray-600">
+                <span class="font-medium text-primary-600">Parent Info</span>
+                <span>Child Info</span>
+                <span>Choose Plan</span>
             </div>
         </div>
 
@@ -63,10 +117,22 @@
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
                 </div>
 
-                <button type="submit"
-                        class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg">
-                    Next Step →
-                </button>
+                <div class="flex justify-between mt-6">
+                    <button type="button" disabled
+                            class="px-4 py-2 text-sm border border-gray-300 text-gray-400 rounded-lg cursor-not-allowed flex items-center">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        Back
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 text-sm bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg flex items-center">
+                        Next
+                        <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                </div>
             </form>
         </div>
     </div>

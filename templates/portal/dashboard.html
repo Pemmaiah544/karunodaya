@@ -4,6 +4,19 @@
 {% block title %}Dashboard - Karunodaya{% endblock %}
 
 {% block content %}
+<script>
+// Clear onboarding data after successful completion
+function clearOnboardingData() {
+    localStorage.removeItem('onboarding_step1_data');
+    localStorage.removeItem('onboarding_step2_data');
+    localStorage.removeItem('onboarding_step3_data');
+    localStorage.removeItem('onboarding_plan_type');
+}
+
+// Clear data when dashboard loads
+document.addEventListener('DOMContentLoaded', clearOnboardingData);
+</script>
+
 <div class="container mx-auto px-4 py-4">
     <!-- Welcome Section -->
     <div class="mb-6">

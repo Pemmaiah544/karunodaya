@@ -25,6 +25,9 @@ class ParentProfileAdmin(ModelAdmin):
         ('Contact Details', {
             'fields': ('phone_number', 'address', 'city', 'state', 'pincode')
         }),
+        ('Plan Preference', {
+            'fields': ('plan_preference',)
+        }),
         ('Metadata', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
