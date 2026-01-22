@@ -16,6 +16,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from .forms import ComplaintForm
 from .models import Complaint
+from services.curation import get_curated_books
 
 
 class RegisterView(TemplateView):
