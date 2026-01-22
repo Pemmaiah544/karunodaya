@@ -24,20 +24,22 @@ class RegisterView(TemplateView):
     template_name = 'portal/register.html'
 
     def post(self, request):
-        # Simple registration (can be enhanced with forms)
-        username = request.POST.get('username')
-        email = request.POST.get('email')
+        # Simple registration using mobile number as username
+        mobile_number = request.POST.get('mobile_number')
         password = request.POST.get('password')
         password2 = request.POST.get('password2')
+
+        if not mobile_number:
+            return render(request, self.template_name, {'error': 'Mobile number is required'})
 
         if password != password2:
             return render(request, self.template_name, {'error': 'Passwords do not match'})
 
-        if User.objects.filter(username=username).exists():
-            return render(request, self.template_name, {'error': 'Username already exists'})
+        if User.objects.filter(username=mobile_number).exists():
+            return render(request, self.template_name, {'error': 'An account with this mobile number already exists'})
 
         # Create user
-        user = User.objects.create_user(username=username, email=email, password=password)
+        user = User.objects.create_user(username=mobile_number, password=password)
         login(request, user)
 
         return redirect('portal:onboarding')
@@ -49,9 +51,16 @@ class OnboardingView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
         # Check if parent profile exists
         try:
-            context['parent_profile'] = self.request.user.parent_profile
+            parent_profile = self.request.user.parent_profile
+            context['parent_profile'] = parent_profile
+            
+            # If onboarding is already complete (has children), redirect to dashboard
+            if parent_profile.children.exists():
+                return redirect('portal:dashboard')
+                
         except ParentProfile.DoesNotExist:
             context['parent_profile'] = None
 
@@ -63,6 +72,15 @@ class OnboardingView(LoginRequiredMixin, TemplateView):
 def onboarding_step2(request):
     """HTMX handler for step 2 - parent info."""
     if request.method == 'POST':
+        # Update user names
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        
+        user = request.user
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
+
         # Create or update parent profile
         phone_number = request.POST.get('phone_number')
         address = request.POST.get('address')
@@ -71,7 +89,7 @@ def onboarding_step2(request):
         pincode = request.POST.get('pincode')
 
         parent_profile, created = ParentProfile.objects.update_or_create(
-            user=request.user,
+            user=user,
             defaults={
                 'phone_number': phone_number,
                 'address': address,
@@ -111,12 +129,8 @@ def onboarding_step3(request):
             date_of_birth=dob
         )
 
-        # Return step 3 template (plan selection)
-        subscription_plans = SubscriptionPlan.objects.filter(is_active=True)
-        return render(request, 'portal/onboarding_step3.html', {
-            'child': child,
-            'subscription_plans': subscription_plans
-        })
+        # Redirect to dashboard - onboarding complete
+        return redirect('portal:dashboard')
 
     return HttpResponse('Method not allowed', status=405)
 
@@ -198,6 +212,11 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         try:
             parent_profile = self.request.user.parent_profile
+            
+            # Check if onboarding is complete (must have at least one child)
+            if not parent_profile.children.exists():
+                return redirect('portal:onboarding')
+            
             context['parent_profile'] = parent_profile
             context['children'] = parent_profile.children.all()
 
