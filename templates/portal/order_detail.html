@@ -79,9 +79,54 @@
         </div>
     </div>
 
+    <!-- Tracking ID Card (Compact & Standard) -->
+    {% if order.tracking_number and order.status in 'DISPATCHED,OUT_FOR_DELIVERY,DELIVERED' %}
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
+        <div class="flex items-center justify-between mb-3 text-gray-900">
+            <div class="flex items-center gap-2">
+                <div class="text-blue-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-bold uppercase tracking-tight">Track Your Shipment</h3>
+            </div>
+            {% if order.courier_partner %}
+            <span class="text-[10px] font-bold text-gray-500 bg-gray-200 px-2 py-0.5 rounded uppercase">{{
+                order.courier_partner }}</span>
+            {% endif %}
+        </div>
+
+        <div class="flex gap-2">
+            <div class="flex-1 relative">
+                <label for="tracking_id" class="sr-only">Tracking ID</label>
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase">ID</span>
+                </div>
+                <input type="text" id="tracking_id" readonly value="{{ order.tracking_number }}"
+                    class="block w-full pl-8 pr-3 py-1.5 bg-white border border-gray-300 rounded text-sm font-mono font-bold text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+                    aria-readonly="true">
+            </div>
+            <button
+                onclick="const input = document.getElementById('tracking_id'); input.select(); document.execCommand('copy'); alert('Tracking ID copied!');"
+                class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                title="Copy to clipboard">
+                <svg class="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3">
+                    </path>
+                </svg>
+                Copy
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Tracking Timeline -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-6">Order Tracking</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-6">Order Status</h2>
 
         <!-- Timeline -->
         <div class="relative">
