@@ -5,171 +5,171 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-4 pb-24">
-    <!-- Back Button -->
-    <a href="{% url 'portal:marketplace' %}"
-        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md text-orange-600 hover:bg-orange-50 mb-6 transition-colors">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-    </a>
+ <!-- Back Button -->
+ <a href="{% url 'portal:marketplace' %}"
+ class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white text-orange-600 hover:bg-orange-50 mb-6 transition-colors">
+ <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+ </svg>
+ </a>
 
-    <!-- Curated Book Notification -->
-    {% if request.GET.from_curated %}
-    <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-        <div class="flex items-start">
-            <svg class="w-5 h-5 text-orange-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-            </svg>
-            <div>
-                <h3 class="font-semibold text-orange-900 mb-1">This book is in your child's curated selection!</h3>
-                <p class="text-sm text-orange-800">
-                    This book was specially selected for your child based on their reading level and grade. 
-                    It will be included in their next subscription box if they have an active subscription.
-                </p>
-            </div>
-        </div>
-    </div>
-    {% endif %}
+ <!-- Curated Book Notification -->
+ {% if request.GET.from_curated %}
+ <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+ <div class="flex items-start">
+ <svg class="w-5 h-5 text-orange-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+ <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+ </svg>
+ <div>
+ <h3 class="font-semibold text-orange-900 mb-1">This book is in your child's curated selection!</h3>
+ <p class="text-sm text-orange-800">
+ This book was specially selected for your child based on their reading level and grade. 
+ It will be included in their next subscription box if they have an active subscription.
+ </p>
+ </div>
+ </div>
+ </div>
+ {% endif %}
 
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <!-- Book Image -->
-        <div class="w-full bg-gray-100 flex items-center justify-center" style="min-height: 300px;">
-            {% if book.cover_image %}
-            <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="w-full max-w-md object-contain">
-            {% else %}
-            <span class="text-8xl">📚</span>
-            {% endif %}
-        </div>
+ <div class="bg-white rounded-lg shadow overflow-hidden">
+ <!-- Book Image -->
+ <div class="w-full bg-gray-100 flex items-center justify-center" style="min-height: 300px;">
+ {% if book.cover_image %}
+ <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="w-full max-w-md object-contain">
+ {% else %}
+ <span class="text-8xl">📚</span>
+ {% endif %}
+ </div>
 
-        <!-- Book Details -->
-        <div class="p-6">
-            <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ book.title }}</h1>
-            <p class="text-lg text-gray-700 mb-4">by {{ book.author }}</p>
+ <!-- Book Details -->
+ <div class="p-6">
+ <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ book.title }}</h1>
+ <p class="text-lg text-gray-700 mb-4">by {{ book.author }}</p>
 
-            <!-- Tags -->
-            <div class="flex flex-wrap gap-2 mb-4">
-                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium
-                    {% if book.difficulty_rating == 'BEGINNER' %}bg-green-100 text-green-800 border border-green-200 shadow-sm
-                    {% elif book.difficulty_rating == 'INTERMEDIATE' %}bg-blue-100 text-blue-800 border border-blue-200 shadow-sm
-                    {% else %}bg-orange-100 text-orange-800 border border-orange-200 shadow-sm{% endif %}">
-                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        {% if book.difficulty_rating == 'BEGINNER' %}
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                        {% elif book.difficulty_rating == 'INTERMEDIATE' %}
-                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000 2H6a2 2 0 100 4h2a2 2 0 100-4h-.5a1 1 0 000-2H8a2 2 0 012-2h4a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5z" clip-rule="evenodd"/>
-                        {% else %}
-                        <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zm0 4a1 1 0 000 2h6a1 1 0 100-2H7zm0 4a1 1 0 000 2h2a1 1 0 100-2H7zm4 0a1 1 0 100 2h2a1 1 0 100-2h-2z" clip-rule="evenodd"/>
-                        {% endif %}
-                    </svg>
-                    {{ book.get_difficulty_rating_display }}
-                </span>
-                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border border-gray-200 shadow-sm">
-                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
-                    </svg>
-                    Grades: {{ book.get_recommended_grade_min_display }} - {{ book.get_recommended_grade_max_display }}
-                </span>
-                {% if book.low_stock %}
-                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-orange-100 text-orange-800 border border-orange-200 shadow-sm">
-                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                    </svg>
-                    Low Stock
-                </span>
-                {% endif %}
-            </div>
+ <!-- Tags -->
+ <div class="flex flex-wrap gap-2 mb-4">
+ <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium
+ {% if book.difficulty_rating == 'BEGINNER' %}bg-green-100 text-green-800 border border-green-200 shadow-sm
+ {% elif book.difficulty_rating == 'INTERMEDIATE' %}bg-blue-100 text-blue-800 border border-blue-200 shadow-sm
+ {% else %}bg-orange-100 text-orange-800 border border-orange-200 {% endif %}">
+ <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+ {% if book.difficulty_rating == 'BEGINNER' %}
+ <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+ {% elif book.difficulty_rating == 'INTERMEDIATE' %}
+ <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+ <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000 2H6a2 2 0 100 4h2a2 2 0 100-4h-.5a1 1 0 000-2H8a2 2 0 012-2h4a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5z" clip-rule="evenodd"/>
+ {% else %}
+ <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zm0 4a1 1 0 000 2h6a1 1 0 100-2H7zm0 4a1 1 0 000 2h2a1 1 0 100-2H7zm4 0a1 1 0 100 2h2a1 1 0 100-2h-2z" clip-rule="evenodd"/>
+ {% endif %}
+ </svg>
+ {{ book.get_difficulty_rating_display }}
+ </span>
+ <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border border-gray-200">
+ <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+ <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
+ </svg>
+ Grades: {{ book.get_recommended_grade_min_display }} - {{ book.get_recommended_grade_max_display }}
+ </span>
+ {% if book.low_stock %}
+ <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-orange-100 text-orange-800 border border-orange-200">
+ <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+ <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+ </svg>
+ Low Stock
+ </span>
+ {% endif %}
+ </div>
 
-            <!-- Description -->
-            <div class="mb-6">
-                <h2 class="font-semibold text-gray-900 mb-2">About this book</h2>
-                <p class="text-gray-700 leading-relaxed">{{ book.description|default:"No description available." }}</p>
-            </div>
+ <!-- Description -->
+ <div class="mb-6">
+ <h2 class="font-semibold text-gray-900 mb-2">About this book</h2>
+ <p class="text-gray-700 leading-relaxed">{{ book.description|default:"No description available." }}</p>
+ </div>
 
-            <!-- Publisher Info -->
-            <div class="mb-6 pb-6 border-b">
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <p class="text-gray-600">Publisher</p>
-                        <p class="font-medium">{{ book.publisher.name|default:"Unknown" }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600">ISBN</p>
-                        <p class="font-medium">{{ book.isbn|default:"N/A" }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600">Price (MRP)</p>
-                        <p class="font-medium">₹{{ book.mrp }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600">Stock Available</p>
-                        <p class="font-medium">{{ book.stock_count }} copies</p>
-                    </div>
-                </div>
-            </div>
+ <!-- Publisher Info -->
+ <div class="mb-6 pb-6 border-b">
+ <div class="grid grid-cols-2 gap-4 text-sm">
+ <div>
+ <p class="text-gray-600">Publisher</p>
+ <p class="font-medium">{{ book.publisher.name|default:"Unknown" }}</p>
+ </div>
+ <div>
+ <p class="text-gray-600">ISBN</p>
+ <p class="font-medium">{{ book.isbn|default:"N/A" }}</p>
+ </div>
+ <div>
+ <p class="text-gray-600">Price (MRP)</p>
+ <p class="font-medium">₹{{ book.mrp }}</p>
+ </div>
+ <div>
+ <p class="text-gray-600">Stock Available</p>
+ <p class="font-medium">{{ book.stock_count }} copies</p>
+ </div>
+ </div>
+ </div>
 
-            <!-- Availability -->
-            <div class="mb-6">
-                {% if book.is_subscription_eligible %}
-                <div class="flex items-center text-green-600 mb-2">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clip-rule="evenodd" />
-                    </svg>
-                    <span class="font-medium">Available in subscription boxes</span>
-                </div>
-                {% endif %}
-                {% if book.is_purchase_eligible and book.stock_count > 0 %}
-                <div class="flex items-center text-green-600">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clip-rule="evenodd" />
-                    </svg>
-                    <span class="font-medium">Available for purchase ({{ book.stock_count }} in stock)</span>
-                </div>
-                {% elif book.is_purchase_eligible %}
-                <div class="flex items-center text-red-600">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                            clip-rule="evenodd" />
-                    </svg>
-                    <span class="font-medium">Out of stock</span>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+ <!-- Availability -->
+ <div class="mb-6">
+ {% if book.is_subscription_eligible %}
+ <div class="flex items-center text-green-600 mb-2">
+ <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+ <path fill-rule="evenodd"
+ d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+ clip-rule="evenodd" />
+ </svg>
+ <span class="font-medium">Available in subscription boxes</span>
+ </div>
+ {% endif %}
+ {% if book.is_purchase_eligible and book.stock_count > 0 %}
+ <div class="flex items-center text-green-600">
+ <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+ <path fill-rule="evenodd"
+ d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+ clip-rule="evenodd" />
+ </svg>
+ <span class="font-medium">Available for purchase ({{ book.stock_count }} in stock)</span>
+ </div>
+ {% elif book.is_purchase_eligible %}
+ <div class="flex items-center text-red-600">
+ <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+ <path fill-rule="evenodd"
+ d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+ clip-rule="evenodd" />
+ </svg>
+ <span class="font-medium">Out of stock</span>
+ </div>
+ {% endif %}
+ </div>
+ </div>
+ </div>
 
-    <!-- Purchase Section -->
-    {% if book.is_purchase_eligible and book.stock_count > 0 %}
-    <div class="fixed bottom-16 left-0 right-0 bg-white border-t shadow-lg p-4">
-        <div class="container mx-auto flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-600">Price</p>
-                <p class="text-2xl font-bold text-primary-600">₹{{ book.mrp }}</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <a href="{% url 'portal:cart' %}"
-                    class="flex items-center text-primary-600 hover:text-primary-700 font-medium">
-                    <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                    View Cart
-                </a>
-                <form method="post" action="{% url 'portal:add_to_cart' book.id %}">
-                    {% csrf_token %}
-                    <button type="submit"
-                        class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-8 rounded-lg">
-                        Add to Cart
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-    {% endif %}
+ <!-- Purchase Section -->
+ {% if book.is_purchase_eligible and book.stock_count > 0 %}
+ <div class="fixed bottom-16 left-0 right-0 bg-white border-t p-4">
+ <div class="container mx-auto flex items-center justify-between">
+ <div>
+ <p class="text-sm text-gray-600">Price</p>
+ <p class="text-2xl font-bold text-primary-600">₹{{ book.mrp }}</p>
+ </div>
+ <div class="flex items-center gap-3">
+ <a href="{% url 'portal:cart' %}"
+ class="flex items-center text-primary-600 hover:text-primary-700 font-medium">
+ <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+ d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+ </svg>
+ View Cart
+ </a>
+ <form method="post" action="{% url 'portal:add_to_cart' book.id %}">
+ {% csrf_token %}
+ <button type="submit"
+ class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-8 rounded-lg">
+ Add to Cart
+ </button>
+ </form>
+ </div>
+ </div>
+ </div>
+ {% endif %}
 </div>
 {% endblock %}
