@@ -5,16 +5,16 @@
 
 {% block content %}
 <script>
-// Clear onboarding data after successful completion
-function clearOnboardingData() {
-    localStorage.removeItem('onboarding_step1_data');
-    localStorage.removeItem('onboarding_step2_data');
-    localStorage.removeItem('onboarding_step3_data');
-    localStorage.removeItem('onboarding_plan_type');
-}
+    // Clear onboarding data after successful completion
+    function clearOnboardingData() {
+        localStorage.removeItem('onboarding_step1_data');
+        localStorage.removeItem('onboarding_step2_data');
+        localStorage.removeItem('onboarding_step3_data');
+        localStorage.removeItem('onboarding_plan_type');
+    }
 
-// Clear data when dashboard loads
-document.addEventListener('DOMContentLoaded', clearOnboardingData);
+    // Clear data when dashboard loads
+    document.addEventListener('DOMContentLoaded', clearOnboardingData);
 </script>
 
 <div class="container mx-auto px-4 py-4">
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', clearOnboardingData);
                             d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                     <h3 class="text-base font-semibold text-gray-900 mb-2">No children added yet</h3>
-                    <p class="text-sm text-gray-600 mb-3">Add your first child from your profile to get started</p>
+                    <p class="text-sm text-gray-600 mb-3">Add your child from your profile to get started</p>
                     <a href="{% url 'portal:profile' %}"
                         class="inline-block bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium text-sm">
                         Go to Profile

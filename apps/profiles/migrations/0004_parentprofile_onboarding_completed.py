@@ -3,6 +3,12 @@
 from django.db import migrations, models
 
 
+def set_existing_profiles_as_completed(apps, schema_editor):
+    """Set onboarding_completed=True for all existing ParentProfiles"""
+    ParentProfile = apps.get_model('profiles', 'ParentProfile')
+    ParentProfile.objects.all().update(onboarding_completed=True)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -15,4 +21,5 @@ class Migration(migrations.Migration):
             name='onboarding_completed',
             field=models.BooleanField(default=False, help_text='Whether the user has completed the full onboarding process'),
         ),
+        migrations.RunPython(set_existing_profiles_as_completed, reverse_code=migrations.RunPython.noop),
     ]
