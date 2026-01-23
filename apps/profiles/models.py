@@ -14,10 +14,10 @@ class ParentProfile(models.Model):
         related_name='parent_profile'
     )
     phone_number = models.CharField(max_length=15)
-    address = models.TextField()
-    city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
-    pincode = models.CharField(max_length=10)
+    address = models.TextField(blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    state = models.CharField(max_length=100, blank=True, null=True)
+    pincode = models.CharField(max_length=10, blank=True, null=True)
     plan_preference = models.CharField(
         max_length=20,
         choices=[
@@ -28,6 +28,10 @@ class ParentProfile(models.Model):
         blank=True,
         null=True,
         help_text="User's preferred plan type from onboarding"
+    )
+    onboarding_completed = models.BooleanField(
+        default=False,
+        help_text="Whether the user has completed the full onboarding process"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -76,15 +80,19 @@ class Child(models.Model):
     )
     name = models.CharField(max_length=100)
     age = models.IntegerField(
-        validators=[MinValueValidator(3), MaxValueValidator(14)]
+        validators=[MinValueValidator(3), MaxValueValidator(14)],
+        blank=True,
+        null=True
     )
-    grade = models.CharField(max_length=20, choices=GRADE_CHOICES)
+    grade = models.CharField(max_length=20, choices=GRADE_CHOICES, blank=True, null=True)
     reading_difficulty_level = models.CharField(
         max_length=20,
         choices=DIFFICULTY_LEVEL_CHOICES,
-        help_text="Reading difficulty level for book curation"
+        help_text="Reading difficulty level for book curation",
+        blank=True,
+        null=True
     )
-    date_of_birth = models.DateField()
+    date_of_birth = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -95,7 +103,9 @@ class Child(models.Model):
         # Limit 5 children per parent (enforced at form level)
 
     def __str__(self):
-        return f"{self.name} ({self.age} years, {self.get_grade_display()})"
+        age_str = f"{self.age} years" if self.age else "age unknown"
+        grade_str = self.get_grade_display() if self.grade else "grade unknown"
+        return f"{self.name} ({age_str}, {grade_str})"
 
     def save(self, *args, **kwargs):
         # Validate max 5 children per parent

@@ -58,21 +58,21 @@ class OnboardingView(LoginRequiredMixin, TemplateView):
     """Multi-step onboarding with HTMX."""
     template_name = 'portal/onboarding.html'
 
+    def get(self, request, *args, **kwargs):
+        # Check if onboarding is complete
+        try:
+            parent_profile = request.user.parent_profile
+            if parent_profile.onboarding_completed:
+                # Onboarding is complete, redirect to dashboard
+                return redirect('portal:dashboard')
+        except ParentProfile.DoesNotExist:
+            # No profile yet, show onboarding
+            pass
+        
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Check if parent profile exists
-        try:
-            parent_profile = self.request.user.parent_profile
-            context['parent_profile'] = parent_profile
-            
-            # If onboarding is already complete (has children), redirect to dashboard
-            if parent_profile.children.exists():
-                return redirect('portal:dashboard')
-                
-        except ParentProfile.DoesNotExist:
-            context['parent_profile'] = None
-
         context['subscription_plans'] = SubscriptionPlan.objects.filter(is_active=True)
         return context
 
@@ -82,8 +82,8 @@ def onboarding_step2(request):
     """HTMX handler for step 2 - parent info."""
     if request.method == 'POST':
         # Update user names
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
+        first_name = request.POST.get('first_name', '')
+        last_name = request.POST.get('last_name', '')
         
         user = request.user
         user.first_name = first_name
@@ -91,11 +91,11 @@ def onboarding_step2(request):
         user.save()
 
         # Create or update parent profile
-        phone_number = request.POST.get('phone_number')
-        address = request.POST.get('address')
-        city = request.POST.get('city')
-        state = request.POST.get('state')
-        pincode = request.POST.get('pincode')
+        phone_number = request.POST.get('phone_number', '')
+        address = request.POST.get('address', '')
+        city = request.POST.get('city', '')
+        state = request.POST.get('state', '')
+        pincode = request.POST.get('pincode', '')
 
         parent_profile, created = ParentProfile.objects.update_or_create(
             user=user,
@@ -122,21 +122,27 @@ def onboarding_step3(request):
     if request.method == 'POST':
         parent_profile = request.user.parent_profile
 
-        # Create child
-        name = request.POST.get('name')
-        age = request.POST.get('age')
-        grade = request.POST.get('grade')
-        reading_level = request.POST.get('reading_level')
-        dob = request.POST.get('date_of_birth')
+        # Get child data (all optional)
+        name = request.POST.get('name', '').strip()
+        age = request.POST.get('age', None)
+        grade = request.POST.get('grade', '')
+        reading_level = request.POST.get('reading_level', '')
+        dob = request.POST.get('date_of_birth', None)
 
-        child = Child.objects.create(
-            parent=parent_profile,
-            name=name,
-            age=age,
-            grade=grade,
-            reading_difficulty_level=reading_level,
-            date_of_birth=dob
-        )
+        # Only create child if at least name is provided
+        if name:
+            child = Child.objects.create(
+                parent=parent_profile,
+                name=name,
+                age=int(age) if age else None,
+                grade=grade if grade else None,
+                reading_difficulty_level=reading_level if reading_level else None,
+                date_of_birth=dob if dob else None
+            )
+
+        # Mark onboarding as completed
+        parent_profile.onboarding_completed = True
+        parent_profile.save()
 
         # Redirect to dashboard - onboarding complete
         return redirect('portal:dashboard')
@@ -220,8 +226,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         """Check if onboarding is complete before rendering dashboard."""
         try:
             parent_profile = request.user.parent_profile
-            # Check if onboarding is complete (must have at least one child)
-            if not parent_profile.children.exists():
+            # Check if onboarding is completed
+            if not parent_profile.onboarding_completed:
                 return redirect('portal:onboarding')
         except ParentProfile.DoesNotExist:
             # Redirect to onboarding if no profile
