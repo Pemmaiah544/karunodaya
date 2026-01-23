@@ -15,16 +15,19 @@
 </head>
 
 <body class="bg-gray-50">
-    <div class="min-h-screen flex items-center justify-center px-4 py-12">
-        <div class="max-w-md w-full space-y-8">
-            <div class="text-center">
-                <img src="{% static 'images/foundation-logo.png' %}" alt="Karunodaya Logo"
-                    class="h-20 sm:h-24 w-auto mb-3 mx-auto">
-                <p class="text-lg sm:text-xl font-medium text-gray-900">Create Your Account</p>
-                <p class="text-sm text-gray-600">Join our book subscription platform</p>
-            </div>
+    <div class="min-h-screen flex flex-col items-center justify-center px-4 py-8">
+        <div class="max-w-md w-full space-y-6">
+
 
             <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+                <div class="flex justify-center">
+                    <img src="{% static 'images/foundation-logo.png' %}" alt="Karunodaya Logo"
+                        class="h-16 sm:h-20 w-auto mb-8 mr-8">
+                </div>
+
+                <div class="text-center mb-8">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-600 tracking-tight">Create Your Account</h2>
+                </div>
                 {% if form.non_field_errors %}
                 <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded" role="alert">
                     <p class="font-semibold text-sm">Please correct the following errors:</p>
