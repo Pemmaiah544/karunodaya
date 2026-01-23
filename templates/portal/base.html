@@ -84,13 +84,13 @@
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center">
                 <a href="{% url 'portal:dashboard' %}" class="flex items-center">
-                    <img src="{% static 'images/karunodaya-logo.png' %}" alt="Karunodaya Foundation" class="h-10">
+                    <img src="{% static 'images/foundation-logo.png' %}" alt="Karunodaya Foundation" class="h-10">
                 </a>
             </div>
             <div class="flex items-center space-x-4">
                 {% block header_right %}
                 {% if user.is_authenticated %}
-                {% if request.resolver_match.url_name == 'profile' or request.resolver_match.url_name == 'add_child' or request.resolver_match.url_name == 'edit_child' %}
+                {% if request.resolver_match.url_name == "profile" or request.resolver_match.url_name == "add_child" or request.resolver_match.url_name == "edit_child" %}
                 <!-- Settings Dropdown (only on profile pages) -->
                 <div class="relative">
                     <button id="settings-btn"
