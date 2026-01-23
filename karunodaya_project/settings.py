@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',  # For site domain configuration
 
     # Third-party apps
     'django_htmx',
@@ -182,6 +183,9 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Karunodaya <noreply@karunodaya.com>')
 ADMIN_EMAIL = config('ADMIN_EMAIL', default='admin@karunodaya.com')
 EMAIL_TIMEOUT = 10
+
+# Site Configuration
+SITE_ID = 1
 
 
 # Debug Toolbar Configuration (for development)

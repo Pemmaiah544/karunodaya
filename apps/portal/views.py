@@ -14,35 +14,44 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
-from .forms import ComplaintForm
+from .forms import ComplaintForm, RegisterForm
 from .models import Complaint
 from services.curation import get_curated_books
+
+
+class HomeView(TemplateView):
+    """Home view that redirects to login page."""
+    
+    def get(self, request, *args, **kwargs):
+        # Always redirect to login page
+        return redirect('portal:login')
 
 
 class RegisterView(TemplateView):
     """User registration view."""
     template_name = 'portal/register.html'
 
+    def get(self, request, *args, **kwargs):
+        form = RegisterForm()
+        return render(request, self.template_name, {'form': form})
+
     def post(self, request):
-        # Simple registration using mobile number as username
-        mobile_number = request.POST.get('mobile_number')
-        password = request.POST.get('password')
-        password2 = request.POST.get('password2')
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            mobile_number = form.cleaned_data.get('mobile_number')
+            email = form.cleaned_data.get('email')
+            password = form.cleaned_data.get('password')
 
-        if not mobile_number:
-            return render(request, self.template_name, {'error': 'Mobile number is required'})
-
-        if password != password2:
-            return render(request, self.template_name, {'error': 'Passwords do not match'})
-
-        if User.objects.filter(username=mobile_number).exists():
-            return render(request, self.template_name, {'error': 'An account with this mobile number already exists'})
-
-        # Create user
-        user = User.objects.create_user(username=mobile_number, password=password)
-        login(request, user)
-
-        return redirect('portal:onboarding')
+            # Create user
+            user = User.objects.create_user(
+                username=mobile_number, 
+                email=email, 
+                password=password
+            )
+            login(request, user)
+            return redirect('portal:onboarding')
+        
+        return render(request, self.template_name, {'form': form})
 
 
 class OnboardingView(LoginRequiredMixin, TemplateView):
@@ -207,46 +216,50 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     """Main dashboard view."""
     template_name = 'portal/dashboard.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
+    def dispatch(self, request, *args, **kwargs):
+        """Check if onboarding is complete before rendering dashboard."""
         try:
-            parent_profile = self.request.user.parent_profile
-            
+            parent_profile = request.user.parent_profile
             # Check if onboarding is complete (must have at least one child)
             if not parent_profile.children.exists():
                 return redirect('portal:onboarding')
-            
-            context['parent_profile'] = parent_profile
-            context['children'] = parent_profile.children.all()
-
-            # Get active subscriptions
-            context['active_subscriptions'] = SubscriptionCycle.objects.filter(
-                parent=parent_profile,
-                status__in=['ACTIVE', 'OVERDUE']
-            ).select_related('child', 'plan').prefetch_related('physical_copies__book')
-
-            # Get borrowed books (from active subscriptions)
-            borrowed_books = []
-            for cycle in context['active_subscriptions']:
-                for physical_copy in cycle.physical_copies.all():
-                    borrowed_books.append({
-                        'book': physical_copy.book,
-                        'child': cycle.child,
-                        'due_date': cycle.expected_return_date,
-                        'is_overdue': cycle.is_overdue,
-                        'cycle': cycle
-                    })
-            context['borrowed_books'] = borrowed_books
-
-            # Get recent orders
-            context['recent_orders'] = Order.objects.filter(
-                parent=parent_profile
-            ).order_by('-created_at')[:5]
-
         except ParentProfile.DoesNotExist:
             # Redirect to onboarding if no profile
             return redirect('portal:onboarding')
+        
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        parent_profile = self.request.user.parent_profile
+        
+        context['parent_profile'] = parent_profile
+        context['children'] = parent_profile.children.all()
+
+        # Get active subscriptions
+        context['active_subscriptions'] = SubscriptionCycle.objects.filter(
+            parent=parent_profile,
+            status__in=['ACTIVE', 'OVERDUE']
+        ).select_related('child', 'plan').prefetch_related('physical_copies__book')
+
+        # Get borrowed books (from active subscriptions)
+        borrowed_books = []
+        for cycle in context['active_subscriptions']:
+            for physical_copy in cycle.physical_copies.all():
+                borrowed_books.append({
+                    'book': physical_copy.book,
+                    'child': cycle.child,
+                    'due_date': cycle.expected_return_date,
+                    'is_overdue': cycle.is_overdue,
+                    'cycle': cycle
+                })
+        context['borrowed_books'] = borrowed_books
+
+        # Get recent orders
+        context['recent_orders'] = Order.objects.filter(
+            parent=parent_profile
+        ).order_by('-created_at')[:5]
 
         return context
 
