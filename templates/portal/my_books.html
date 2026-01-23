@@ -7,7 +7,7 @@
 <div class="container mx-auto px-4 py-8">
     <!-- Back Button -->
     <a href="{% url 'portal:dashboard' %}"
-        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md text-purple-600 hover:bg-purple-50 mb-6 transition-colors">
+        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md text-orange-600 hover:bg-orange-50 mb-6 transition-colors">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
@@ -31,11 +31,11 @@
             {% for cycle in active_cycles %}
             <div class="bg-white rounded-lg shadow overflow-hidden">
                 <!-- Cycle Header -->
-                <div class="bg-gradient-to-r from-purple-600 to-purple-700 p-4">
+                <div class="bg-gradient-to-r from-orange-600 to-orange-700 p-4">
                     <div class="flex items-center justify-between">
                         <div>
                             <h3 class="text-white font-semibold text-lg">{{ cycle.child.name }}</h3>
-                            <p class="text-purple-100 text-sm">{{ cycle.plan.name }}</p>
+                            <p class="text-orange-100 text-sm">{{ cycle.plan.name }}</p>
                         </div>
                         <div class="text-right">
                             {% if cycle.status == 'OVERDUE' %}
@@ -116,9 +116,9 @@
                         </label>
                         <textarea name="condition_notes" rows="2"
                             placeholder="Any damage or notes about book condition..."
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent mb-3"></textarea>
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent mb-3"></textarea>
                         <button type="submit"
-                            class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg">
+                            class="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg">
                             Mark as Returned
                         </button>
                     </form>
@@ -135,7 +135,7 @@
             <h3 class="text-lg font-semibold text-gray-900 mb-2">No books currently borrowed</h3>
             <p class="text-gray-600 mb-4">Start a subscription to get curated books!</p>
             <a href="{% url 'portal:subscribe' %}"
-                class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded-lg">
+                class="inline-block bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-6 rounded-lg">
                 Subscribe Now
             </a>
         </div>

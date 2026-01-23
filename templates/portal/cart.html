@@ -7,7 +7,7 @@
 <div class="container mx-auto px-4 py-8">
     <!-- Back Button -->
     <a href="{% url 'portal:marketplace' %}"
-        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md text-purple-600 hover:bg-purple-50 mb-6 transition-colors">
+        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md text-orange-600 hover:bg-orange-50 mb-6 transition-colors">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
@@ -28,8 +28,8 @@
                         class="w-16 h-24 object-cover rounded-lg flex-shrink-0">
                     {% else %}
                     <div
-                        class="w-16 h-24 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg class="w-8 h-8 text-purple-300" fill="currentColor" viewBox="0 0 20 20">
+                        class="w-16 h-24 bg-gradient-to-br from-orange-50 to-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-8 h-8 text-orange-300" fill="currentColor" viewBox="0 0 20 20">
                             <path
                                 d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                         </svg>
@@ -42,7 +42,7 @@
                         <p class="text-sm text-gray-500 mb-2">₹{{ item.price }} × {{ item.quantity }}</p>
 
                         <!-- Price - Prominent -->
-                        <p class="text-lg font-bold text-purple-600">₹{{ item.subtotal }}</p>
+                        <p class="text-lg font-bold text-orange-600">₹{{ item.subtotal }}</p>
                     </div>
                 </div>
 
@@ -53,8 +53,8 @@
                         {% csrf_token %}
                         <label class="text-sm text-gray-600">Qty:</label>
                         <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="10"
-                            class="w-14 px-2 py-1.5 text-center border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm">
-                        <button type="submit" class="text-sm text-purple-600 hover:text-purple-700 font-medium px-2">
+                            class="w-14 px-2 py-1.5 text-center border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm">
+                        <button type="submit" class="text-sm text-orange-600 hover:text-orange-700 font-medium px-2">
                             Update
                         </button>
                     </form>
@@ -85,7 +85,7 @@
                     <div class="flex justify-between items-start mb-3">
                         <h3 class="font-semibold text-gray-900 text-sm">Deliver to:</h3>
                         <a href="{% url 'portal:profile' %}"
-                            class="text-xs text-purple-600 hover:text-purple-700 font-medium">Change</a>
+                            class="text-xs text-orange-600 hover:text-orange-700 font-medium">Change</a>
                     </div>
                     {% if user.parent_profile %}
                     <div class="text-sm text-gray-700 space-y-1">
@@ -121,7 +121,7 @@
                     <h3 class="font-semibold text-gray-900 mb-3">Payment Method</h3>
                     <div class="space-y-2">
                         <label
-                            class="flex items-center cursor-pointer p-3 border-2 border-gray-200 rounded-lg hover:border-purple-400 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-50">
+                            class="flex items-center cursor-pointer p-3 border-2 border-gray-200 rounded-lg hover:border-orange-400 has-[:checked]:border-orange-600 has-[:checked]:bg-orange-50">
                             <input type="radio" name="payment_method" value="ONLINE" checked class="mr-3">
                             <div class="flex-1">
                                 <p class="font-medium text-sm">Online Payment</p>
@@ -129,7 +129,7 @@
                             </div>
                         </label>
                         <label
-                            class="flex items-center cursor-pointer p-3 border-2 border-gray-200 rounded-lg hover:border-purple-400 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-50">
+                            class="flex items-center cursor-pointer p-3 border-2 border-gray-200 rounded-lg hover:border-orange-400 has-[:checked]:border-orange-600 has-[:checked]:bg-orange-50">
                             <input type="radio" name="payment_method" value="COD" class="mr-3">
                             <div class="flex-1">
                                 <p class="font-medium text-sm">Cash on Delivery</p>
@@ -143,7 +143,7 @@
                     {% csrf_token %}
                     <input type="hidden" name="payment_method" id="selected_payment_method" value="ONLINE">
                     <button type="submit"
-                        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg mb-3">
+                        class="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-4 rounded-lg mb-3">
                         Proceed to Checkout
                     </button>
                 </form>
@@ -158,7 +158,7 @@
                 </script>
 
                 <a href="{% url 'portal:marketplace' %}"
-                    class="block text-center text-purple-600 hover:text-purple-700 font-medium">
+                    class="block text-center text-orange-600 hover:text-orange-700 font-medium">
                     Continue Shopping
                 </a>
 
@@ -218,7 +218,7 @@
             <h2 class="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
             <p class="text-gray-600 mb-6">Looks like you haven't added any books yet.</p>
             <a href="{% url 'portal:marketplace' %}"
-                class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-8 rounded-lg">
+                class="inline-block bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-8 rounded-lg">
                 Browse Books
             </a>
         </div>

@@ -7,7 +7,7 @@
 <div class="container mx-auto px-4 py-4 max-w-4xl">
     <!-- Back Button -->
     <a href="{% url 'portal:orders' %}"
-        class="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 mb-4 transition-colors">
+        class="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 mb-4 transition-colors">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
@@ -17,7 +17,7 @@
     <!-- Single Order Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <!-- Order Header -->
-        <div class="bg-gradient-to-r from-purple-600 to-purple-700 p-6 text-white">
+        <div class="bg-gradient-to-r from-orange-600 to-orange-700 p-6 text-white">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                 <div>
                     <div class="flex items-center gap-3 mb-2">
@@ -26,14 +26,14 @@
                             {{ order.get_order_type_display }}
                         </span>
                     </div>
-                    <p class="text-purple-100 text-sm">{{ order.created_at|date:"d M Y, h:i A" }}</p>
+                    <p class="text-orange-100 text-sm">{{ order.created_at|date:"d M Y, h:i A" }}</p>
                 </div>
                 <div class="text-right">
                     <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full
                         {% if order.status == 'PAID' or order.status == 'DELIVERED' %}bg-green-500 text-white
                         {% elif order.status == 'CONFIRMED' %}bg-blue-500 text-white
                         {% elif order.status == 'PENDING' %}bg-yellow-500 text-white
-                        {% elif order.status == 'DISPATCHED' %}bg-purple-500 text-white
+                        {% elif order.status == 'DISPATCHED' %}bg-orange-500 text-white
                         {% elif order.status == 'OUT_FOR_DELIVERY' %}bg-blue-500 text-white
                         {% elif order.status == 'CANCELLED' %}bg-red-500 text-white
                         {% else %}bg-gray-500 text-white{% endif %}">
@@ -44,7 +44,7 @@
                         {% endif %}
                         {{ order.get_status_display }}
                     </div>
-                    <p class="text-sm text-purple-100 mt-2">
+                    <p class="text-sm text-orange-100 mt-2">
                         {% if order.payment_method == 'COD' %}💵 COD{% else %}💳 Paid{% endif %}
                     </p>
                 </div>
@@ -79,7 +79,7 @@
                     <input type="text" readonly value="{{ order.tracking_number }}" 
                         class="flex-1 px-3 py-2 bg-white border border-gray-300 rounded text-sm font-mono">
                     <button onclick="navigator.clipboard.writeText('{{ order.tracking_number }}'); this.textContent='✓ Copied!'; setTimeout(() => this.textContent='Copy', 2000);"
-                        class="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors">
+                        class="px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors">
                         Copy
                     </button>
                 </div>
@@ -107,7 +107,7 @@
                             <p class="text-sm text-gray-500">{{ item.book.author }}</p>
                             <p class="text-sm text-gray-500">Qty: {{ item.quantity }} × ₹{{ item.price_per_unit }}</p>
                         </div>
-                        <p class="font-semibold text-purple-600">₹{{ item.subtotal }}</p>
+                        <p class="font-semibold text-orange-600">₹{{ item.subtotal }}</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -128,7 +128,7 @@
                         <div class="flex-1">
                             <p class="font-medium text-gray-900">{{ physical_copy.book.title }}</p>
                             <p class="text-sm text-gray-500">{{ physical_copy.book.author }}</p>
-                            <span class="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">Subscription</span>
+                            <span class="inline-block px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">Subscription</span>
                         </div>
                     </div>
                     {% endfor %}
@@ -176,7 +176,7 @@
                         </div>
                         <div class="flex justify-between font-semibold text-gray-900 pt-2 border-t">
                             <span>Total</span>
-                            <span class="text-purple-600">₹{{ order.total_amount }}</span>
+                            <span class="text-orange-600">₹{{ order.total_amount }}</span>
                         </div>
                     </div>
                 </div>

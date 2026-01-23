@@ -7,7 +7,7 @@
 <div class="container mx-auto px-4 py-8">
     <!-- Back Button -->
     <a href="{% url 'portal:dashboard' %}"
-        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md text-purple-600 hover:bg-purple-50 mb-6 transition-colors">
+        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md text-orange-600 hover:bg-orange-50 mb-6 transition-colors">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
@@ -32,7 +32,7 @@
             {% if child %}
             <!-- Pre-selected child -->
             <input type="hidden" name="child_id" value="{{ child.id }}">
-            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="font-medium text-gray-900">{{ child.name }}</p>
@@ -41,7 +41,7 @@
                             Reading Level: {{ child.get_reading_difficulty_level_display }}
                         </p>
                     </div>
-                    <a href="{% url 'portal:subscribe' %}" class="text-sm text-purple-600 hover:text-purple-700">
+                    <a href="{% url 'portal:subscribe' %}" class="text-sm text-orange-600 hover:text-orange-700">
                         Change
                     </a>
                 </div>
@@ -49,7 +49,7 @@
             {% else %}
             <!-- Child selection dropdown -->
             <select name="child_id" required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent">
                 <option value="">-- Select a child --</option>
                 {% for child_option in children %}
                 <option value="{{ child_option.id }}">
@@ -69,10 +69,10 @@
                 <label class="relative cursor-pointer group">
                     <input type="radio" name="plan_id" value="{{ plan.id }}" required class="peer sr-only">
                     <div
-                        class="h-full border-2 border-gray-200 rounded-xl p-6 peer-checked:border-purple-600 peer-checked:bg-gradient-to-br peer-checked:from-purple-50 peer-checked:to-blue-50 peer-checked:shadow-lg hover:border-purple-400 hover:shadow-md transition-all duration-200">
+                        class="h-full border-2 border-gray-200 rounded-xl p-6 peer-checked:border-orange-600 peer-checked:bg-gradient-to-br peer-checked:from-orange-50 peer-checked:to-blue-50 peer-checked:shadow-lg hover:border-orange-400 hover:shadow-md transition-all duration-200">
                         <!-- Selected Badge -->
                         <div class="absolute top-4 right-4 opacity-0 peer-checked:opacity-100 transition-opacity">
-                            <div class="bg-purple-600 text-white rounded-full p-1">
+                            <div class="bg-orange-600 text-white rounded-full p-1">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -83,7 +83,7 @@
 
                         <h3 class="font-bold text-xl text-gray-900 mb-3">{{ plan.name }}</h3>
                         <div class="mb-6">
-                            <span class="text-4xl font-bold text-purple-600">₹{{ plan.price_per_month }}</span>
+                            <span class="text-4xl font-bold text-orange-600">₹{{ plan.price_per_month }}</span>
                             <span class="text-gray-600 text-sm">/month</span>
                         </div>
                         <ul class="text-sm text-gray-700 space-y-3">
@@ -142,10 +142,10 @@
                 <label class="relative flex items-center cursor-pointer">
                     <input type="radio" name="payment_method" value="ONLINE" checked class="peer sr-only">
                     <div
-                        class="w-full border-2 border-gray-200 rounded-lg p-4 peer-checked:border-purple-600 peer-checked:bg-purple-50 hover:border-purple-400 transition">
+                        class="w-full border-2 border-gray-200 rounded-lg p-4 peer-checked:border-orange-600 peer-checked:bg-orange-50 hover:border-orange-400 transition">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
-                                <svg class="w-6 h-6 text-purple-600 mr-3" fill="none" stroke="currentColor"
+                                <svg class="w-6 h-6 text-orange-600 mr-3" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -163,7 +163,7 @@
                 <label class="relative flex items-center cursor-pointer">
                     <input type="radio" name="payment_method" value="COD" class="peer sr-only">
                     <div
-                        class="w-full border-2 border-gray-200 rounded-lg p-4 peer-checked:border-purple-600 peer-checked:bg-purple-50 hover:border-purple-400 transition">
+                        class="w-full border-2 border-gray-200 rounded-lg p-4 peer-checked:border-orange-600 peer-checked:bg-orange-50 hover:border-orange-400 transition">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
                                 <svg class="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor"
@@ -197,7 +197,7 @@
         <!-- Action Buttons -->
         <div class="flex gap-4">
             <button type="submit"
-                class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg">
+                class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-6 rounded-lg">
                 Continue to Payment
             </button>
             <a href="{% url 'portal:dashboard' %}"
