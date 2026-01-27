@@ -222,7 +222,7 @@
                                                    name="q" 
                                                    value="{{ cl.query }}"
                                                    id="admin-search-input"
-                                                   placeholder="Search by name, email, phone, or username..."
+                                                   placeholder="{% if opts.model_name == 'user' %}Search by name, email, phone, or username...{% elif opts.model_name == 'book' %}Search by book name or author name...{% elif opts.model_name == 'parentprofile' %}Search by parent name, email, or phone...{% elif opts.model_name == 'child' %}Search by child name...{% elif opts.model_name == 'order' %}Search by order ID or parent name...{% else %}Search...{% endif %}"
                                                    style="padding-left: 26px !important;"
                                                    class="w-full pr-10 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-sm bg-white shadow-sm transition-all duration-200">
                                         </div>
