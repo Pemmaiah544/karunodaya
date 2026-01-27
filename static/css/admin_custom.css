@@ -1,0 +1,96 @@
+/* Custom Admin Logo and Branding Styling */
+.unfold-brand {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 0.5rem 1rem !important;
+    /* Further reduced padding */
+    border-bottom: 1px solid #e5e7eb !important;
+    margin-bottom: 0.15rem !important;
+    /* Further reduced margin */
+}
+
+.unfold-brand img {
+    height: 2rem !important;
+    /* Smaller logo to save space */
+    width: auto !important;
+    max-width: 100%;
+}
+
+/* Hide Unfold title text in brand area */
+.unfold-brand span,
+.unfold-brand a:not(:has(img)) {
+    display: none !important;
+}
+
+/* Sidebar structure and compacting */
+#sidebar {
+    border-right: 1px solid #e5e7eb !important;
+    background-color: white !important;
+    overflow-y: auto !important;
+}
+
+/* Extremely compact navigation groups */
+#sidebar nav section {
+    margin-bottom: 0.15rem !important;
+    /* Minimal margin between sections */
+}
+
+/* Extremely compact Section Headers */
+#sidebar nav h3 {
+    margin-top: 0.1rem !important;
+    margin-bottom: 0.05rem !important;
+    font-size: 0.55rem !important;
+    /* Even smaller header font */
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    padding-left: 1rem !important;
+    padding-top: 0.1rem !important;
+    padding-bottom: 0.1rem !important;
+    color: #9ca3af !important;
+    line-height: 1 !important;
+}
+
+/* Ultra compact Sidebar Links */
+#sidebar nav ul {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+#sidebar nav ul li {
+    margin: 0 !important;
+}
+
+#sidebar nav ul li a {
+    padding-top: 0.15rem !important;
+    /* Even more minimal vertical padding */
+    padding-bottom: 0.15rem !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.5rem !important;
+    font-size: 0.7rem !important;
+    /* Smaller link font */
+    margin: 0.02rem 0.5rem !important;
+    /* Tighter margins */
+    border-radius: 0.25rem !important;
+    line-height: 1.1 !important;
+}
+
+/* Compact Sidebar Icons */
+#sidebar nav ul li a svg {
+    width: 0.9rem !important;
+    /* Even smaller icons */
+    height: 0.9rem !important;
+    margin-right: 0.4rem !important;
+}
+
+/* Content Area */
+#content {
+    background-color: #f9fafb !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .unfold-brand img {
+        height: 1.5rem !important;
+    }
+}
