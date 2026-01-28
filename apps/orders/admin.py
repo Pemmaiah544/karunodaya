@@ -42,7 +42,7 @@ class OrderItemInline(TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(ModelAdmin):
-    list_display = ('order_id_link', 'parent', 'order_type', 'status', 'total_amount', 'tracking_number', 'created_at')
+    list_display = ('order_id_link', 'get_parent_name', 'get_phone_number', 'order_type', 'status', 'total_amount', 'tracking_number', 'created_at')
     list_editable = ('status', 'tracking_number')
     list_filter = ('order_type', 'status', 'payment_method', 'created_at')
     search_fields = ('id', 'parent__user__username', 'parent__user__email', 'tracking_number')
@@ -55,13 +55,22 @@ class OrderAdmin(ModelAdmin):
         from django.urls import reverse
         from django.utils.html import format_html
         url = reverse('admin:orders_order_change', args=[obj.pk])
+        # Use simple black color with important to ensure visibility
         return format_html(
-            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">#{}</a>',
+            '<a href="{}" style="color: #1f2937 !important; font-weight: 500; font-size: 13px; display: inline-block;">#{}</a>',
             url,
             obj.id
         )
     order_id_link.short_description = 'Order ID'
     order_id_link.admin_order_field = 'id'
+
+    def get_parent_name(self, obj):
+        return f"{obj.parent.user.first_name} {obj.parent.user.last_name}" if obj.parent.user.first_name else obj.parent.user.username
+    get_parent_name.short_description = 'Parent'
+
+    def get_phone_number(self, obj):
+        return obj.parent.phone_number
+    get_phone_number.short_description = 'Phone Number'
     
     fieldsets = (
         ('Order Information', {
