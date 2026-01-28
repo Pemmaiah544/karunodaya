@@ -74,11 +74,7 @@
         box-shadow: 0 2px 4px rgba(251, 146, 60, 0.1);
     }
 
-    #result_list tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* Checkbox column - narrow */
+    /* Checkbox column - keep narrow */
     #result_list th.action-checkbox-column,
     #result_list td.action-checkbox {
         width: 40px !important;
@@ -86,107 +82,23 @@
         text-align: center !important;
     }
 
-    /* Compact column widths */
-    #result_list th:nth-child(2),
-    /* Title */
-    #result_list td:nth-child(2) {
-        width: 30%;
-        min-width: 250px;
-        max-width: 350px;
-        white-space: normal;
-        word-wrap: break-word;
-    }
-
-    /* Make Title Text Always Visible in Black */
-    #result_list tbody td:nth-child(2) a,
-    #result_list tbody td:nth-child(2) a:link,
-    #result_list tbody td:nth-child(2) a:visited,
-    #result_list tbody td:nth-child(2) a:active {
-        color: #1f2937 !important;
-        font-weight: 600 !important;
-        font-size: 14px !important;
-        text-decoration: none !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        display: inline !important;
+    /* All data columns - Equal Spacing & Natural Alignment */
+    #result_list th,
+    #result_list td {
         width: auto !important;
-        height: auto !important;
-    }
-
-    #result_list tbody td:nth-child(2) a:hover {
-        color: #000000 !important;
-        text-decoration: underline !important;
-    }
-
-
-    #result_list th:nth-child(3),
-    /* Author */
-    #result_list td:nth-child(3) {
-        width: 15%;
         min-width: 120px;
         white-space: nowrap;
     }
 
-    #result_list th:nth-child(4),
-    /* Cover */
-    #result_list td:nth-child(4) {
-        width: 8%;
-        min-width: 80px;
-        text-align: center;
-        white-space: nowrap;
+    /* Column linking styling */
+    #result_list tbody td a {
+        color: inherit;
+        text-decoration: none;
     }
 
-    #result_list th:nth-child(5),
-    /* Publisher */
-    #result_list td:nth-child(5) {
-        width: 15%;
-        min-width: 120px;
-        white-space: nowrap;
-    }
-
-    #result_list th:nth-child(6),
-    /* Difficulty */
-    #result_list td:nth-child(6) {
-        width: 10%;
-        min-width: 80px;
-        text-align: center;
-        white-space: nowrap;
-    }
-
-    #result_list th:nth-child(7),
-    /* Sub Eligible */
-    #result_list td:nth-child(7) {
-        width: 8%;
-        min-width: 60px;
-        text-align: center;
-        white-space: nowrap;
-    }
-
-    #result_list th:nth-child(8),
-    /* Purchase Eligible */
-    #result_list td:nth-child(8) {
-        width: 8%;
-        min-width: 60px;
-        text-align: center;
-        white-space: nowrap;
-    }
-
-    #result_list th:nth-child(9),
-    /* Stock */
-    #result_list td:nth-child(9) {
-        width: 6%;
-        min-width: 50px;
-        text-align: center;
-        white-space: nowrap;
-    }
-
-    #result_list th:nth-child(10),
-    /* Active */
-    #result_list td:nth-child(10) {
-        width: 6%;
-        min-width: 50px;
-        text-align: center;
-        white-space: nowrap;
+    #result_list tbody td a:hover {
+        color: #fb923c;
+        text-decoration: underline;
     }
 
     /* Enhanced Pagination - Matching Previous Screenshot */

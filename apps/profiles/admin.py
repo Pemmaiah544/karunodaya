@@ -9,11 +9,27 @@ from .models import ParentProfile, Child
 admin.site.unregister(User)
 @admin.register(User)
 class UserAdmin(ModelAdmin):
-    list_display = ('get_phone_number', 'email', 'first_name', 'last_name', 'is_staff', 'is_active', 'date_joined')
+    list_display = ('first_name_link', 'last_name', 'get_phone_number', 'email', 'is_active')
     list_filter = ('is_staff', 'is_active', 'is_superuser', 'groups', 'date_joined')
     search_fields = ('username', 'first_name', 'last_name', 'email', 'parent_profile__phone_number')
     ordering = ('username',)
     
+    # Enhanced change list template
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    def first_name_link(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        url = reverse('admin:auth_user_change', args=[obj.pk])
+        display_name = obj.first_name if obj.first_name else obj.username
+        return format_html(
+            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            url,
+            display_name
+        )
+    first_name_link.short_description = 'First Name'
+    first_name_link.admin_order_field = 'first_name'
+
     def get_phone_number(self, obj):
         try:
             return obj.parent_profile.phone_number

@@ -253,11 +253,6 @@ UNFOLD = {
                 "title": _("Authentication"),
                 "items": [
                     {
-                        "title": _("Groups"),
-                        "icon": "group",
-                        "link": reverse_lazy("admin:auth_group_changelist"),
-                    },
-                    {
                         "title": _("Users"),
                         "icon": "person",
                         "link": reverse_lazy("admin:auth_user_changelist"),
