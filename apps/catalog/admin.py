@@ -7,13 +7,25 @@ from .forms import BookAdminForm
 
 @admin.register(Publisher)
 class PublisherAdmin(ModelAdmin):
-    list_display = ('name', 'email', 'phone', 'created_at')
+    list_display = ('name_link', 'email', 'phone', 'created_at')
     search_fields = ('name', 'email', 'phone')
     readonly_fields = ('created_at', 'updated_at')
     list_per_page = 15
     
     # Enhanced change list template
     change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    def name_link(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        url = reverse('admin:catalog_publisher_change', args=[obj.pk])
+        return format_html(
+            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            url,
+            obj.name
+        )
+    name_link.short_description = 'Name'
+    name_link.admin_order_field = 'name'
 
 
 @admin.register(Book)

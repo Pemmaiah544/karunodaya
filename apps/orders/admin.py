@@ -11,10 +11,25 @@ from services.email_service import (
 
 @admin.register(SubscriptionPlan)
 class SubscriptionPlanAdmin(ModelAdmin):
-    list_display = ('name', 'books_per_month', 'price_per_month', 'age_group_min', 'age_group_max', 'is_active')
+    list_display = ('plan_name_link', 'books_per_month', 'price_per_month', 'age_group_min', 'age_group_max', 'is_active')
     list_filter = ('is_active', 'age_group_min')
     search_fields = ('name', 'description')
     list_editable = ('is_active',)
+
+    # Enhanced change list template
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    def plan_name_link(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        url = reverse('admin:orders_subscriptionplan_change', args=[obj.pk])
+        return format_html(
+            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            url,
+            obj.name
+        )
+    plan_name_link.short_description = 'Name'
+    plan_name_link.admin_order_field = 'name'
 
 
 class OrderItemInline(TabularInline):
@@ -27,11 +42,26 @@ class OrderItemInline(TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(ModelAdmin):
-    list_display = ('id', 'parent', 'order_type', 'status', 'payment_method', 'total_amount', 'tracking_number', 'created_at')
+    list_display = ('order_id_link', 'parent', 'order_type', 'status', 'total_amount', 'tracking_number', 'created_at')
     list_editable = ('status', 'tracking_number')
     list_filter = ('order_type', 'status', 'payment_method', 'created_at')
     search_fields = ('id', 'parent__user__username', 'parent__user__email', 'tracking_number')
     readonly_fields = ('created_at', 'updated_at')
+    
+    # Enhanced change list template
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    def order_id_link(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        url = reverse('admin:orders_order_change', args=[obj.pk])
+        return format_html(
+            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">#{}</a>',
+            url,
+            obj.id
+        )
+    order_id_link.short_description = 'Order ID'
+    order_id_link.admin_order_field = 'id'
     
     fieldsets = (
         ('Order Information', {
@@ -210,11 +240,26 @@ class OrderAdmin(ModelAdmin):
 
 @admin.register(SubscriptionCycle)
 class SubscriptionCycleAdmin(ModelAdmin):
-    list_display = ('child', 'plan', 'issue_date', 'expected_return_date', 'status', 'late_fee')
+    list_display = ('child_name_link', 'plan', 'issue_date', 'expected_return_date', 'status', 'late_fee')
     list_filter = ('status', 'issue_date')
     search_fields = ('child__name', 'parent__user__username')
     readonly_fields = ('created_at', 'updated_at', 'books_count')
     filter_horizontal = ('physical_copies',)
+
+    # Enhanced change list template
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    def child_name_link(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        url = reverse('admin:orders_subscriptioncycle_change', args=[obj.pk])
+        return format_html(
+            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            url,
+            obj.child.name
+        )
+    child_name_link.short_description = 'Child'
+    child_name_link.admin_order_field = 'child__name'
 
     fieldsets = (
         ('Subscription Information', {

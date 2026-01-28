@@ -22,8 +22,7 @@ class PhysicalCopyAdmin(ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
     inlines = [InventoryLogInline]
     actions = ['mark_as_damaged', 'mark_as_lost', 'mark_as_available']
-    list_per_page = 15
-
+    
     # Enhanced change list template
     change_list_template = 'admin/catalog/enhanced_book_clean.html'
 
@@ -38,6 +37,7 @@ class PhysicalCopyAdmin(ModelAdmin):
         )
     barcode_link.short_description = 'Barcode'
     barcode_link.admin_order_field = 'barcode'
+    actions = ['mark_as_damaged', 'mark_as_lost', 'mark_as_available']
 
     fieldsets = (
         ('Book Information', {
@@ -107,12 +107,11 @@ class PhysicalCopyAdmin(ModelAdmin):
 
 @admin.register(InventoryLog)
 class InventoryLogAdmin(ModelAdmin):
-    list_display = ('physical_copy_link', 'action', 'performed_by', 'timestamp')
+    list_display = ('physical_copy_link', 'get_barcode', 'action', 'performed_by', 'timestamp')
     list_filter = ('action', 'timestamp')
     search_fields = ('physical_copy__barcode', 'notes')
     readonly_fields = ('timestamp',)
-    list_per_page = 15
-
+    
     # Enhanced change list template
     change_list_template = 'admin/catalog/enhanced_book_clean.html'
 
@@ -123,10 +122,15 @@ class InventoryLogAdmin(ModelAdmin):
         return format_html(
             '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
             url,
-            str(obj.physical_copy)
+            str(obj.physical_copy.book.title)
         )
     physical_copy_link.short_description = 'Physical Copy'
-    physical_copy_link.admin_order_field = 'physical_copy'
+    physical_copy_link.admin_order_field = 'physical_copy__book__title'
+
+    def get_barcode(self, obj):
+        return obj.physical_copy.barcode
+    get_barcode.short_description = 'Bar-Code'
+    get_barcode.admin_order_field = 'physical_copy__barcode'
 
     def has_delete_permission(self, request, obj=None):
         # Inventory logs should not be deleted (audit trail)
