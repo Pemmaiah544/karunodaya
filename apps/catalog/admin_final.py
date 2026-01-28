@@ -22,7 +22,7 @@ class BookAdmin(ModelAdmin):
     list_display = (
         'title', 'author', 'cover_image_thumbnail', 'publisher', 'difficulty_rating',
         'is_subscription_eligible', 'is_purchase_eligible',
-        'stock_count', 'is_active', 'marketplace_status'
+        'stock_count', 'is_active'
     )
     list_filter = (
         'difficulty_rating', 'is_subscription_eligible',
@@ -30,7 +30,7 @@ class BookAdmin(ModelAdmin):
     )
     search_fields = ('title', 'author', 'isbn')
     list_editable = ('stock_count', 'is_active', 'is_purchase_eligible')
-    list_per_page = 15
+    list_per_page = 20  # Increased for better viewing
 
     fieldsets = (
         ('Basic Information', {
@@ -53,26 +53,11 @@ class BookAdmin(ModelAdmin):
     # Enhanced change list template
     change_list_template = 'admin/catalog/enhanced_book_clean.html'
 
-    def marketplace_status(self, obj):
-        """Display marketplace eligibility status with color coding."""
-        if obj.is_purchase_eligible and obj.is_active and obj.stock_count > 0:
-            return '✅ Visible'
-        else:
-            reasons = []
-            if not obj.is_purchase_eligible:
-                reasons.append('Not purchase eligible')
-            if not obj.is_active:
-                reasons.append('Inactive')
-            if obj.stock_count <= 0:
-                reasons.append('No stock')
-            return f'❌ Hidden: {", ".join(reasons)}'
-    marketplace_status.short_description = 'Marketplace'
-
     def cover_image_thumbnail(self, obj):
         """Display cover image thumbnail in admin list view."""
         if obj.cover_image:
             return format_html(
-                '<img src="{}" width="50" height="70" style="object-fit: cover; border-radius: 4px;" />',
+                '<img src="{}" width="40" height="60" style="object-fit: cover; border-radius: 4px;" />',
                 obj.cover_image.url
             )
         return "No Image"

@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'apps.orders',
     'apps.payments',
     'apps.portal',
+    'apps.core',  # Enhanced table system
 ]
 
 MIDDLEWARE = [

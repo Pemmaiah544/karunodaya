@@ -1,0 +1,32 @@
+{% extends "admin/change_list.html" %}
+{% load table_tags %}
+
+{% block result_list %}
+    {% if cl.formset and cl.formset.errors %}
+        <p class="errornote">
+            {% if cl.formset.total_error_count == 1 %}Please correct the error below.{% else %}Please correct the errors below.{% endif %}
+        </p>
+        {{ cl.formset.non_form_errors }}
+    {% endif %}
+
+    <!-- Enhanced Table Component -->
+    {% if config %}
+        {% enhanced_table 
+            config=config 
+            data=data 
+            pagination=pagination 
+            search_query=search_query 
+            current_filters=current_filters 
+            user=user 
+        %}
+    {% else %}
+        <!-- Fallback: Default Django Admin Table -->
+        {{ block.super }}
+    {% endif %}
+{% endblock %}
+
+{% block pagination %}
+    {% if not config %}
+        {{ block.super }}
+    {% endif %}
+{% endblock %}

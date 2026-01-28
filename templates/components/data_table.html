@@ -1,0 +1,370 @@
+{% load static %}
+{% load humanize %}
+
+<style>
+/* Reusable Table Component Styles */
+.data-table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.data-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.data-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #5a67d8;
+}
+
+.data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
+
+.data-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.data-table tbody tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+.data-table tbody tr:hover {
+    background-color: #edf2f7;
+    transform: translateX(2px);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Pagination Styles */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.pagination-info {
+    color: #4a5568;
+    font-size: 14px;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.pagination-btn {
+    padding: 8px 12px;
+    border: 1px solid #d2d6dc;
+    background: white;
+    color: #4a5568;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+}
+
+.pagination-btn:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.pagination-btn.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.pagination-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-btn.disabled:hover {
+    background: white;
+    color: #4a5568;
+    border-color: #d2d6dc;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .data-table-container {
+        overflow-x: auto;
+    }
+    
+    .data-table {
+        min-width: 600px;
+    }
+    
+    .pagination-container {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+    
+    .pagination-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .data-table th,
+    .data-table td {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    .pagination-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        min-width: 32px;
+    }
+}
+
+/* Card-based layout for mobile (alternative option) */
+@media (max-width: 640px) {
+    .table-card-view .data-table,
+    .table-card-view .data-table thead,
+    .table-card-view .data-table tbody,
+    .table-card-view .data-table th,
+    .table-card-view .data-table td,
+    .table-card-view .data-table tr {
+        display: block;
+    }
+    
+    .table-card-view .data-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    
+    .table-card-view .data-table tr {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        padding: 12px;
+        background: white;
+    }
+    
+    .table-card-view .data-table td {
+        border: none;
+        border-bottom: 1px solid #f1f5f9;
+        position: relative;
+        padding-left: 120px;
+        text-align: left;
+        white-space: normal;
+    }
+    
+    .table-card-view .data-table td:before {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        width: 100px;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: 600;
+        color: #4a5568;
+        content: attr(data-label);
+    }
+}
+
+/* Loading state */
+.table-loading {
+    text-align: center;
+    padding: 40px;
+    color: #718096;
+}
+
+.table-loading::before {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e2e8f0;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Empty state */
+.table-empty {
+    text-align: center;
+    padding: 40px;
+    color: #718096;
+}
+
+.table-empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+</style>
+
+<div class="data-table-container {% if mobile_card_view %}table-card-view{% endif %}">
+    {% if loading %}
+        <div class="table-loading">
+            Loading data...
+        </div>
+    {% elif not data %}
+        <div class="table-empty">
+            <div class="table-empty-icon">📊</div>
+            <h3>No data available</h3>
+            <p>{{ empty_message|default:"No records found" }}</p>
+        </div>
+    {% else %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    {% for column in columns %}
+                        <th {% if column.sortable %}class="sortable"{% endif %}>
+                            {{ column.title }}
+                            {% if column.sortable %}
+                                <span class="sort-icon">↕</span>
+                            {% endif %}
+                        </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                    <tr {% if row.id %}data-id="{{ row.id }}"{% endif %}>
+                        {% for column in columns %}
+                            <td data-label="{{ column.title }}">
+                                {% if column.template %}
+                                    {% include column.template with row=row %}
+                                {% elif column.field %}
+                                    {% if row|get_attr:column.field %}
+                                        {% if column.format == 'currency' %}
+                                            {{ row|get_attr:column.field|floatformat:2|intcomma }}
+                                        {% elif column.format == 'date' %}
+                                            {{ row|get_attr:column.field|date:"Y-m-d" }}
+                                        {% elif column.format == 'datetime' %}
+                                            {{ row|get_attr:column.field|date:"Y-m-d H:i" }}
+                                        {% elif column.format == 'boolean' %}
+                                            {% if row|get_attr:column.field %}
+                                                ✅ Yes
+                                            {% else %}
+                                                ❌ No
+                                            {% endif %}
+                                        {% else %}
+                                            {{ row|get_attr:column.field }}
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                {% else %}
+                                    {{ row|get_attr:column.name|default:"-" }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if pagination and pagination.total_pages > 1 %}
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Showing {{ pagination.start_index }}-{{ pagination.end_index }} 
+                    of {{ pagination.total_items }} items
+                </div>
+                <div class="pagination-controls">
+                    {% if pagination.has_previous %}
+                        <a href="?page=1" class="pagination-btn">«</a>
+                        <a href="?page={{ pagination.previous_page }}" class="pagination-btn">‹</a>
+                    {% else %}
+                        <span class="pagination-btn disabled">«</span>
+                        <span class="pagination-btn disabled">‹</span>
+                    {% endif %}
+
+                    {% for page_num in pagination.page_range %}
+                        {% if page_num == pagination.current_page %}
+                            <span class="pagination-btn active">{{ page_num }}</span>
+                        {% elif page_num <= 3 or page_num >= pagination.total_pages|add:"-2" or page_num|add:"2" >= pagination.current_page and page_num|add:"-2" <= pagination.current_page %}
+                            <a href="?page={{ page_num }}" class="pagination-btn">{{ page_num }}</a>
+                        {% elif page_num == 4 or page_num == pagination.total_pages|add:"-3" %}
+                            <span class="pagination-btn">...</span>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                        <a href="?page={{ pagination.next_page }}" class="pagination-btn">›</a>
+                        <a href="?page={{ pagination.total_pages }}" class="pagination-btn">»</a>
+                    {% else %}
+                        <span class="pagination-btn disabled">›</span>
+                        <span class="pagination-btn disabled">»</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<script>
+// Add interactive functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers for sortable columns
+    const sortableHeaders = document.querySelectorAll('.sortable');
+    sortableHeaders.forEach(header => {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', function() {
+            const columnName = this.textContent.trim();
+            const currentUrl = new URL(window.location);
+            const currentSort = currentUrl.searchParams.get('sort');
+            
+            if (currentSort === columnName) {
+                currentUrl.searchParams.set('sort', '-' + columnName);
+            } else {
+                currentUrl.searchParams.set('sort', columnName);
+            }
+            
+            window.location = currentUrl.toString();
+        });
+    });
+
+    // Add row selection functionality
+    const tableRows = document.querySelectorAll('.data-table tbody tr');
+    tableRows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (!e.target.closest('a')) {
+                this.classList.toggle('selected');
+            }
+        });
+    });
+});
+</script>

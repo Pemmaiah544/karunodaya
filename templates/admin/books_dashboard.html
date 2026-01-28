@@ -1,0 +1,111 @@
+{% extends 'admin/base_site.html' %}
+{% load table_tags %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="page-header">
+        <h1>Books Management</h1>
+        <p>Manage and view all books in the system</p>
+    </div>
+
+    <!-- Example 1: Basic Books Table -->
+    <div class="section">
+        <h2>Books List</h2>
+        {% data_table 
+            data=books 
+            columns=book_columns 
+            pagination=paginator 
+            mobile_card_view=True 
+            empty_message="No books found in the system"
+        %}
+    </div>
+
+    <!-- Example 2: Custom Template for Actions -->
+    <div class="section">
+        <h2>Books with Actions</h2>
+        {% data_table 
+            data=books_with_actions 
+            columns=book_action_columns 
+            pagination=paginator 
+            mobile_card_view=True 
+        %}
+    </div>
+
+    <!-- Example 3: Different Data Type (Users) -->
+    <div class="section">
+        <h2>Users List</h2>
+        {% data_table 
+            data=users 
+            columns=user_columns 
+            pagination=user_paginator 
+            mobile_card_view=False 
+            empty_message="No users found"
+        %}
+    </div>
+</div>
+
+<style>
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.page-header h1 {
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.page-header p {
+    color: #718096;
+    margin: 0;
+}
+
+.section {
+    margin-bottom: 40px;
+}
+
+.section h2 {
+    color: #4a5568;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+/* Action buttons styling */
+.action-btn {
+    padding: 4px 8px;
+    margin: 0 2px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.action-btn.edit {
+    background: #4299e1;
+    color: white;
+}
+
+.action-btn.delete {
+    background: #f56565;
+    color: white;
+}
+
+.action-btn.view {
+    background: #48bb78;
+    color: white;
+}
+
+.action-btn:hover {
+    opacity: 0.8;
+}
+</style>
+{% endblock %}
