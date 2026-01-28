@@ -20,7 +20,7 @@ class PublisherAdmin(ModelAdmin):
 class BookAdmin(ModelAdmin):
     form = BookAdminForm
     list_display = (
-        'title', 'author', 'cover_image_thumbnail', 'publisher', 'difficulty_rating',
+        'title_link', 'author', 'cover_image_thumbnail', 'publisher', 'difficulty_rating',
         'is_subscription_eligible', 'is_purchase_eligible',
         'stock_count', 'is_active', 'marketplace_status'
     )
@@ -52,6 +52,19 @@ class BookAdmin(ModelAdmin):
 
     # Enhanced change list template
     change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    def title_link(self, obj):
+        """Display book title as a clickable link with custom styling."""
+        from django.urls import reverse
+        from django.utils.html import format_html
+        url = reverse('admin:catalog_book_change', args=[obj.pk])
+        return format_html(
+            '<a href="{}" style="color: #000000 !important; font-weight: 600; font-size: 14px;">{}</a>',
+            url,
+            obj.title
+        )
+    title_link.short_description = 'Title'
+    title_link.admin_order_field = 'title'
 
     def marketplace_status(self, obj):
         """Display marketplace eligibility status with color coding."""

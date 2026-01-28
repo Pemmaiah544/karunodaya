@@ -78,18 +78,10 @@
         border-bottom: none;
     }
 
-    /* Checkbox column - narrow */
-    #result_list th.action-checkbox-column,
-    #result_list td.action-checkbox {
-        width: 40px !important;
-        padding: 8px !important;
-        text-align: center !important;
-    }
-
     /* Compact column widths */
-    #result_list th:nth-child(2),
+    #result_list th:nth-child(1),
     /* Title */
-    #result_list td:nth-child(2) {
+    #result_list td:nth-child(1) {
         width: 30%;
         min-width: 250px;
         max-width: 350px;
@@ -98,10 +90,10 @@
     }
 
     /* Make Title Text Always Visible in Black */
-    #result_list tbody td:nth-child(2) a,
-    #result_list tbody td:nth-child(2) a:link,
-    #result_list tbody td:nth-child(2) a:visited,
-    #result_list tbody td:nth-child(2) a:active {
+    #result_list tbody td:nth-child(1) a,
+    #result_list tbody td:nth-child(1) a:link,
+    #result_list tbody td:nth-child(1) a:visited,
+    #result_list tbody td:nth-child(1) a:active {
         color: #1f2937 !important;
         font-weight: 600 !important;
         font-size: 14px !important;
@@ -113,48 +105,57 @@
         height: auto !important;
     }
 
-    #result_list tbody td:nth-child(2) a:hover {
+    #result_list tbody td:nth-child(1) a:hover {
         color: #000000 !important;
         text-decoration: underline !important;
     }
 
 
-    #result_list th:nth-child(3),
+    #result_list th:nth-child(2),
     /* Author */
-    #result_list td:nth-child(3) {
+    #result_list td:nth-child(2) {
         width: 15%;
         min-width: 120px;
         white-space: nowrap;
     }
 
-    #result_list th:nth-child(4),
+    #result_list th:nth-child(3),
     /* Cover */
-    #result_list td:nth-child(4) {
+    #result_list td:nth-child(3) {
         width: 8%;
         min-width: 80px;
         text-align: center;
         white-space: nowrap;
     }
 
-    #result_list th:nth-child(5),
+    #result_list th:nth-child(4),
     /* Publisher */
-    #result_list td:nth-child(5) {
+    #result_list td:nth-child(4) {
         width: 15%;
         min-width: 120px;
         white-space: nowrap;
     }
 
-    #result_list th:nth-child(6),
+    #result_list th:nth-child(5),
     /* Difficulty */
-    #result_list td:nth-child(6) {
+    #result_list td:nth-child(5) {
         width: 10%;
         min-width: 80px;
         text-align: center;
         white-space: nowrap;
     }
 
-    #result_list th:nth-child(7),
+    #result_list th:nth-child(6),
     /* Sub Eligible */
+    #result_list td:nth-child(6) {
+        width: 8%;
+        min-width: 60px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    #result_list th:nth-child(7),
+    /* Purchase Eligible */
     #result_list td:nth-child(7) {
         width: 8%;
         min-width: 60px;
@@ -163,26 +164,17 @@
     }
 
     #result_list th:nth-child(8),
-    /* Purchase Eligible */
-    #result_list td:nth-child(8) {
-        width: 8%;
-        min-width: 60px;
-        text-align: center;
-        white-space: nowrap;
-    }
-
-    #result_list th:nth-child(9),
     /* Stock */
-    #result_list td:nth-child(9) {
+    #result_list td:nth-child(8) {
         width: 6%;
         min-width: 50px;
         text-align: center;
         white-space: nowrap;
     }
 
-    #result_list th:nth-child(10),
+    #result_list th:nth-child(9),
     /* Active */
-    #result_list td:nth-child(10) {
+    #result_list td:nth-child(9) {
         width: 6%;
         min-width: 50px;
         text-align: center;
@@ -314,9 +306,13 @@
         box-shadow: 0 4px 8px rgba(251, 146, 60, 0.3);
     }
 
-    /* Filter enhancements - Let Unfold handle the sidebar layout to prevent blank screen issue */
+    /* Filter enhancements - Compact Orange Theme */
     #changelist-filter {
-        border-left: 1px solid #e2e8f0;
+        background: white;
+        border-radius: 12px;
+        padding: 16px 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
     }
 
     #changelist-filter h2 {
@@ -324,8 +320,47 @@
         font-size: 15px;
         font-weight: 700;
         margin-bottom: 12px;
-        padding: 10px 15px;
+        padding-bottom: 6px;
         border-bottom: 2px solid #fb923c;
+    }
+
+    #changelist-filter h3 {
+        color: #c2410c;
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 12px;
+        margin-bottom: 6px;
+    }
+
+    #changelist-filter ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    #changelist-filter li {
+        margin-bottom: 3px;
+    }
+
+    #changelist-filter li a {
+        color: #6b7280;
+        text-decoration: none;
+        padding: 4px 10px;
+        border-radius: 6px;
+        display: block;
+        transition: all 0.2s ease;
+        font-size: 12px;
+    }
+
+    #changelist-filter li a:hover {
+        background: #fff7ed;
+        color: #fb923c;
+    }
+
+    #changelist-filter li.selected a {
+        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+        color: white;
+        font-weight: 600;
     }
 
     /* Action buttons - Compact Orange Theme */
@@ -465,23 +500,6 @@
     td .boolean-false {
         background: #fee2e2;
         color: #dc2626;
-    }
-
-    /* FINAL OVERRIDE - Force Title Links to be Black and Visible */
-    table#result_list tbody tr td:first-child a,
-    table#result_list tbody tr td:first-child a:link,
-    table#result_list tbody tr td:first-child a:visited {
-        color: #000000 !important;
-        font-weight: 700 !important;
-        font-size: 14px !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        display: inline !important;
-    }
-
-    table#result_list tbody tr td:first-child a:hover {
-        color: #ea580c !important;
-        text-decoration: underline !important;
     }
 </style>
 {% endblock %}
