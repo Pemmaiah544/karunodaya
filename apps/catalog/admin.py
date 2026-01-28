@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from unfold.admin import ModelAdmin
 from .models import Publisher, Book
+from .forms import BookAdminForm
 
 
 @admin.register(Publisher)
@@ -13,6 +15,7 @@ class PublisherAdmin(ModelAdmin):
 
 @admin.register(Book)
 class BookAdmin(ModelAdmin):
+    form = BookAdminForm
     list_display = (
         'title', 'author', 'cover_image_thumbnail', 'publisher', 'difficulty_rating',
         'is_subscription_eligible', 'is_purchase_eligible',
@@ -23,7 +26,7 @@ class BookAdmin(ModelAdmin):
         'is_purchase_eligible', 'is_active', 'publisher'
     )
     search_fields = ('title', 'author', 'isbn')
-    readonly_fields = ('created_at', 'updated_at', 'cover_image_thumbnail')
+    # readonly_fields = ('created_at', 'updated_at', 'created_at_display', 'updated_at_display')
     list_editable = ('stock_count', 'is_active', 'is_purchase_eligible')
 
     fieldsets = (
@@ -42,10 +45,10 @@ class BookAdmin(ModelAdmin):
         ('Status', {
             'fields': ('is_active',)
         }),
-        ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
+        # ('Metadata', {
+#             'fields': ('created_at_display', 'updated_at_display'),
+#             'classes': ('collapse',)
+#         }),
     )
 
     def marketplace_status(self, obj):
@@ -97,3 +100,23 @@ class BookAdmin(ModelAdmin):
             )
         return "No Image"
     cover_image_thumbnail.short_description = 'Cover'
+
+    def created_at_display(self, obj):
+        """Display created at with calendar icon."""
+        if obj.created_at:
+            return format_html(
+                '📅 {}',
+                obj.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            )
+        return format_html('📅 Not set yet')
+    created_at_display.short_description = 'Created at'
+
+    def updated_at_display(self, obj):
+        """Display updated at with clock icon."""
+        if obj.updated_at:
+            return format_html(
+                '🕐 {}',
+                obj.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+            )
+        return format_html('🕐 Not set yet')
+    updated_at_display.short_description = 'Updated at'
