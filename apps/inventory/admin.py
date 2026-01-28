@@ -109,7 +109,14 @@ class PhysicalCopyAdmin(ModelAdmin):
 class InventoryLogAdmin(ModelAdmin):
     list_display = ('physical_copy_link', 'get_barcode', 'action', 'performed_by', 'timestamp')
     list_filter = ('action', 'timestamp')
-    search_fields = ('physical_copy__barcode', 'notes')
+    search_fields = (
+        'physical_copy__barcode', 
+        'physical_copy__book__title', 
+        'performed_by__username', 
+        'performed_by__first_name', 
+        'performed_by__last_name', 
+        'notes'
+    )
     readonly_fields = ('timestamp',)
     
     # Enhanced change list template

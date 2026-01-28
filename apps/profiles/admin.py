@@ -69,11 +69,27 @@ class ChildInline(TabularInline):
 
 @admin.register(ParentProfile)
 class ParentProfileAdmin(ModelAdmin):
-    list_display = ('user', 'phone_number', 'user__email', 'user__first_name', 'user__last_name', 'is_staff_status', 'city', 'children_count', 'created_at')
+    list_display = ('first_name_link', 'user__last_name', 'phone_number', 'user__email', 'is_staff_status', 'city', 'created_at')
     list_filter = ('city', 'state', 'created_at', 'user__is_staff')
     search_fields = ('user__first_name', 'user__last_name', 'user__email', 'phone_number')
     readonly_fields = ('created_at', 'updated_at')
     inlines = [ChildInline]
+    
+    # Enhanced change list template
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    def first_name_link(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        url = reverse('admin:profiles_parentprofile_change', args=[obj.pk])
+        display_name = obj.user.first_name if obj.user.first_name else obj.user.username
+        return format_html(
+            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            url,
+            display_name
+        )
+    first_name_link.short_description = 'User First Name'
+    first_name_link.admin_order_field = 'user__first_name'
 
     def is_staff_status(self, obj):
         return obj.user.is_staff
@@ -99,10 +115,25 @@ class ParentProfileAdmin(ModelAdmin):
 
 @admin.register(Child)
 class ChildAdmin(ModelAdmin):
-    list_display = ('name', 'parent', 'age', 'grade', 'reading_difficulty_level', 'created_at')
+    list_display = ('name_link', 'parent', 'age', 'grade', 'reading_difficulty_level', 'created_at')
     list_filter = ('grade', 'reading_difficulty_level', 'age')
     search_fields = ('name', 'parent__user__username')
     readonly_fields = ('created_at', 'updated_at')
+
+    # Enhanced change list template
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    def name_link(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        url = reverse('admin:profiles_child_change', args=[obj.pk])
+        return format_html(
+            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            url,
+            obj.name
+        )
+    name_link.short_description = 'Name'
+    name_link.admin_order_field = 'name'
 
     fieldsets = (
         ('Basic Information', {

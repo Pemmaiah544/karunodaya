@@ -4,44 +4,35 @@
     flex-direction: column !important;
     align-items: flex-start !important;
     padding: 0.5rem 1rem !important;
-    /* Further reduced padding */
     border-bottom: 1px solid #e5e7eb !important;
     margin-bottom: 0.15rem !important;
-    /* Further reduced margin */
 }
 
 .unfold-brand img {
     height: 2rem !important;
-    /* Smaller logo to save space */
     width: auto !important;
     max-width: 100%;
 }
 
-/* Hide Unfold title text in brand area */
 .unfold-brand span,
 .unfold-brand a:not(:has(img)) {
     display: none !important;
 }
 
-/* Sidebar structure and compacting */
 #sidebar {
     border-right: 1px solid #e5e7eb !important;
     background-color: white !important;
     overflow-y: auto !important;
 }
 
-/* Extremely compact navigation groups */
 #sidebar nav section {
     margin-bottom: 0.15rem !important;
-    /* Minimal margin between sections */
 }
 
-/* Extremely compact Section Headers */
 #sidebar nav h3 {
     margin-top: 0.1rem !important;
     margin-bottom: 0.05rem !important;
     font-size: 0.55rem !important;
-    /* Even smaller header font */
     text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
     padding-left: 1rem !important;
@@ -51,7 +42,6 @@
     line-height: 1 !important;
 }
 
-/* Ultra compact Sidebar Links */
 #sidebar nav ul {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
@@ -63,34 +53,122 @@
 
 #sidebar nav ul li a {
     padding-top: 0.15rem !important;
-    /* Even more minimal vertical padding */
     padding-bottom: 0.15rem !important;
     padding-left: 0.75rem !important;
     padding-right: 0.5rem !important;
     font-size: 0.7rem !important;
-    /* Smaller link font */
     margin: 0.02rem 0.5rem !important;
-    /* Tighter margins */
     border-radius: 0.25rem !important;
     line-height: 1.1 !important;
 }
 
-/* Compact Sidebar Icons */
 #sidebar nav ul li a svg {
     width: 0.9rem !important;
-    /* Even smaller icons */
     height: 0.9rem !important;
     margin-right: 0.4rem !important;
 }
 
-/* Content Area */
 #content {
     background-color: #f9fafb !important;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .unfold-brand img {
         height: 1.5rem !important;
     }
+}
+
+/* --- PREMIUM ORANGE THEME FOR ALL PAGES (LIST & EDIT) --- */
+
+/* Unified Container Styling (Tables & Forms) */
+.results,
+fieldset,
+.module,
+.unfold-table-container,
+div[class*="unfold-card"] {
+    border-radius: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    background: white !important;
+    overflow: hidden !important;
+    margin-bottom: 24px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Orange Gradient Headers for EVERYTHING */
+#result_list thead,
+fieldset h2,
+.module h2,
+legend,
+.unfold-table-container th,
+div[class*="unfold-card"] h2,
+.unfold-bg-primary-600 {
+    background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* Specific Header text styling */
+#result_list th,
+fieldset h2,
+.module h2,
+legend,
+.unfold-table-container th,
+div[class*="unfold-card"] h2 {
+    color: white !important;
+    padding: 12px 20px !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Ensure links in headers are white */
+#result_list th a,
+.unfold-table-container th a {
+    color: white !important;
+}
+
+/* Form input focus theme */
+input:focus,
+select:focus,
+textarea:focus,
+.unfold-input:focus {
+    border-color: #fb923c !important;
+    box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.2) !important;
+    outline: none !important;
+}
+
+/* Submit row styling (Action bar at the bottom) */
+.submit-row,
+.unfold-action-bar,
+div[class*="unfold-form-actions"] {
+    background: #f8fafc !important;
+    padding: 16px 24px !important;
+    border-radius: 12px !important;
+    margin-top: 24px !important;
+    border: 1px solid #e2e8f0 !important;
+    display: flex !important;
+    gap: 12px !important;
+    justify-content: flex-end !important;
+}
+
+/* Buttons styling */
+input[type="submit"],
+.button,
+.unfold-button-primary {
+    background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 4px rgba(234, 88, 12, 0.2) !important;
+}
+
+input[type="submit"]:hover,
+.button:hover,
+.unfold-button-primary:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(234, 88, 12, 0.3) !important;
 }

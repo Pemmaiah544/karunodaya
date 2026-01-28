@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.sites.models import Site
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin
 from .models import TableConfiguration, TableColumn, TableFilter, TableAction
@@ -99,3 +100,26 @@ class TableActionAdmin(ModelAdmin):
             'fields': ('order',)
         }),
     )
+
+# Override default Site admin to use enhanced table styling
+admin.site.unregister(Site)
+
+@admin.register(Site)
+class SiteAdmin(ModelAdmin):
+    list_display = ('domain_link', 'name')
+    search_fields = ('domain', 'name')
+    
+    # Enhanced change list template
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    def domain_link(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        url = reverse('admin:sites_site_change', args=[obj.pk])
+        return format_html(
+            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            url,
+            obj.domain
+        )
+    domain_link.short_description = 'Domain Name'
+    domain_link.admin_order_field = 'domain'
