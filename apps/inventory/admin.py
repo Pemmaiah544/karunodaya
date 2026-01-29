@@ -31,7 +31,7 @@ class PhysicalCopyAdmin(ModelAdmin):
         from django.utils.html import format_html
         url = reverse('admin:inventory_physicalcopy_change', args=[obj.pk])
         return format_html(
-            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            '<a href="{}" style="color: #4b5563 !important; font-weight: 600; font-size: 14px;">{}</a>',
             url,
             obj.barcode
         )
@@ -127,7 +127,7 @@ class InventoryLogAdmin(ModelAdmin):
         from django.utils.html import format_html
         url = reverse('admin:inventory_inventorylog_change', args=[obj.pk])
         return format_html(
-            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            '<a href="{}" style="color: #4b5563 !important; font-weight: 600; font-size: 14px;">{}</a>',
             url,
             str(obj.physical_copy.book.title)
         )

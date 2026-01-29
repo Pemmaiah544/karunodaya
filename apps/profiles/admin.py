@@ -84,7 +84,7 @@ class ParentProfileAdmin(ModelAdmin):
         url = reverse('admin:profiles_parentprofile_change', args=[obj.pk])
         display_name = obj.user.first_name if obj.user.first_name else obj.user.username
         return format_html(
-            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            '<a href="{}" style="color: #4b5563 !important; font-weight: 600; font-size: 14px;">{}</a>',
             url,
             display_name
         )
@@ -128,7 +128,7 @@ class ChildAdmin(ModelAdmin):
         from django.utils.html import format_html
         url = reverse('admin:profiles_child_change', args=[obj.pk])
         return format_html(
-            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            '<a href="{}" style="color: #4b5563 !important; font-weight: 600; font-size: 14px;">{}</a>',
             url,
             obj.name
         )

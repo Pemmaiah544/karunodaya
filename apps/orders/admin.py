@@ -24,7 +24,7 @@ class SubscriptionPlanAdmin(ModelAdmin):
         from django.utils.html import format_html
         url = reverse('admin:orders_subscriptionplan_change', args=[obj.pk])
         return format_html(
-            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            '<a href="{}" style="color: #4b5563 !important; font-weight: 600; font-size: 14px;">{}</a>',
             url,
             obj.name
         )
@@ -263,7 +263,7 @@ class SubscriptionCycleAdmin(ModelAdmin):
         from django.utils.html import format_html
         url = reverse('admin:orders_subscriptioncycle_change', args=[obj.pk])
         return format_html(
-            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            '<a href="{}" style="color: #4b5563 !important; font-weight: 600; font-size: 14px;">{}</a>',
             url,
             obj.child.name
         )

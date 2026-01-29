@@ -52,7 +52,7 @@
     }
 
     #result_list th {
-        padding: 8px 12px;
+        padding: 12px 16px;
         text-align: left;
         font-weight: 600;
         font-size: 12px;
@@ -61,6 +61,12 @@
         border-bottom: none;
         white-space: nowrap;
         color: #ffffff !important;
+    }
+
+    /* First column - align to left edge */
+    #result_list th:first-child,
+    #result_list td:first-child {
+        padding-left: 16px !important;
     }
 
     #result_list th a:link,
@@ -78,10 +84,10 @@
     }
 
     #result_list td {
-        padding: 12px 16px;
+        padding: 14px 16px;
         border-bottom: 1px solid #f1f5f9;
         vertical-align: middle;
-        line-height: 1.4;
+        line-height: 1.5;
         font-size: 13px;
     }
 
@@ -102,17 +108,16 @@
     /* Checkbox column - keep narrow */
     #result_list th.action-checkbox-column,
     #result_list td.action-checkbox {
-        width: 40px !important;
-        padding: 8px !important;
+        width: 45px !important;
+        min-width: 45px !important;
+        padding: 8px 12px !important;
         text-align: center !important;
     }
 
-    /* All data columns - Equal Spacing & Natural Alignment */
-    #result_list th,
-    #result_list td {
-        width: auto !important;
-        min-width: 120px;
-        white-space: nowrap;
+    /* All data columns - Consistent Spacing */
+    #result_list th:not(.action-checkbox-column),
+    #result_list td:not(.action-checkbox) {
+        padding: 14px 16px !important;
     }
 
     /* Column linking styling */

@@ -20,7 +20,7 @@ class PublisherAdmin(ModelAdmin):
         from django.utils.html import format_html
         url = reverse('admin:catalog_publisher_change', args=[obj.pk])
         return format_html(
-            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            '<a href="{}" style="color: #4b5563 !important; font-weight: 400; font-size: 13px;">{}</a>',
             url,
             obj.name
         )
