@@ -23,7 +23,7 @@ class UserAdmin(ModelAdmin):
         url = reverse('admin:auth_user_change', args=[obj.pk])
         display_name = obj.first_name if obj.first_name else obj.username
         return format_html(
-            '<a href="{}" style="color: #374151; font-weight: 400; font-size: 13px;">{}</a>',
+            '<a href="{}" style="color: #000000 !important; font-weight: 400; font-size: 13px;">{}</a>',
             url,
             display_name
         )

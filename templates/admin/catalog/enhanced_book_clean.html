@@ -3,6 +3,30 @@
 {% block extrastyle %}
 {{ block.super }}
 <style>
+    /* Override search field styling to match select action dropdown */
+    #admin-search-input {
+        height: 2.75rem !important;
+        /* h-11 = 44px */
+        padding: 0.5rem 1rem !important;
+        /* px-4 */
+        padding-left: 2.5rem !important;
+        /* pl-10 */
+        border-radius: 0.5rem !important;
+        /* rounded-lg */
+        font-size: 0.875rem !important;
+        /* text-sm */
+    }
+
+    /* Ensure action select dropdown has consistent styling */
+    select[name="action"] {
+        height: 2.75rem !important;
+        /* h-11 = 44px */
+        border-radius: 0.5rem !important;
+        /* rounded-lg */
+        font-size: 0.875rem !important;
+        /* text-sm */
+    }
+
     /* Enhanced Admin Table Styles - Compact & Well-Structured */
     .results {
         background: white;
@@ -195,6 +219,8 @@
     #searchbar input[type="text"] {
         width: 100%;
         padding: 10px 14px;
+        height: 44px;
+        /* Match select action field height */
         border: 2px solid #fdba74;
         border-radius: 8px;
         font-size: 13px;
