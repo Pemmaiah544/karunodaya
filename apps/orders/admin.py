@@ -46,6 +46,8 @@ class OrderAdmin(ModelAdmin):
     list_editable = ('status', 'tracking_number')
     list_filter = ('order_type', 'status', 'payment_method', 'created_at')
     search_fields = ('id', 'parent__user__username', 'parent__user__email', 'tracking_number')
+    list_per_page = 10
+
     readonly_fields = ('created_at', 'updated_at')
     
     # Enhanced change list template
@@ -252,6 +254,8 @@ class SubscriptionCycleAdmin(ModelAdmin):
     list_display = ('child_name_link', 'plan', 'issue_date', 'expected_return_date', 'status', 'late_fee')
     list_filter = ('status', 'issue_date')
     search_fields = ('child__name', 'parent__user__username')
+    list_per_page = 10
+
     readonly_fields = ('created_at', 'updated_at', 'books_count')
     filter_horizontal = ('physical_copies',)
 

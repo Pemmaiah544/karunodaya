@@ -6,6 +6,69 @@ import re
 
 register = template.Library()
 
+
+@register.simple_tag(takes_context=True)
+def admin_querystring(context, **kwargs):
+    request = context.get('request')
+    if request is None:
+        return ''
+
+    query = request.GET.copy()
+    for key, value in kwargs.items():
+        if value is None or value == '':
+            try:
+                query.pop(key)
+            except KeyError:
+                pass
+        else:
+            query[key] = str(value)
+
+    encoded = query.urlencode()
+    return f"?{encoded}" if encoded else "?"
+
+
+@register.simple_tag
+def admin_pagination_info(cl):
+    total = getattr(cl, 'result_count', 0) or 0
+    # In Django 5.1+, ChangeList.page_num is 1-indexed.
+    # We'll normalize it to 0-indexed for our calculation logic if needed,
+    # or just use it directly if we adjust the formulas.
+    page_num = getattr(cl, 'page_num', 1) 
+    paginator = getattr(cl, 'paginator', None)
+    pages = getattr(paginator, 'num_pages', 1) if paginator is not None else 1
+    show_all = bool(getattr(cl, 'show_all', False))
+
+    per_page = getattr(cl, 'list_per_page', 0) or 0
+    if show_all:
+        per_page = total if total else per_page
+
+    if total <= 0:
+        start = 0
+        end = 0
+    else:
+        if per_page <= 0:
+            start = 1
+            end = total
+        else:
+            # page_num is 1-indexed, so Page 1: (1-1)*5 + 1 = 1
+            start = (page_num - 1) * per_page + 1
+            end = min(start + per_page - 1, total)
+
+    has_prev = page_num > 1
+    has_next = page_num < pages
+
+    return {
+        'total': total,
+        'start': start,
+        'end': end,
+        'page': page_num,
+        'pages': pages,
+        'has_prev': has_prev,
+        'has_next': has_next,
+        'prev_p': page_num - 1,
+        'next_p': page_num + 1,
+    }
+
 @register.filter
 def get_attr(obj, attr_path):
     """
@@ -25,6 +88,22 @@ def get_attr(obj, attr_path):
         return value
     except (AttributeError, KeyError, TypeError):
         return None
+
+@register.filter
+def multiply(value, arg):
+    """Multiply two numbers"""
+    try:
+        return int(value) * int(arg)
+    except (ValueError, TypeError):
+        return value
+
+@register.filter
+def min_value(value, arg):
+    """Return the minimum of two numbers"""
+    try:
+        return min(int(value), int(arg))
+    except (ValueError, TypeError):
+        return value
 
 @register.filter
 def add(value, arg):

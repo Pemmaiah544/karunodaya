@@ -106,7 +106,7 @@ karunodaya/
 
 8. **Run development server**
    ```bash
-  Tue, Jan 27
+   python3 manage.py runserver
    ```
 
 9. **Access the application**

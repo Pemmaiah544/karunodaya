@@ -1,4 +1,5 @@
 {% extends "admin/change_list.html" %}
+{% load table_tags %}
 
 {% block extrastyle %}
 {{ block.super }}
@@ -77,79 +78,162 @@
         border-bottom: none;
     }
 
-    /* Title Links - Make them visible and clickable */
+    /* Make all links visible and clickable */
+    #result_list tbody tr td:first-child,
     #result_list tbody tr td:first-child a {
+        color: #4b5563 !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
+        display: block !important;
+        opacity: 1 !important;
+    }
+
+    #result_list tbody tr td:nth-child(2) a {
         color: #1f2937 !important;
         font-weight: 600 !important;
         text-decoration: none !important;
         display: block !important;
     }
 
-    #result_list tbody tr td:first-child a:hover {
+    #result_list tbody tr td:first-child a:hover,
+    #result_list tbody tr td:nth-child(2) a:hover {
         color: #ea580c !important;
         text-decoration: underline !important;
     }
 
-    /* Standard Django Pagination Enhancement */
-    .paginator {
-        background: white;
-        border: 1px solid #e2e8f0;
-        padding: 10px 16px;
-        margin: 20px 0;
-        border-radius: 6px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-    }
-
-    .paginator .this-page {
-        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
-        color: white;
-        padding: 6px 12px;
+    /* Status styling for inventory */
+    .status-available {
+        background: #dcfce7;
+        color: #16a34a;
+        padding: 4px 8px;
         border-radius: 4px;
         font-weight: 600;
-        border: none;
+        font-size: 12px;
     }
 
-    .paginator a:link,
-    .paginator a:visited {
-        background: #f8fafc;
-        color: #4b5563;
-        padding: 6px 12px;
+    .status-borrowed {
+        background: #dbeafe;
+        color: #2563eb;
+        padding: 4px 8px;
         border-radius: 4px;
-        text-decoration: none;
-        font-weight: 500;
-        border: 1px solid #d1d5db;
-        transition: all 0.2s ease;
-        margin: 0 2px;
+        font-weight: 600;
+        font-size: 12px;
     }
 
-    .paginator a:hover {
-        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
-        color: white;
-        border-color: #fb923c;
-        text-decoration: none;
+    .status-damaged {
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 12px;
     }
 
-    .paginator .showall,
-    .paginator .last {
+    .status-lost {
         background: #f3f4f6;
         color: #6b7280;
-        padding: 6px 12px;
+        padding: 4px 8px;
         border-radius: 4px;
-        text-decoration: none;
-        font-weight: 500;
-        border: 1px solid #d1d5db;
-        transition: all 0.2s ease;
+        font-weight: 600;
+        font-size: 12px;
     }
 
-    .paginator .showall:hover,
-    .paginator .last:hover {
-        background: #e5e7eb;
-        color: #374151;
+    /* Standard Django Pagination Enhancement */
+    /* Inventory custom pagination (screenshot-style) */
+    #inventory-pagination {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin: 14px 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    #inventory-pagination .ip-left,
+    #inventory-pagination .ip-center,
+    #inventory-pagination .ip-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    #inventory-pagination .ip-center {
+        flex: 1;
+        justify-content: center;
+        color: #6b7280;
+        font-size: 12px;
+    }
+
+    #inventory-pagination label {
+        color: #6b7280;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    #inventory-pagination select {
+        height: 28px;
+        padding: 2px 26px 2px 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #111827;
+        font-size: 12px;
+        outline: none;
+    }
+
+    #inventory-pagination select:focus {
+        border-color: #fb923c;
+        box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.12);
+    }
+
+    #inventory-pagination .ip-btn {
+        height: 28px;
+        padding: 0 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        background: #f9fafb;
+        color: #6b7280;
+        font-size: 12px;
+        font-weight: 500;
         text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    #inventory-pagination .ip-btn:hover {
+        border-color: #fb923c;
+        color: #ea580c;
+        background: #fff7ed;
+    }
+
+    #inventory-pagination .ip-btn.disabled {
+        opacity: 0.55;
+        pointer-events: none;
+    }
+
+    #inventory-pagination .ip-page {
+        color: #111827;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 0 6px;
+    }
+
+    @media (max-width: 768px) {
+        #inventory-pagination {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        #inventory-pagination .ip-center {
+            justify-content: flex-start;
+        }
+
+        #inventory-pagination .ip-right {
+            justify-content: space-between;
+        }
     }
 
     /* Enhanced Search Bar */
@@ -307,20 +391,6 @@
         text-decoration: none;
     }
 
-    /* Image Thumbnails */
-    td img {
-        border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
-        max-width: 40px;
-        max-height: 60px;
-    }
-
-    td img:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    }
-
     /* Responsive Design */
     @media (max-width: 768px) {
         .paginator {
@@ -356,4 +426,69 @@
         overflow-x: hidden;
     }
 </style>
+{% endblock %}
+
+{% block pagination %}
+<div id="inventory-pagination">
+    <div class="ip-left">
+        <label for="inventory-per-page">Rows per page:</label>
+        <select id="inventory-per-page" aria-label="Rows per page" onchange="changePerPage(this.value)">
+            {% with current_pp=per_page|default:'5' %}
+            <option value="5" {% if current_pp == '5' %}selected{% endif %}>5</option>
+            <option value="10" {% if current_pp == '10' %}selected{% endif %}>10</option>
+            <option value="25" {% if current_pp == '25' %}selected{% endif %}>25</option>
+            <option value="50" {% if current_pp == '50' %}selected{% endif %}>50</option>
+            {% endwith %}
+        </select>
+
+        <script>
+            function changePerPage(perPage) {
+                // Get current URL and parameters
+                const url = new URL(window.location);
+
+                // Remove page parameter to go to page 1
+                url.searchParams.delete('p');
+
+                // Set per_page parameter
+                url.searchParams.set('per_page', perPage);
+
+                // Navigate to new URL
+                window.location.href = url.toString();
+            }
+        </script>
+    </div>
+
+    <div class="ip-center">
+        {% if cl.result_count %}
+        {% with pp=per_page|default:5 %}
+        {% with start=cl.page_num|add:'-1'|multiply:pp|add:1 %}
+        Showing {{ start }} to {{ start|add:pp|add:'-1'|min_value:cl.result_count }} of {{ cl.result_count }} {{
+        cl.opts.verbose_name_plural }}
+        {% endwith %}
+        {% endwith %}
+        {% else %}
+        No {{ cl.opts.verbose_name_plural }} found
+        {% endif %}
+    </div>
+
+    <div class="ip-right">
+        {% if cl.result_count %}
+        {% if cl.page_num > 1 %}
+        <a class="ip-btn"
+            href="?p={{ cl.page_num|add:'-1' }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if cl.query %}&{{ cl.query }}{% endif %}">Previous</a>
+        {% else %}
+        <span class="ip-btn disabled">Previous</span>
+        {% endif %}
+
+        <span class="ip-page-info">Page {{ cl.page_num }} of {{ cl.paginator.num_pages }}</span>
+
+        {% if cl.page_num < cl.paginator.num_pages %} <a class="ip-btn"
+            href="?p={{ cl.page_num|add:'1' }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if cl.query %}&{{ cl.query }}{% endif %}">
+            Next</a>
+            {% else %}
+            <span class="ip-btn disabled">Next</span>
+            {% endif %}
+            {% endif %}
+    </div>
+</div>
 {% endblock %}

@@ -19,12 +19,42 @@ class PhysicalCopyAdmin(ModelAdmin):
     list_display = ('barcode_link', 'book', 'status', 'purchased_date', 'updated_at')
     list_filter = ('status', 'purchased_date')
     search_fields = ('barcode', 'book__title')
+    list_per_page = 5
+
     readonly_fields = ('created_at', 'updated_at')
     inlines = [InventoryLogInline]
     actions = ['mark_as_damaged', 'mark_as_lost', 'mark_as_available']
     
     # Enhanced change list template
-    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+    change_list_template = 'admin/inventory/enhanced_inventory.html'
+
+    def changelist_view(self, request, extra_context=None):
+        # Store per_page parameter before modifying GET
+        original_get = request.GET
+        per_page_value = original_get.get('per_page')
+        
+        # Remove per_page from GET to avoid Django treating it as filter
+        cleaned = original_get.copy()
+        if 'per_page' in cleaned:
+            del cleaned['per_page']
+        
+        request.GET = cleaned
+        
+        try:
+            response = super().changelist_view(request, extra_context=extra_context)
+            # Apply per_page to the ChangeList and re-fetch results
+            if hasattr(response, 'context_data') and 'cl' in response.context_data:
+                cl = response.context_data['cl']
+                allowed = {"5": 5, "10": 10, "25": 25, "50": 50}
+                if per_page_value in allowed:
+                    cl.list_per_page = allowed[per_page_value]
+                    cl.get_results(request)
+                    response.context_data['per_page'] = str(cl.list_per_page)
+                else:
+                    response.context_data['per_page'] = str(self.list_per_page)
+            return response
+        finally:
+            request.GET = original_get
 
     def barcode_link(self, obj):
         from django.urls import reverse
@@ -37,7 +67,6 @@ class PhysicalCopyAdmin(ModelAdmin):
         )
     barcode_link.short_description = 'Barcode'
     barcode_link.admin_order_field = 'barcode'
-    actions = ['mark_as_damaged', 'mark_as_lost', 'mark_as_available']
 
     fieldsets = (
         ('Book Information', {
@@ -107,20 +136,49 @@ class PhysicalCopyAdmin(ModelAdmin):
 
 @admin.register(InventoryLog)
 class InventoryLogAdmin(ModelAdmin):
-    list_display = ('physical_copy_link', 'get_barcode', 'action', 'performed_by', 'timestamp')
-    list_filter = ('action', 'timestamp')
+    list_display = ('physical_copy', 'action', 'performed_by', 'timestamp', 'notes')
+    list_filter = ('action', 'timestamp', 'performed_by')
     search_fields = (
         'physical_copy__barcode', 
-        'physical_copy__book__title', 
-        'performed_by__username', 
+        'physical_copy__book__title',
         'performed_by__first_name', 
         'performed_by__last_name', 
         'notes'
     )
+    list_per_page = 5
+
     readonly_fields = ('timestamp',)
     
     # Enhanced change list template
-    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+    change_list_template = 'admin/inventory/enhanced_inventory.html'
+
+    def changelist_view(self, request, extra_context=None):
+        # Store per_page parameter before modifying GET
+        original_get = request.GET
+        per_page_value = original_get.get('per_page')
+        
+        # Remove per_page from GET to avoid Django treating it as filter
+        cleaned = original_get.copy()
+        if 'per_page' in cleaned:
+            del cleaned['per_page']
+        
+        request.GET = cleaned
+        
+        try:
+            response = super().changelist_view(request, extra_context=extra_context)
+            # Apply per_page to the ChangeList and re-fetch results
+            if hasattr(response, 'context_data') and 'cl' in response.context_data:
+                cl = response.context_data['cl']
+                allowed = {"5": 5, "10": 10, "25": 25, "50": 50}
+                if per_page_value in allowed:
+                    cl.list_per_page = allowed[per_page_value]
+                    cl.get_results(request)
+                    response.context_data['per_page'] = str(cl.list_per_page)
+                else:
+                    response.context_data['per_page'] = str(self.list_per_page)
+            return response
+        finally:
+            request.GET = original_get
 
     def physical_copy_link(self, obj):
         from django.urls import reverse

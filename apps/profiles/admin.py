@@ -13,6 +13,8 @@ class UserAdmin(ModelAdmin):
     list_filter = ('is_staff', 'is_active', 'is_superuser', 'groups', 'date_joined')
     search_fields = ('username', 'first_name', 'last_name', 'email', 'parent_profile__phone_number')
     ordering = ('username',)
+    list_per_page = 10
+
     
     # Enhanced change list template
     change_list_template = 'admin/catalog/enhanced_book_clean.html'
@@ -72,6 +74,8 @@ class ParentProfileAdmin(ModelAdmin):
     list_display = ('first_name_link', 'user__last_name', 'phone_number', 'user__email', 'is_staff_status', 'city', 'created_at')
     list_filter = ('city', 'state', 'created_at', 'user__is_staff')
     search_fields = ('user__first_name', 'user__last_name', 'user__email', 'phone_number')
+    list_per_page = 10
+
     readonly_fields = ('created_at', 'updated_at')
     inlines = [ChildInline]
     
@@ -118,6 +122,8 @@ class ChildAdmin(ModelAdmin):
     list_display = ('name_link', 'parent', 'age', 'grade', 'reading_difficulty_level', 'created_at')
     list_filter = ('grade', 'reading_difficulty_level', 'age')
     search_fields = ('name', 'parent__user__username')
+    list_per_page = 10
+
     readonly_fields = ('created_at', 'updated_at')
 
     # Enhanced change list template
