@@ -13,8 +13,7 @@ class PublisherAdmin(AdminPaginationMixin, ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
     list_per_page = 15
     
-    # Enhanced change list template
-    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
 
     def name_link(self, obj):
         from django.urls import reverse
@@ -63,8 +62,7 @@ class BookAdmin(AdminPaginationMixin, ModelAdmin):
         }),
     )
 
-    # Enhanced change list template
-    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
 
     def title_link(self, obj):
         """Display book title as a clickable link with custom styling."""

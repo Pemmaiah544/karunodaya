@@ -6,6 +6,7 @@ class AdminPaginationMixin:
     Must be used with 'admin/catalog/enhanced_book_clean.html' template.
     """
     change_list_template = 'admin/catalog/enhanced_book_clean.html'
+    change_form_template = 'admin/base_change_form.html'
 
     def changelist_view(self, request, extra_context=None):
         # Store per_page parameter before modifying GET

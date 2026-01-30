@@ -250,4 +250,6 @@ class OrderItem(models.Model):
     @property
     def subtotal(self):
         """Calculate subtotal for this item."""
+        if self.quantity is None or self.price_per_unit is None:
+            return 0
         return self.quantity * self.price_per_unit

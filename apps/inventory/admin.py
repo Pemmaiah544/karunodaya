@@ -130,8 +130,7 @@ class InventoryLogAdmin(AdminPaginationMixin, ModelAdmin):
         return obj.physical_copy.barcode if obj.physical_copy else '-'
     barcode.short_description = 'Barcode'
     
-    # Enhanced change list template - same as all other tables
-    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
 
     def has_delete_permission(self, request, obj=None):
         # Inventory logs should not be deleted (audit trail)

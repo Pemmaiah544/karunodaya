@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DefaultUserAdmin
 from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from django import forms
 from unfold.admin import ModelAdmin, TabularInline
 from apps.core.admin_mixins import AdminPaginationMixin
 from .models import ParentProfile, Child
@@ -8,16 +10,26 @@ from .models import ParentProfile, Child
 
 # Custom User Admin to override the default Django User admin
 admin.site.unregister(User)
+
+class MyUserCreationForm(UserCreationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({
+                'class': 'unfold-input border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary-500',
+                'style': 'visibility: visible !important; width: 300px !important;'
+            })
+
 @admin.register(User)
-class UserAdmin(AdminPaginationMixin, ModelAdmin):
+class UserAdmin(AdminPaginationMixin, DefaultUserAdmin, ModelAdmin):
+    add_form = MyUserCreationForm
+    add_form_template = 'admin/auth/user/add_form.html'
+    
     list_display = ('first_name_link', 'last_name', 'get_phone_number', 'email', 'is_active')
     list_filter = ('is_staff', 'is_active', 'is_superuser', 'groups', 'date_joined')
     search_fields = ('username', 'first_name', 'last_name', 'email', 'parent_profile__phone_number')
     ordering = ('username',)
     
-    # Enhanced change list template
-    change_list_template = 'admin/catalog/enhanced_book_clean.html'
-
     def first_name_link(self, obj):
         from django.urls import reverse
         from django.utils.html import format_html
@@ -61,6 +73,8 @@ class UserAdmin(AdminPaginationMixin, ModelAdmin):
     )
 
 
+
+
 class ChildInline(TabularInline):
     model = Child
     extra = 0
@@ -76,9 +90,6 @@ class ParentProfileAdmin(AdminPaginationMixin, ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
     inlines = [ChildInline]
     
-    # Enhanced change list template
-    change_list_template = 'admin/catalog/enhanced_book_clean.html'
-
     def first_name_link(self, obj):
         from django.urls import reverse
         from django.utils.html import format_html
@@ -120,9 +131,6 @@ class ChildAdmin(AdminPaginationMixin, ModelAdmin):
     list_filter = ('grade', 'reading_difficulty_level', 'age')
     search_fields = ('name', 'parent__user__username')
     readonly_fields = ('created_at', 'updated_at')
-
-    # Enhanced change list template
-    change_list_template = 'admin/catalog/enhanced_book_clean.html'
 
     def name_link(self, obj):
         from django.urls import reverse
