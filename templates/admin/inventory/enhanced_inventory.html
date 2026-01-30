@@ -16,90 +16,8 @@
         border: 1px solid #e2e8f0;
     }
 
-    /* Table Styling */
-    #result_list {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
-        background: white;
-    }
-
-    #result_list thead {
-        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
-        color: white;
-    }
-
-    #result_list th {
-        padding: 12px 16px;
-        text-align: left;
-        font-weight: 600;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: none;
-        white-space: nowrap;
-    }
-
-    #result_list th a:link,
-    #result_list th a:visited {
-        color: white;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    #result_list th a:hover {
-        color: #fed7aa;
-    }
-
-    #result_list td {
-        padding: 12px 16px;
-        border-bottom: 1px solid #f1f5f9;
-        vertical-align: middle;
-        line-height: 1.5;
-    }
-
-    #result_list tbody tr {
-        transition: all 0.2s ease;
-    }
-
-    #result_list tbody tr:nth-child(even) {
-        background: #f8fafc;
-    }
-
-    #result_list tbody tr:hover {
-        background: #fff7ed;
-        transform: translateX(2px);
-        box-shadow: 0 2px 4px rgba(251, 146, 60, 0.1);
-    }
-
-    #result_list tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* Make all links visible and clickable */
-    #result_list tbody tr td:first-child,
-    #result_list tbody tr td:first-child a {
-        color: #4b5563 !important;
-        font-weight: 600 !important;
-        text-decoration: none !important;
-        display: block !important;
-        opacity: 1 !important;
-    }
-
-    #result_list tbody tr td:nth-child(2) a {
-        color: #1f2937 !important;
-        font-weight: 600 !important;
-        text-decoration: none !important;
-        display: block !important;
-    }
-
-    #result_list tbody tr td:first-child a:hover,
-    #result_list tbody tr td:nth-child(2) a:hover {
-        color: #ea580c !important;
-        text-decoration: underline !important;
-    }
+    /* Use common table styling from admin_custom.css */
+    /* Only keep inventory-specific customizations */
 
     /* Status styling for inventory */
     .status-available {
@@ -433,11 +351,11 @@
     <div class="ip-left">
         <label for="inventory-per-page">Rows per page:</label>
         <select id="inventory-per-page" aria-label="Rows per page" onchange="changePerPage(this.value)">
-            {% with current_pp=per_page|default:'5' %}
-            <option value="5" {% if current_pp == '5' %}selected{% endif %}>5</option>
-            <option value="10" {% if current_pp == '10' %}selected{% endif %}>10</option>
-            <option value="25" {% if current_pp == '25' %}selected{% endif %}>25</option>
-            <option value="50" {% if current_pp == '50' %}selected{% endif %}>50</option>
+            {% with current=per_page|default:'5' %}
+            <option value="5" {% if current == '5' %}selected{% endif %}>5</option>
+            <option value="10" {% if current == '10' %}selected{% endif %}>10</option>
+            <option value="25" {% if current == '25' %}selected{% endif %}>25</option>
+            <option value="50" {% if current == '50' %}selected{% endif %}>50</option>
             {% endwith %}
         </select>
 

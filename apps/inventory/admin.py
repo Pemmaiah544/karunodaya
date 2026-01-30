@@ -25,8 +25,8 @@ class PhysicalCopyAdmin(ModelAdmin):
     inlines = [InventoryLogInline]
     actions = ['mark_as_damaged', 'mark_as_lost', 'mark_as_available']
     
-    # Enhanced change list template
-    change_list_template = 'admin/inventory/enhanced_inventory.html'
+    # Enhanced change list template - same as all other tables
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
 
     def changelist_view(self, request, extra_context=None):
         # Store per_page parameter before modifying GET
@@ -136,7 +136,7 @@ class PhysicalCopyAdmin(ModelAdmin):
 
 @admin.register(InventoryLog)
 class InventoryLogAdmin(ModelAdmin):
-    list_display = ('physical_copy', 'action', 'performed_by', 'timestamp', 'notes')
+    list_display = ('physical_copy_display', 'barcode', 'action', 'performed_by', 'timestamp', 'notes')
     list_filter = ('action', 'timestamp', 'performed_by')
     search_fields = (
         'physical_copy__barcode', 
@@ -149,8 +149,19 @@ class InventoryLogAdmin(ModelAdmin):
 
     readonly_fields = ('timestamp',)
     
-    # Enhanced change list template
-    change_list_template = 'admin/inventory/enhanced_inventory.html'
+    def physical_copy_display(self, obj):
+        """Display only the book title without barcode"""
+        return obj.physical_copy.book.title if obj.physical_copy else '-'
+    physical_copy_display.short_description = 'Physical Copy'
+    physical_copy_display.admin_order_field = 'physical_copy__book__title'
+    
+    def barcode(self, obj):
+        """Display barcode from the related physical copy"""
+        return obj.physical_copy.barcode if obj.physical_copy else '-'
+    barcode.short_description = 'Barcode'
+    
+    # Enhanced change list template - same as all other tables
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
 
     def changelist_view(self, request, extra_context=None):
         # Store per_page parameter before modifying GET

@@ -15,71 +15,11 @@
         border: 1px solid #e2e8f0;
     }
 
-    /* Table Styling */
-    #result_list {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
-        background: white;
-    }
+    /* Use global table styling from admin_custom.css */
 
-    #result_list thead {
-        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
-        color: white;
-    }
-
-    #result_list th {
-        padding: 12px 16px;
-        text-align: left;
-        font-weight: 600;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: none;
-        white-space: nowrap;
-    }
-
-    #result_list th a:link,
-    #result_list th a:visited {
-        color: white;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    #result_list th a:hover {
-        color: #fed7aa;
-    }
-
-    #result_list td {
-        padding: 12px 16px;
-        border-bottom: 1px solid #f1f5f9;
-        vertical-align: middle;
-        line-height: 1.5;
-    }
-
-    #result_list tbody tr {
-        transition: all 0.2s ease;
-    }
-
-    #result_list tbody tr:nth-child(even) {
-        background: #f8fafc;
-    }
-
-    #result_list tbody tr:hover {
-        background: #fff7ed;
-        transform: translateX(2px);
-        box-shadow: 0 2px 4px rgba(251, 146, 60, 0.1);
-    }
-
-    #result_list tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* Title Links - Make them visible and clickable */
+    /* DEBUG: First column fix - inline test */
     #result_list tbody tr td:first-child a {
-        color: #1f2937 !important;
+        color: #4b5563 !important; /* Tailwind gray-600 */
         font-weight: 600 !important;
         text-decoration: none !important;
         display: block !important;
@@ -88,6 +28,65 @@
     #result_list tbody tr td:first-child a:hover {
         color: #ea580c !important;
         text-decoration: underline !important;
+    }
+
+    /* Inventory-specific pagination styling */
+    #inventory-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background: #f8fafc;
+        border-radius: 8px;
+        margin-top: 16px;
+        border: 1px solid #e2e8f0;
+    }
+
+    #inventory-pagination .ip-left,
+    #inventory-pagination .ip-center,
+    #inventory-pagination .ip-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    #inventory-pagination label {
+        font-weight: 600;
+        color: #374151;
+    }
+
+    #inventory-pagination select {
+        padding: 6px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: white;
+        color: #374151;
+    }
+
+    #inventory-pagination .ip-btn {
+        padding: 6px 12px;
+        background: white;
+        color: #4b5563;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    #inventory-pagination .ip-btn:hover {
+        background: #fb923c;
+        color: white;
+        border-color: #fb923c;
+    }
+
+    #inventory-pagination .ip-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    #inventory-pagination .ip-page-info {
+        font-weight: 600;
+        color: #374151;
     }
 
     /* Standard Django Pagination Enhancement */
@@ -356,4 +355,60 @@
         overflow-x: hidden;
     }
 </style>
+{% endblock %}
+
+{% block pagination %}
+{% if per_page %}
+<!-- Inventory pagination for tables using per_page parameter -->
+<div id="inventory-pagination">
+    <div class="ip-left">
+        <label for="inventory-per-page">Rows per page:</label>
+        <select id="inventory-per-page" aria-label="Rows per page" onchange="changePerPage(this.value)">
+            {% with current=per_page|default:'5' %}
+            <option value="5" {% if current == '5' %}selected{% endif %}>5</option>
+            <option value="10" {% if current == '10' %}selected{% endif %}>10</option>
+            <option value="25" {% if current == '25' %}selected{% endif %}>25</option>
+            <option value="50" {% if current == '50' %}selected{% endif %}>50</option>
+            {% endwith %}
+        </select>
+        
+        <script>
+        function changePerPage(perPage) {
+            const url = new URL(window.location);
+            url.searchParams.delete('p');
+            url.searchParams.set('per_page', perPage);
+            window.location.href = url.toString();
+        }
+        </script>
+    </div>
+
+    <div class="ip-center">
+        {% if cl.result_count %}
+            Showing {{ cl.result_start|default:1 }} to {{ cl.result_end|default:cl.result_count }} of {{ cl.result_count }} {{ cl.opts.verbose_name_plural }}
+        {% else %}
+            No {{ cl.opts.verbose_name_plural }} found
+        {% endif %}
+    </div>
+
+    <div class="ip-right">
+        {% if cl.result_count %}
+            {% if cl.page_num > 0 %}
+                <a class="ip-btn" href="?p={{ cl.page_num|add:'-1' }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if cl.query %}&{{ cl.query }}{% endif %}">Previous</a>
+            {% else %}
+                <span class="ip-btn disabled">Previous</span>
+            {% endif %}
+            
+            <span class="ip-page-info">Page {{ cl.page_num|add:1 }} of {{ cl.paginator.num_pages }}</span>
+            
+            {% if cl.page_num < cl.paginator.num_pages|add:'-1' %}
+                <a class="ip-btn" href="?p={{ cl.page_num|add:'1' }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if cl.query %}&{{ cl.query }}{% endif %}">Next</a>
+            {% else %}
+                <span class="ip-btn disabled">Next</span>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% else %}
+{{ block.super }}
+{% endif %}
 {% endblock %}
