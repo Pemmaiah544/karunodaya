@@ -1,10 +1,11 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
+from apps.core.admin_mixins import AdminPaginationMixin
 from .models import Transaction
 
 
 @admin.register(Transaction)
-class TransactionAdmin(ModelAdmin):
+class TransactionAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('transaction_id_link', 'get_order_number', 'get_parent_name', 'get_order_type', 'amount', 'status', 'created_at')
     list_filter = ('status', 'created_at')
     search_fields = (

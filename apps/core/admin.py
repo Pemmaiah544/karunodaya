@@ -2,11 +2,12 @@ from django.contrib import admin
 from django.contrib.sites.models import Site
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin
+from apps.core.admin_mixins import AdminPaginationMixin
 from .models import TableConfiguration, TableColumn, TableFilter, TableAction
 
 
 @admin.register(TableConfiguration)
-class TableConfigurationAdmin(ModelAdmin):
+class TableConfigurationAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('name', 'model_name', 'items_per_page', 'enable_search', 'is_active')
     list_filter = ('enable_search', 'enable_sorting', 'enable_pagination', 'header_style', 'is_active')
     search_fields = ('name', 'description', 'model_name')
@@ -38,7 +39,7 @@ class TableConfigurationAdmin(ModelAdmin):
 
 
 @admin.register(TableColumn)
-class TableColumnAdmin(ModelAdmin):
+class TableColumnAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('table_config', 'display_name', 'field_name', 'column_type', 'sortable', 'order')
     list_filter = ('column_type', 'sortable', 'searchable', 'text_align')
     search_fields = ('display_name', 'field_name', 'table_config__name')
@@ -61,7 +62,7 @@ class TableColumnAdmin(ModelAdmin):
 
 
 @admin.register(TableFilter)
-class TableFilterAdmin(ModelAdmin):
+class TableFilterAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('table_config', 'label', 'field_name', 'filter_type', 'order')
     list_filter = ('filter_type',)
     search_fields = ('label', 'field_name', 'table_config__name')
@@ -81,7 +82,7 @@ class TableFilterAdmin(ModelAdmin):
 
 
 @admin.register(TableAction)
-class TableActionAdmin(ModelAdmin):
+class TableActionAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('table_config', 'label', 'action_type', 'button_class', 'order')
     list_filter = ('action_type', 'button_class')
     search_fields = ('label', 'name', 'table_config__name')
@@ -105,7 +106,7 @@ class TableActionAdmin(ModelAdmin):
 admin.site.unregister(Site)
 
 @admin.register(Site)
-class SiteAdmin(ModelAdmin):
+class SiteAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('domain_link', 'name')
     search_fields = ('domain', 'name')
     

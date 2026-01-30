@@ -1,4 +1,5 @@
 {% extends "admin/change_list.html" %}
+{% load table_tags %}
 
 {% block extrastyle %}
 {{ block.super }}
@@ -19,7 +20,8 @@
 
     /* DEBUG: First column fix - inline test */
     #result_list tbody tr td:first-child a {
-        color: #4b5563 !important; /* Tailwind gray-600 */
+        color: #4b5563 !important;
+        /* Tailwind gray-600 */
         font-weight: 600 !important;
         text-decoration: none !important;
         display: block !important;
@@ -371,41 +373,44 @@
             <option value="50" {% if current == '50' %}selected{% endif %}>50</option>
             {% endwith %}
         </select>
-        
+
         <script>
-        function changePerPage(perPage) {
-            const url = new URL(window.location);
-            url.searchParams.delete('p');
-            url.searchParams.set('per_page', perPage);
-            window.location.href = url.toString();
-        }
+            function changePerPage(perPage) {
+                const url = new URL(window.location);
+                url.searchParams.delete('p');
+                url.searchParams.set('per_page', perPage);
+                window.location.href = url.toString();
+            }
         </script>
     </div>
 
     <div class="ip-center">
         {% if cl.result_count %}
-            Showing {{ cl.result_start|default:1 }} to {{ cl.result_end|default:cl.result_count }} of {{ cl.result_count }} {{ cl.opts.verbose_name_plural }}
+        Showing {{ cl.result_start|default:1 }} to {{ cl.result_end|default:cl.result_count }} of {{ cl.result_count }}
+        {{ cl.opts.verbose_name_plural }}
         {% else %}
-            No {{ cl.opts.verbose_name_plural }} found
+        No {{ cl.opts.verbose_name_plural }} found
         {% endif %}
     </div>
 
     <div class="ip-right">
         {% if cl.result_count %}
-            {% if cl.page_num > 0 %}
-                <a class="ip-btn" href="?p={{ cl.page_num|add:'-1' }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if cl.query %}&{{ cl.query }}{% endif %}">Previous</a>
-            {% else %}
-                <span class="ip-btn disabled">Previous</span>
-            {% endif %}
-            
-            <span class="ip-page-info">Page {{ cl.page_num|add:1 }} of {{ cl.paginator.num_pages }}</span>
-            
-            {% if cl.page_num < cl.paginator.num_pages|add:'-1' %}
-                <a class="ip-btn" href="?p={{ cl.page_num|add:'1' }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if cl.query %}&{{ cl.query }}{% endif %}">Next</a>
-            {% else %}
-                <span class="ip-btn disabled">Next</span>
-            {% endif %}
+        {% if cl.page_num > 1 %}
+        <a class="ip-btn"
+            href="?p={{ cl.page_num|add:'-1' }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if cl.query %}&{{ cl.query }}{% endif %}">Previous</a>
+        {% else %}
+        <span class="ip-btn disabled">Previous</span>
         {% endif %}
+
+        <span class="ip-page-info">Page {{ cl.page_num }} of {{ cl.paginator.num_pages }}</span>
+
+        {% if cl.page_num < cl.paginator.num_pages %} <a class="ip-btn"
+            href="?p={{ cl.page_num|add:'1' }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if cl.query %}&{{ cl.query }}{% endif %}">
+            Next</a>
+            {% else %}
+            <span class="ip-btn disabled">Next</span>
+            {% endif %}
+            {% endif %}
     </div>
 </div>
 {% else %}

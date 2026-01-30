@@ -2,13 +2,14 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DefaultUserAdmin
 from django.contrib.auth.models import User
 from unfold.admin import ModelAdmin, TabularInline
+from apps.core.admin_mixins import AdminPaginationMixin
 from .models import ParentProfile, Child
 
 
 # Custom User Admin to override the default Django User admin
 admin.site.unregister(User)
 @admin.register(User)
-class UserAdmin(ModelAdmin):
+class UserAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('first_name_link', 'last_name', 'get_phone_number', 'email', 'is_active')
     list_filter = ('is_staff', 'is_active', 'is_superuser', 'groups', 'date_joined')
     search_fields = ('username', 'first_name', 'last_name', 'email', 'parent_profile__phone_number')
@@ -68,7 +69,7 @@ class ChildInline(TabularInline):
 
 
 @admin.register(ParentProfile)
-class ParentProfileAdmin(ModelAdmin):
+class ParentProfileAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('first_name_link', 'user__last_name', 'phone_number', 'user__email', 'is_staff_status', 'city', 'created_at')
     list_filter = ('city', 'state', 'created_at', 'user__is_staff')
     search_fields = ('user__first_name', 'user__last_name', 'user__email', 'phone_number')
@@ -114,7 +115,7 @@ class ParentProfileAdmin(ModelAdmin):
 
 
 @admin.register(Child)
-class ChildAdmin(ModelAdmin):
+class ChildAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('name_link', 'parent', 'age', 'grade', 'reading_difficulty_level', 'created_at')
     list_filter = ('grade', 'reading_difficulty_level', 'age')
     search_fields = ('name', 'parent__user__username')

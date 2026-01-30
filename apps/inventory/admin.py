@@ -1,5 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
+from apps.core.admin_mixins import AdminPaginationMixin
 from .models import PhysicalCopy, InventoryLog
 
 
@@ -15,7 +16,7 @@ class InventoryLogInline(TabularInline):
 
 
 @admin.register(PhysicalCopy)
-class PhysicalCopyAdmin(ModelAdmin):
+class PhysicalCopyAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('barcode_link', 'book', 'status', 'purchased_date', 'updated_at')
     list_filter = ('status', 'purchased_date')
     search_fields = ('barcode', 'book__title')
@@ -24,37 +25,6 @@ class PhysicalCopyAdmin(ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
     inlines = [InventoryLogInline]
     actions = ['mark_as_damaged', 'mark_as_lost', 'mark_as_available']
-    
-    # Enhanced change list template - same as all other tables
-    change_list_template = 'admin/catalog/enhanced_book_clean.html'
-
-    def changelist_view(self, request, extra_context=None):
-        # Store per_page parameter before modifying GET
-        original_get = request.GET
-        per_page_value = original_get.get('per_page')
-        
-        # Remove per_page from GET to avoid Django treating it as filter
-        cleaned = original_get.copy()
-        if 'per_page' in cleaned:
-            del cleaned['per_page']
-        
-        request.GET = cleaned
-        
-        try:
-            response = super().changelist_view(request, extra_context=extra_context)
-            # Apply per_page to the ChangeList and re-fetch results
-            if hasattr(response, 'context_data') and 'cl' in response.context_data:
-                cl = response.context_data['cl']
-                allowed = {"5": 5, "10": 10, "25": 25, "50": 50}
-                if per_page_value in allowed:
-                    cl.list_per_page = allowed[per_page_value]
-                    cl.get_results(request)
-                    response.context_data['per_page'] = str(cl.list_per_page)
-                else:
-                    response.context_data['per_page'] = str(self.list_per_page)
-            return response
-        finally:
-            request.GET = original_get
 
     def barcode_link(self, obj):
         from django.urls import reverse
@@ -135,7 +105,7 @@ class PhysicalCopyAdmin(ModelAdmin):
 
 
 @admin.register(InventoryLog)
-class InventoryLogAdmin(ModelAdmin):
+class InventoryLogAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('physical_copy_display', 'barcode', 'action', 'performed_by', 'timestamp', 'notes')
     list_filter = ('action', 'timestamp', 'performed_by')
     search_fields = (
@@ -162,51 +132,6 @@ class InventoryLogAdmin(ModelAdmin):
     
     # Enhanced change list template - same as all other tables
     change_list_template = 'admin/catalog/enhanced_book_clean.html'
-
-    def changelist_view(self, request, extra_context=None):
-        # Store per_page parameter before modifying GET
-        original_get = request.GET
-        per_page_value = original_get.get('per_page')
-        
-        # Remove per_page from GET to avoid Django treating it as filter
-        cleaned = original_get.copy()
-        if 'per_page' in cleaned:
-            del cleaned['per_page']
-        
-        request.GET = cleaned
-        
-        try:
-            response = super().changelist_view(request, extra_context=extra_context)
-            # Apply per_page to the ChangeList and re-fetch results
-            if hasattr(response, 'context_data') and 'cl' in response.context_data:
-                cl = response.context_data['cl']
-                allowed = {"5": 5, "10": 10, "25": 25, "50": 50}
-                if per_page_value in allowed:
-                    cl.list_per_page = allowed[per_page_value]
-                    cl.get_results(request)
-                    response.context_data['per_page'] = str(cl.list_per_page)
-                else:
-                    response.context_data['per_page'] = str(self.list_per_page)
-            return response
-        finally:
-            request.GET = original_get
-
-    def physical_copy_link(self, obj):
-        from django.urls import reverse
-        from django.utils.html import format_html
-        url = reverse('admin:inventory_inventorylog_change', args=[obj.pk])
-        return format_html(
-            '<a href="{}" style="color: #4b5563 !important; font-weight: 600; font-size: 14px;">{}</a>',
-            url,
-            str(obj.physical_copy.book.title)
-        )
-    physical_copy_link.short_description = 'Physical Copy'
-    physical_copy_link.admin_order_field = 'physical_copy__book__title'
-
-    def get_barcode(self, obj):
-        return obj.physical_copy.barcode
-    get_barcode.short_description = 'Bar-Code'
-    get_barcode.admin_order_field = 'physical_copy__barcode'
 
     def has_delete_permission(self, request, obj=None):
         # Inventory logs should not be deleted (audit trail)

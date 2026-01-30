@@ -1,5 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
+from apps.core.admin_mixins import AdminPaginationMixin
 from .models import SubscriptionPlan, Order, SubscriptionCycle, OrderItem
 from services.email_service import (
     send_order_confirmation_email,
@@ -10,7 +11,7 @@ from services.email_service import (
 
 
 @admin.register(SubscriptionPlan)
-class SubscriptionPlanAdmin(ModelAdmin):
+class SubscriptionPlanAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('plan_name_link', 'books_per_month', 'price_per_month', 'age_group_min', 'age_group_max', 'is_active')
     list_filter = ('is_active', 'age_group_min')
     search_fields = ('name', 'description')
@@ -41,7 +42,7 @@ class OrderItemInline(TabularInline):
 
 
 @admin.register(Order)
-class OrderAdmin(ModelAdmin):
+class OrderAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('order_id_link', 'get_parent_name', 'get_phone_number', 'order_type', 'status', 'total_amount', 'tracking_number', 'created_at')
     list_editable = ('status', 'tracking_number')
     list_filter = ('order_type', 'status', 'payment_method', 'created_at')
@@ -250,7 +251,7 @@ class OrderAdmin(ModelAdmin):
 
 
 @admin.register(SubscriptionCycle)
-class SubscriptionCycleAdmin(ModelAdmin):
+class SubscriptionCycleAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('child_name_link', 'plan', 'issue_date', 'expected_return_date', 'status', 'late_fee')
     list_filter = ('status', 'issue_date')
     search_fields = ('child__name', 'parent__user__username')

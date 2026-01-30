@@ -1,10 +1,11 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
+from apps.core.admin_mixins import AdminPaginationMixin
 from .models import Complaint
 
 
 @admin.register(Complaint)
-class ComplaintAdmin(ModelAdmin):
+class ComplaintAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ['subject_link', 'parent', 'category', 'status', 'created_at']
     list_filter = ['status', 'category', 'created_at']
     search_fields = ['subject', 'description', 'parent__user__username', 'order__id']
