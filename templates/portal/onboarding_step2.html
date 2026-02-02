@@ -1,7 +1,9 @@
 <!-- Save form data to local storage -->
 <script>
     function saveFormData() {
-        const formData = new FormData(document.querySelector('form'));
+        const form = document.querySelector('form');
+        if (!form) return;
+        const formData = new FormData(form);
         const data = {};
         formData.forEach((value, key) => {
             data[key] = value;
@@ -17,22 +19,28 @@
 
             // Restore form fields
             Object.keys(data).forEach(key => {
-                const input = document.querySelector(`[name="${key}"]`);
-                if (input) {
-                    input.value = data[key];
-                }
+                const inputs = document.querySelectorAll(`[name="${key}"]`);
+                inputs.forEach(input => {
+                    if (input.type === 'radio' || input.type === 'checkbox') {
+                        if (input.value === data[key]) {
+                            input.checked = true;
+                        }
+                    } else {
+                        input.value = data[key];
+                    }
+                });
             });
         }
     }
 
+    // Run immediately when swapped by HTMX
+    loadFormData();
+
     // Auto-save form data
-    document.querySelectorAll('input, select').forEach(input => {
+    document.querySelectorAll('input, select, textarea').forEach(input => {
         input.addEventListener('input', saveFormData);
         input.addEventListener('change', saveFormData);
     });
-
-    // Load saved data on page load
-    document.addEventListener('DOMContentLoaded', loadFormData);
 
     // Update progress bar for step 2
     document.getElementById('progress-bar').innerHTML = `

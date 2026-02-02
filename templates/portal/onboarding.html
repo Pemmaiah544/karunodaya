@@ -15,7 +15,9 @@
 <script>
     // Save form data to local storage
     function saveFormData() {
-        const formData = new FormData(document.querySelector('form'));
+        const form = document.querySelector('form');
+        if (!form) return;
+        const formData = new FormData(form);
         const data = {};
         formData.forEach((value, key) => {
             data[key] = value;
@@ -31,10 +33,16 @@
 
             // Restore form fields
             Object.keys(data).forEach(key => {
-                const input = document.querySelector(`[name="${key}"]`);
-                if (input) {
-                    input.value = data[key];
-                }
+                const inputs = document.querySelectorAll(`[name="${key}"]`);
+                inputs.forEach(input => {
+                    if (input.type === 'radio' || input.type === 'checkbox') {
+                        if (input.value === data[key]) {
+                            input.checked = true;
+                        }
+                    } else {
+                        input.value = data[key];
+                    }
+                });
             });
         }
     }
@@ -47,13 +55,19 @@
         localStorage.removeItem('onboarding_plan_type');
     }
 
-    // Auto-save form data
-    document.querySelectorAll('input').forEach(input => {
-        input.addEventListener('input', saveFormData);
-    });
+    // Initial load
+    document.addEventListener('DOMContentLoaded', () => {
+        loadFormData();
 
-    // Load saved data on page load
-    document.addEventListener('DOMContentLoaded', loadFormData);
+        // Auto-save form data on any input change
+        const form = document.querySelector('form');
+        if (form) {
+            form.querySelectorAll('input, textarea, select').forEach(input => {
+                input.addEventListener('input', saveFormData);
+                input.addEventListener('change', saveFormData);
+            });
+        }
+    });
 </script>
 
 <div class="container mx-auto px-4 py-8">
