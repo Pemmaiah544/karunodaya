@@ -81,29 +81,29 @@ class OnboardingView(LoginRequiredMixin, TemplateView):
 def onboarding_step2(request):
     """HTMX handler for step 2 - parent info."""
     if request.method == 'POST':
-        # Update user names
-        first_name = request.POST.get('first_name', '')
-        last_name = request.POST.get('last_name', '')
+        # Update user names (capitalize first letter of each word)
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
         
         user = request.user
-        user.first_name = first_name
-        user.last_name = last_name
+        user.first_name = first_name.title() if first_name else ''
+        user.last_name = last_name.title() if last_name else ''
         user.save()
 
-        # Create or update parent profile
+        # Create or update parent profile (capitalize city and state)
         phone_number = request.POST.get('phone_number', '')
-        address = request.POST.get('address', '')
-        city = request.POST.get('city', '')
-        state = request.POST.get('state', '')
+        address = request.POST.get('address', '').strip()
+        city = request.POST.get('city', '').strip()
+        state = request.POST.get('state', '').strip()
         pincode = request.POST.get('pincode', '')
 
         parent_profile, created = ParentProfile.objects.update_or_create(
             user=user,
             defaults={
                 'phone_number': phone_number,
-                'address': address,
-                'city': city,
-                'state': state,
+                'address': address.title() if address else '',
+                'city': city.title() if city else '',
+                'state': state.title() if state else '',
                 'pincode': pincode,
             }
         )
@@ -129,11 +129,11 @@ def onboarding_step3(request):
         reading_level = request.POST.get('reading_level', '')
         dob = request.POST.get('date_of_birth', None)
 
-        # Only create child if at least name is provided
+        # Only create child if at least name is provided (capitalize name)
         if name:
             child = Child.objects.create(
                 parent=parent_profile,
-                name=name,
+                name=name.title(),
                 age=int(age) if age else None,
                 grade=grade if grade else None,
                 reading_difficulty_level=reading_level if reading_level else None,
@@ -448,6 +448,55 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         return context
 
 
+@login_required
+def update_profile_name(request):
+    """Update user's first and last name."""
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        
+        # Validate first name (required)
+        if not first_name or len(first_name) < 2 or len(first_name) > 50:
+            messages.error(request, 'First name must be between 2 and 50 characters.')
+            return redirect('portal:profile')
+        
+        # Check if first name contains at least one letter
+        if not any(c.isalpha() for c in first_name):
+            messages.error(request, 'First name must contain at least one letter.')
+            return redirect('portal:profile')
+        
+        # Check if first name contains only letters and spaces
+        if not all(c.isalpha() or c.isspace() for c in first_name):
+            messages.error(request, 'First name can only contain letters and spaces.')
+            return redirect('portal:profile')
+        
+        # Validate last name (optional, but if provided must be valid)
+        if last_name:
+            if len(last_name) < 2 or len(last_name) > 50:
+                messages.error(request, 'Last name must be between 2 and 50 characters.')
+                return redirect('portal:profile')
+            
+            if not any(c.isalpha() for c in last_name):
+                messages.error(request, 'Last name must contain at least one letter.')
+                return redirect('portal:profile')
+            
+            if not all(c.isalpha() or c.isspace() for c in last_name):
+                messages.error(request, 'Last name can only contain letters and spaces.')
+                return redirect('portal:profile')
+        
+        # Update user's name (capitalize first letter of each word)
+        user = request.user
+        user.first_name = first_name.title()
+        user.last_name = last_name.title() if last_name else ''
+        user.save()
+        
+        messages.success(request, 'Your name has been updated successfully!')
+        return redirect('portal:profile')
+    
+    return redirect('portal:profile')
+
+
+
 class AddChildView(LoginRequiredMixin, TemplateView):
     """Add child profile view."""
     template_name = 'portal/add_child.html'
@@ -492,8 +541,10 @@ class EditChildView(LoginRequiredMixin, DetailView):
     def post(self, request, child_id):
         child = self.get_object()
 
-        # Update child
-        child.name = request.POST.get('name')
+        # Update child (capitalize name)
+        child.name = request.POST.get('name', '').strip().title()
+        interests = request.POST.get('interests', '').strip()
+        child.interests = interests.title() if interests else ''
         child.age = request.POST.get('age')
         child.grade = request.POST.get('grade')
         child.reading_difficulty_level = request.POST.get('reading_level')

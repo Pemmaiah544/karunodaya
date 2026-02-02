@@ -1,11 +1,12 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
-from django.core.validators import RegexValidator, EmailValidator
+from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
 import re
 from .models import Complaint
 from apps.orders.models import Order
+from apps.core.validators import StrictEmailValidator
 
 
 class ComplaintForm(forms.ModelForm):
@@ -62,11 +63,13 @@ class RegisterForm(forms.Form):
         })
     )
     email = forms.EmailField(
-        validators=[EmailValidator(message="Please enter a valid email address")],
+        required=False,
+        validators=[StrictEmailValidator()],
         widget=forms.EmailInput(attrs={
-            'placeholder': 'Enter your email address',
+            'placeholder': 'Enter your email address (optional)',
             'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none',
-            'required': True
+            'pattern': r'^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$',
+            'title': 'Enter a valid email address (e.g., user@example.com)',
         })
     )
     password = forms.CharField(
@@ -91,10 +94,13 @@ class RegisterForm(forms.Form):
         return mobile_number
 
     def clean_email(self):
-        email = self.cleaned_data.get('email').lower()
-        if User.objects.filter(email=email).exists():
-            raise ValidationError("This email address is already registered")
-        return email
+        email = self.cleaned_data.get('email')
+        if email:  # Only validate if email is provided
+            email = email.lower()
+            if User.objects.filter(email=email).exists():
+                raise ValidationError("This email address is already registered")
+            return email
+        return ''  # Return empty string if no email provided
 
     def clean_password(self):
         password = self.cleaned_data.get('password')

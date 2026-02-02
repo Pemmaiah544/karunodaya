@@ -114,6 +114,20 @@ def add(value, arg):
         return value
 
 @register.filter
+def selected_if(value, arg):
+    """Returns 'selected' if value matches arg, else empty string."""
+    if str(value) == str(arg):
+        return 'selected'
+    return ''
+
+@register.filter
+def active_if(value, arg):
+    """Returns 'active' if value matches arg, else empty string."""
+    if str(value) == str(arg):
+        return 'active'
+    return ''
+
+@register.filter
 def has_permission(user, permission):
     """Check if user has a specific permission"""
     if not permission:
