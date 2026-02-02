@@ -3,6 +3,7 @@ from apps.profiles.models import ParentProfile
 from apps.orders.models import Order
 
 
+
 class Complaint(models.Model):
     """
     Model for logging issues and complaints by parents.

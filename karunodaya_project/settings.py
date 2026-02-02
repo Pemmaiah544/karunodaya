@@ -28,7 +28,17 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-k24g%xcakvhqbyzv3q*vj
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+# Allow all hosts in development for tunnel access
+ALLOWED_HOSTS = ['*']
+
+# Trust all origins in development for tunnel/mobile access
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.github.dev',
+    'https://*.ngrok-free.app',
+    'https://*.trycloudflare.com',
+    'https://*.app.github.dev',
+    'http://*.127.0.0.1',
+]
 
 
 # Application definition

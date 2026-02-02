@@ -7,6 +7,8 @@ import re
 from .models import Complaint
 from apps.orders.models import Order
 from apps.core.validators import StrictEmailValidator
+from django.contrib.auth.forms import PasswordResetForm
+
 
 
 class ComplaintForm(forms.ModelForm):
@@ -145,3 +147,16 @@ class PortalAuthenticationForm(AuthenticationForm):
             'required': True
         })
     )
+
+
+class UniqueEmailPasswordResetForm(PasswordResetForm):
+    """
+    Subclass of PasswordResetForm that only sends ONE email 
+    even if multiple users share the same email address.
+    """
+    def get_users(self, email):
+        active_users = super().get_users(email)
+        # Only return the first user to prevent multiple emails for the same address
+        users = list(active_users)
+        return users[:1]
+

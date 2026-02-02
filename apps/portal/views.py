@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, ListView, DetailView
 from django.contrib.auth.models import User
 from django.contrib.auth import login
+from django.contrib.auth.views import PasswordResetView
 from django.http import HttpResponse
 from django.db.models import Q
 
@@ -17,6 +18,38 @@ from django.template.loader import render_to_string
 from .forms import ComplaintForm, RegisterForm
 from .models import Complaint
 from services.curation import get_curated_books
+
+
+class CustomPasswordResetView(PasswordResetView):
+    """
+    Custom PasswordResetView that generates password reset links 
+    using the request's actual domain and protocol (HTTP/HTTPS).
+    This ensures password reset links work correctly with dev tunnels.
+    """
+    template_name = 'registration/password_reset.html'
+    email_template_name = 'registration/password_reset_email.txt'
+    html_email_template_name = 'registration/password_reset_email.html'
+    subject_template_name = 'registration/password_reset_subject.txt'
+    success_url_name = 'portal:password_reset_done'
+    
+    def get_email_context(self, **kwargs):
+        """
+        Override to add protocol and domain from request.
+        """
+        context = super().get_email_context(**kwargs)
+        
+        # Use request's domain and protocol
+        request = kwargs.get('request')
+        if request:
+            # Get protocol (http or https)
+            protocol = 'https' if request.is_secure() else 'http'
+            # Get domain from request (works with dev tunnels)
+            domain = request.get_host()
+            
+            context['protocol'] = protocol
+            context['domain'] = domain
+        
+        return context
 
 
 class HomeView(TemplateView):
