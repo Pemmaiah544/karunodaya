@@ -1,0 +1,4 @@
+*.html
+**/*.html
+templates/**/*.html
+karunodaya/templates/**/*.html

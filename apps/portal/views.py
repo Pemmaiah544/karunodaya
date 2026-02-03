@@ -296,13 +296,53 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         parent_profile = self.request.user.parent_profile
         
         context['parent_profile'] = parent_profile
-        context['children'] = parent_profile.children.all()
+        
+        # Get children with subscription info
+        children = parent_profile.children.all()
+        
+        # For each child, check if they have an active subscription
+        children_with_info = []
+        for child in children:
+            has_active_sub = SubscriptionCycle.objects.filter(
+                child=child,
+                status__in=['ACTIVE', 'OVERDUE']
+            ).exists()
+            
+            children_with_info.append({
+                'child': child,
+                'can_subscribe': not has_active_sub  # Can only subscribe if no active subscription
+            })
+        
+        context['children'] = children
+        context['children_with_info'] = children_with_info
 
         # Get active subscriptions
-        context['active_subscriptions'] = SubscriptionCycle.objects.filter(
+        active_subscriptions = SubscriptionCycle.objects.filter(
             parent=parent_profile,
             status__in=['ACTIVE', 'OVERDUE']
         ).select_related('child', 'plan').prefetch_related('physical_copies__book')
+        
+        context['active_subscriptions'] = active_subscriptions
+
+        # Summary grouped by child
+        child_summary = {}
+        for cycle in active_subscriptions:
+            child_name = cycle.child.name
+            if child_name not in child_summary:
+                child_summary[child_name] = 0
+            child_summary[child_name] += 1
+        
+        context['child_subscriptions_summary'] = [
+            {'name': name, 'count': count} for name, count in child_summary.items()
+        ]
+
+        # Calculate total books count across all active subscriptions
+        # Use actual books_count if available, otherwise use plan's books_per_month
+        total_books = sum(
+            cycle.books_count if cycle.books_count > 0 else cycle.plan.books_per_month 
+            for cycle in active_subscriptions
+        )
+        context['total_books_count'] = total_books
 
         # Get borrowed books (from active subscriptions)
         borrowed_books = []
@@ -639,16 +679,49 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
         if child_id:
             child = get_object_or_404(Child, id=child_id, parent__user=self.request.user)
             context['child'] = child
+            
+            # Get active subscription for this child
+            active_subscription = SubscriptionCycle.objects.filter(
+                child=child,
+                status__in=['ACTIVE', 'OVERDUE']
+            ).select_related('plan').first()
+            
+            context['active_subscription'] = active_subscription
+            
+            # If child already has an active subscription, redirect to dashboard
+            if active_subscription:
+                from django.contrib import messages
+                messages.warning(self.request, f'{child.name} already has an active subscription. Each child can only have one subscription at a time.')
+                return context
 
         context['children'] = Child.objects.filter(parent__user=self.request.user)
-        context['subscription_plans'] = SubscriptionPlan.objects.filter(is_active=True)
+        
+        # Filter plans to only show those matching child's reading level
+        all_plans = SubscriptionPlan.objects.filter(is_active=True)
+        
+        if child_id and child:
+            # Map reading levels to plan names
+            level_to_plan = {
+                'BEGINNER': 'Little Readers',
+                'INTERMEDIATE': 'Young Explorers',
+                'ADVANCED': 'Advanced Readers'
+            }
+            
+            matching_plan_name = level_to_plan.get(child.reading_difficulty_level)
+            if matching_plan_name:
+                context['subscription_plans'] = all_plans.filter(name=matching_plan_name)
+            else:
+                context['subscription_plans'] = all_plans
+        else:
+            context['subscription_plans'] = all_plans
+        
         return context
 
     def post(self, request, child_id=None):
         """Create subscription order and redirect to payment."""
         plan_id = request.POST.get('plan_id')
         child_id = request.POST.get('child_id', child_id)
-        payment_method = request.POST.get('payment_method', 'ONLINE')  # Get payment method
+        payment_method = request.POST.get('payment_method', 'ONLINE')
 
         if not plan_id or not child_id:
             return render(request, self.template_name, {
@@ -660,6 +733,38 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
         parent_profile = request.user.parent_profile
         plan = get_object_or_404(SubscriptionPlan, id=plan_id, is_active=True)
         child = get_object_or_404(Child, id=child_id, parent=parent_profile)
+
+        # Check for existing active subscription
+        existing_subscription = SubscriptionCycle.objects.filter(
+            child=child,
+            status__in=['ACTIVE', 'OVERDUE']
+        ).select_related('plan').first()
+
+        if existing_subscription:
+            return render(request, self.template_name, {
+                'error': f'{child.name} already has an active subscription ({existing_subscription.plan.name}). Each child can only have one subscription at a time. Please wait until it expires or contact support.',
+                'child': child,
+                'children': Child.objects.filter(parent__user=request.user),
+                'subscription_plans': SubscriptionPlan.objects.filter(is_active=True),
+                'active_subscription': existing_subscription
+            })
+        
+        # Validate that the plan matches the child's reading level
+        level_to_plan = {
+            'BEGINNER': 'Little Readers',
+            'INTERMEDIATE': 'Young Explorers',
+            'ADVANCED': 'Advanced Readers'
+        }
+        
+        expected_plan_name = level_to_plan.get(child.reading_difficulty_level)
+        
+        if expected_plan_name and plan.name != expected_plan_name:
+            return render(request, self.template_name, {
+                'error': f'This plan is not suitable for {child.name}\'s reading level ({child.get_reading_difficulty_level_display()}). Please purchase individual books from the marketplace instead.',
+                'child': child,
+                'children': Child.objects.filter(parent__user=request.user),
+                'subscription_plans': SubscriptionPlan.objects.filter(is_active=True)
+            })
 
         # Create subscription order with payment method
         order = Order.objects.create(
