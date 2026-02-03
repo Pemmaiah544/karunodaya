@@ -98,109 +98,99 @@
         </div>
     </div>
 
-    <!-- Borrowed Books Section -->
-    {% if borrowed_books %}
-    <div class="mb-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Currently Borrowed</h2>
-            <a href="{% url 'portal:my_books' %}" class="text-orange-600 hover:text-orange-700 font-medium text-sm">
-                View All →
-            </a>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {% for item in borrowed_books %}
-            <div
-                class="flex flex-col bg-white rounded-lg border border-gray-100 transition-all duration-200 overflow-hidden h-full">
-                <!-- Book Cover -->
-                <div class="aspect-[2/3] bg-gradient-to-br from-orange-50 to-orange-100 relative">
-                    {% if item.book.cover_image %}
-                    <img src="{{ item.book.cover_image.url }}" alt="{{ item.book.title }}"
-                        class="w-full h-full object-cover">
-                    {% else %}
-                    <div class="w-full h-full flex items-center justify-center">
-                        <svg class="w-12 h-12 text-orange-300" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-                        </svg>
-                    </div>
-                    {% endif %}
-
-                    <!-- Overdue Badge -->
-                    {% if item.is_overdue %}
-                    <div
-                        class="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">
-                        OVERDUE
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- Book Info -->
-                <div class="p-3 flex flex-col flex-1">
-                    <h4 class="font-bold text-xs text-gray-900 line-clamp-2 mb-1 h-8">{{ item.book.title }}</h4>
-                    <p class="text-[10px] text-gray-600 mb-2">{{ item.book.author }}</p>
-
-                    <!-- Child & Due Date -->
-                    <div class="mt-auto flex items-center justify-between text-[10px] pt-2 border-t border-gray-50">
-                        <span class="text-orange-600 font-bold uppercase tracking-tight">{{ item.child.name }}</span>
-                        <span class="text-gray-500 font-medium">Due: {{ item.due_date|date:"M d" }}</span>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
     <!-- Active Subscriptions -->
     {% if active_subscriptions %}
-    <div class="mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Active Subscriptions</h2>
+    <div class="mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Active Subscriptions</h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {% for cycle in active_subscriptions %}
-            <div
-                class="bg-white rounded-lg shadow-md p-6 border-l-4 {% if cycle.is_overdue %}border-red-500{% else %}border-green-500{% endif %}">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h3 class="font-bold text-lg text-gray-900">{{ cycle.child.name }}</h3>
-                        <p class="text-sm text-gray-600">{{ cycle.plan.name }}</p>
-                    </div>
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full
-                        {% if cycle.status == 'ACTIVE' %}bg-green-100 text-green-800
-                        {% elif cycle.status == 'OVERDUE' %}bg-red-100 text-red-800
-                        {% else %}bg-gray-100 text-gray-800{% endif %}">
-                        {{ cycle.get_status_display }}
+            <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6 relative">
+                <!-- Top Section -->
+                <div class="flex justify-between items-center mb-1">
+                    <h3 class="text-xl font-bold text-gray-900">{{ cycle.child.name }}</h3>
+                    <span class="px-3 py-1 text-[10px] font-bold rounded-md bg-green-100 text-green-500 tracking-wider">
+                        {{ cycle.get_status_display|upper }}
                     </span>
                 </div>
 
-                <div class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Books borrowed:</span>
-                        <span class="font-medium">{{ cycle.books_count }}</span>
+                <p class="text-sm font-bold text-orange-400 mb-4">{{ cycle.plan.name }}</p>
+
+                <div class="border-t border-gray-100 my-4"></div>
+
+                <!-- Info Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-2 font-mono">Books
+                            Borrowed</p>
+                        <p class="text-3xl font-bold text-gray-900 leading-none">
+                            {{ cycle.books_count }}
+                        </p>
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Due date:</span>
-                        <span class="font-medium {% if cycle.is_overdue %}text-red-600{% endif %}">
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-2 font-mono">Due Date
+                        </p>
+                        <p class="text-2xl font-bold text-gray-900 leading-none">
                             {{ cycle.expected_return_date|date:"M d, Y" }}
-                        </span>
+                        </p>
                     </div>
-                    {% if cycle.late_fee > 0 %}
-                    <div class="flex justify-between text-red-600">
-                        <span class="font-medium">Late fee:</span>
-                        <span class="font-bold">₹{{ cycle.late_fee }}</span>
-                    </div>
-                    {% endif %}
                 </div>
 
+                <!-- Manage Button -->
                 <a href="{% url 'portal:my_books' %}"
-                    class="mt-4 block text-center bg-orange-50 hover:bg-orange-100 text-orange-600 py-2 rounded-lg font-medium text-sm transition-colors duration-200">
+                    class="block w-full text-center bg-[#fff8f3] hover:bg-[#fff0e6] text-orange-500 py-4 rounded-2xl font-bold text-sm transition-all duration-200">
                     Manage Books
                 </a>
             </div>
             {% endfor %}
         </div>
     </div>
+    {% endif %}
+
+    <!-- Recommended for You -->
+    {% if recommended_books %}
+    <div class="mt-8 mb-6">
+        <div class="flex justify-between items-center mb-4 px-1">
+            <h2 class="text-xl font-bold text-gray-900">Recommended for You</h2>
+            <a href="{% url 'portal:marketplace' %}" class="text-orange-500 hover:text-orange-600 font-medium text-sm">
+                See All
+            </a>
+        </div>
+
+        <div class="flex overflow-x-auto pb-4 gap-4 hide-scrollbar -mx-4 px-4 scroll-smooth">
+            {% for book in recommended_books %}
+            <a href="{% url 'portal:book_detail' book.id %}" class="flex-none w-40 group">
+                <div
+                    class="bg-gray-100 rounded-2xl p-3 mb-2 aspect-[3/4] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shadow-sm border border-gray-50">
+                    {% if book.cover_image %}
+                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }}"
+                        class="w-full h-full object-contain rounded-sm shadow-md">
+                    {% else %}
+                    <div class="w-full h-full flex items-center justify-center bg-gray-200 rounded-sm">
+                        <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                        </svg>
+                    </div>
+                    {% endif %}
+                </div>
+                <h3 class="font-bold text-sm text-gray-900 truncate px-1">{{ book.title }}</h3>
+                <p class="text-xs text-gray-500 truncate px-1">{{ book.author }}</p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
     {% endif %}
 </div>
 {% endblock %}

@@ -5,8 +5,9 @@ from django.views.generic import TemplateView, ListView, DetailView
 from django.contrib.auth.models import User
 from django.contrib.auth import login
 from django.contrib.auth.views import PasswordResetView
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.db.models import Q
+import re
 
 from apps.profiles.models import ParentProfile, Child
 from apps.catalog.models import Book
@@ -87,6 +88,13 @@ class RegisterView(TemplateView):
         return render(request, self.template_name, {'form': form})
 
 
+def check_mobile_exists(request):
+    """Check if mobile number is already registered."""
+    mobile = request.GET.get('mobile', '')
+    exists = User.objects.filter(username=mobile).exists()
+    return JsonResponse({'exists': exists})
+
+
 class OnboardingView(LoginRequiredMixin, TemplateView):
     """Multi-step onboarding with HTMX."""
     template_name = 'portal/onboarding.html'
@@ -118,6 +126,11 @@ def onboarding_step2(request):
         first_name = request.POST.get('first_name', '').strip()
         last_name = request.POST.get('last_name', '').strip()
         
+        if len(first_name) > 15:
+            return HttpResponse('First name cannot exceed 15 characters', status=400)
+        if last_name and len(last_name) > 15:
+            return HttpResponse('Last name cannot exceed 15 characters', status=400)
+
         user = request.user
         user.first_name = first_name.title() if first_name else ''
         user.last_name = last_name.title() if last_name else ''
@@ -129,6 +142,9 @@ def onboarding_step2(request):
         city = request.POST.get('city', '').strip()
         state = request.POST.get('state', '').strip()
         pincode = request.POST.get('pincode', '')
+
+        if address and not re.search(r'[a-zA-Z]', address):
+            return HttpResponse('Address must contain at least one letter', status=400)
 
         parent_profile, created = ParentProfile.objects.update_or_create(
             user=user,
@@ -164,6 +180,12 @@ def onboarding_step3(request):
 
         # Only create child if at least name is provided (capitalize name)
         if name:
+            if len(name) > 15:
+                # For HTMX request, we might want to return an error, but let's keep it simple for now
+                # and just truncate or redirect with error. Since it's a POST, let's redirect with message.
+                messages.error(request, 'Child name cannot exceed 15 characters')
+                return redirect('portal:onboarding')
+
             child = Child.objects.create(
                 parent=parent_profile,
                 name=name.title(),
@@ -299,6 +321,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['recent_orders'] = Order.objects.filter(
             parent=parent_profile
         ).order_by('-created_at')[:5]
+
+        # Get recommended books
+        context['recommended_books'] = Book.objects.filter(is_active=True).order_by('-created_at')[:10]
 
         return context
 
@@ -489,8 +514,8 @@ def update_profile_name(request):
         last_name = request.POST.get('last_name', '').strip()
         
         # Validate first name (required)
-        if not first_name or len(first_name) < 2 or len(first_name) > 50:
-            messages.error(request, 'First name must be between 2 and 50 characters.')
+        if not first_name or len(first_name) < 2 or len(first_name) > 15:
+            messages.error(request, 'First name must be between 2 and 15 characters.')
             return redirect('portal:profile')
         
         # Check if first name contains at least one letter
@@ -505,8 +530,8 @@ def update_profile_name(request):
         
         # Validate last name (optional, but if provided must be valid)
         if last_name:
-            if len(last_name) < 2 or len(last_name) > 50:
-                messages.error(request, 'Last name must be between 2 and 50 characters.')
+            if len(last_name) < 2 or len(last_name) > 15:
+                messages.error(request, 'Last name must be between 2 and 15 characters.')
                 return redirect('portal:profile')
             
             if not any(c.isalpha() for c in last_name):
@@ -544,7 +569,12 @@ class AddChildView(LoginRequiredMixin, TemplateView):
             })
 
         # Create child
-        name = request.POST.get('name')
+        name = request.POST.get('name', '').strip()
+        if len(name) > 15:
+            return render(request, self.template_name, {
+                'error': 'Child name cannot exceed 15 characters'
+            })
+
         age = request.POST.get('age')
         grade = request.POST.get('grade')
         reading_level = request.POST.get('reading_level')
@@ -552,7 +582,7 @@ class AddChildView(LoginRequiredMixin, TemplateView):
 
         Child.objects.create(
             parent=parent_profile,
-            name=name,
+            name=name.title(),
             age=age,
             grade=grade,
             reading_difficulty_level=reading_level,
@@ -575,7 +605,14 @@ class EditChildView(LoginRequiredMixin, DetailView):
         child = self.get_object()
 
         # Update child (capitalize name)
-        child.name = request.POST.get('name', '').strip().title()
+        name = request.POST.get('name', '').strip()
+        if len(name) > 15:
+            return render(request, self.template_name, {
+                'error': 'Child name cannot exceed 15 characters',
+                'child': child
+            })
+        
+        child.name = name.title()
         interests = request.POST.get('interests', '').strip()
         child.interests = interests.title() if interests else ''
         child.age = request.POST.get('age')

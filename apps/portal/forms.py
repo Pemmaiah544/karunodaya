@@ -76,16 +76,19 @@ class RegisterForm(forms.Form):
     )
     password = forms.CharField(
         min_length=8,
+        max_length=12,
         widget=forms.PasswordInput(attrs={
             'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none',
-            'required': True
+            'required': True,
+            'maxlength': '12'
         })
     )
     password2 = forms.CharField(
         label="Confirm Password",
         widget=forms.PasswordInput(attrs={
             'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none',
-            'required': True
+            'required': True,
+            'maxlength': '12'
         })
     )
 
@@ -106,6 +109,8 @@ class RegisterForm(forms.Form):
 
     def clean_password(self):
         password = self.cleaned_data.get('password')
+        if len(password) > 12:
+            raise ValidationError("Password cannot exceed 12 characters")
         if not re.search(r'[A-Z]', password):
             raise ValidationError("Password must include at least one uppercase letter")
         if not re.search(r'[a-z]', password):

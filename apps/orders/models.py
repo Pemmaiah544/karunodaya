@@ -204,6 +204,14 @@ class SubscriptionCycle(models.Model):
         return False
 
     @property
+    def days_overdue(self):
+        """Calculate days overdue."""
+        from datetime import date
+        if self.status == 'ACTIVE' and date.today() > self.expected_return_date:
+            return (date.today() - self.expected_return_date).days
+        return 0
+
+    @property
     def books_count(self):
         """Number of books in this cycle."""
         return self.physical_copies.count()

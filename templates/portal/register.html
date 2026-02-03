@@ -51,7 +51,7 @@
                             {{ form.mobile_number }}
                         </div>
                         {% if form.mobile_number.errors %}
-                        <div class="text-red-600 text-xs mt-1.5 font-medium flex items-start gap-1">
+                        <div id="mobile-error" class="text-red-600 text-xs mt-1.5 font-medium flex items-start gap-1">
                             <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd"
                                     d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
@@ -69,7 +69,7 @@
                         <p class="text-[10px] text-gray-500 mt-1">If provided, must be a valid email (e.g.,
                             user@example.com)</p>
                         {% if form.email.errors %}
-                        <div class="text-red-600 text-xs mt-1.5 font-medium flex items-start gap-1">
+                        <div id="email-error" class="text-red-600 text-xs mt-1.5 font-medium flex items-start gap-1">
                             <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd"
                                     d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
@@ -98,18 +98,10 @@
                                 </svg>
                             </button>
                         </div>
-                        <p class="text-[10px] text-gray-500 mt-1">Min 8 chars, 1 uppercase, 1 lowercase, 1 digit, 1
-                            special char.</p>
-                        {% if form.password.errors %}
-                        <div class="text-red-600 text-xs mt-1.5 font-medium flex items-start gap-1">
-                            <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            <span>{{ form.password.errors.0 }}</span>
-                        </div>
-                        {% endif %}
+                        <p id="password-note"
+                            class="text-[10px] {% if form.password.errors %}text-red-600 font-bold{% else %}text-gray-500{% endif %} mt-1">
+                            Min 8 chars, max 12 chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char.
+                        </p>
                     </div>
 
                     <div>
@@ -128,15 +120,19 @@
                                 </svg>
                             </button>
                         </div>
-                        {% if form.password2.errors %}
-                        <div class="text-red-600 text-xs mt-1.5 font-medium flex items-start gap-1">
+                        <div id="password-match-error"
+                            class="hidden text-red-600 text-xs mt-1.5 font-medium flex items-start gap-1">
                             <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd"
                                     d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
                                     clip-rule="evenodd" />
                             </svg>
-                            <span>{{ form.password2.errors.0 }}</span>
+                            <span>Passwords do not match</span>
                         </div>
+                        {% if form.password2.errors %}
+                        <script>
+                            document.getElementById('id_password2').classList.add('border-red-500', 'ring-1', 'ring-red-200');
+                        </script>
                         {% endif %}
                     </div>
 
@@ -162,9 +158,32 @@
     <script>
         const form = document.getElementById('register-form');
         const mobileInput = form.querySelector('input[name="mobile_number"]');
+        const emailInput = form.querySelector('input[name="email"]');
+
+        const passwordInput = document.getElementById('id_password');
+        const password2Input = document.getElementById('id_password2');
+        const passwordNote = document.getElementById('password-note');
+
+        // Add error classes to password field if Django says there's an error
+        {% if form.password.errors %}
+        if (passwordInput) {
+            passwordInput.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+        }
+        {% endif %}
 
         if (mobileInput) {
             mobileInput.addEventListener('input', function (e) {
+                // Remove error message and border when user starts typing
+                const errorMsg = document.getElementById('mobile-error');
+                if (errorMsg) {
+                    errorMsg.classList.add('hidden');
+                }
+                const existsMsg = document.getElementById('mobile-exists-error');
+                if (existsMsg) {
+                    existsMsg.classList.add('hidden');
+                }
+                this.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+
                 // Ensure only numbers are entered
                 this.value = this.value.replace(/[^0-9]/g, '');
 
@@ -183,22 +202,124 @@
             });
         }
 
-        form.addEventListener('submit', function (e) {
-            const inputs = form.querySelectorAll('input[required]');
-            let hasEmpty = false;
+        if (passwordInput) {
+            passwordInput.addEventListener('input', function () {
+                this.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+                if (passwordNote) {
+                    passwordNote.classList.remove('text-red-600', 'font-bold');
+                    passwordNote.classList.add('text-gray-500');
+                }
+                const matchError = document.getElementById('password-match-error');
+                if (matchError) matchError.classList.add('hidden');
+            });
+        }
 
+        if (password2Input) {
+            password2Input.addEventListener('input', function () {
+                this.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+                const matchError = document.getElementById('password-match-error');
+                if (matchError) matchError.classList.add('hidden');
+            });
+        }
+
+        if (emailInput) {
+            emailInput.addEventListener('input', function () {
+                const errorMsg = document.getElementById('email-error');
+                if (errorMsg) {
+                    errorMsg.classList.add('hidden');
+                }
+                this.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+            });
+        }
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault(); // Pause submission to validate
+
+            const pass = passwordInput.value;
+            const pass2 = password2Input.value;
+            const mobile = mobileInput.value;
+            let hasError = false;
+
+            // Password Complexity Regex
+            const hasUpper = /[A-Z]/.test(pass);
+            const hasLower = /[a-z]/.test(pass);
+            const hasDigit = /\d/.test(pass);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(pass);
+            const lengthValid = pass.length >= 8 && pass.length <= 12;
+
+            // Reset error states
+            passwordInput.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+            password2Input.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+            mobileInput.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+
+            if (passwordNote) {
+                passwordNote.classList.remove('text-red-600', 'font-bold');
+                passwordNote.classList.add('text-gray-500');
+            }
+            const matchError = document.getElementById('password-match-error');
+            if (matchError) matchError.classList.add('hidden');
+
+            const mobileError = document.getElementById('mobile-error');
+            if (mobileError) mobileError.classList.add('hidden');
+
+            // Validate Complexity
+            if (!hasUpper || !hasLower || !hasDigit || !hasSpecial || !lengthValid) {
+                hasError = true;
+                passwordInput.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+                if (passwordNote) {
+                    passwordNote.classList.add('text-red-600', 'font-bold');
+                    passwordNote.classList.remove('text-gray-500');
+                }
+            }
+
+            // Validate Match
+            if (pass !== pass2) {
+                hasError = true;
+                password2Input.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+                if (matchError) matchError.classList.remove('hidden');
+            }
+
+            // Check if mobile exists (Server Check)
+            if (mobile.length === 10) {
+                try {
+                    const response = await fetch(`{% url "portal:check_mobile_exists" %}?mobile=${mobile}`);
+                    const data = await response.json();
+                    if (data.exists) {
+                        hasError = true;
+                        mobileInput.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+
+                        // Show/Create mobile error
+                        let existsMsg = document.getElementById('mobile-exists-error');
+                        if (!existsMsg) {
+                            existsMsg = document.createElement('div');
+                            existsMsg.id = 'mobile-exists-error';
+                            existsMsg.className = 'text-red-600 text-xs mt-1.5 font-medium flex items-start gap-1';
+                            existsMsg.innerHTML = `
+                                <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                <span>This mobile number is already registered</span>
+                            `;
+                            mobileInput.parentElement.parentElement.appendChild(existsMsg);
+                        } else {
+                            existsMsg.classList.remove('hidden');
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error checking mobile:", err);
+                }
+            }
+
+            const inputs = form.querySelectorAll('input[required]');
             inputs.forEach(input => {
                 if (!input.value.trim()) {
-                    hasEmpty = true;
+                    hasError = true;
                     input.classList.add('border-red-500', 'ring-1', 'ring-red-200');
-                } else {
-                    input.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
                 }
             });
 
-            if (hasEmpty) {
-                e.preventDefault();
-                // Errors will be shown inline by Django or browser validation
+            if (!hasError) {
+                form.submit();
             }
         });
     </script>

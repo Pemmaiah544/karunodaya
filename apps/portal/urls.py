@@ -14,6 +14,7 @@ urlpatterns = [
     ), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', views.RegisterView.as_view(), name='register'),
+    path('check-mobile/', views.check_mobile_exists, name='check_mobile_exists'),
     
     # Password Reset - Using custom view for dev tunnel support
     path('password-reset/', 

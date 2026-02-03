@@ -37,9 +37,9 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Child's Name *</label>
                 <input type="text" name="name" value="{{ child.name }}" required
-                    pattern="^(?=.*[A-Za-z])[A-Za-z\s]{2,50}$"
-                    title="Child's name must contain at least one letter (2-50 characters, letters and spaces only)"
-                    maxlength="50" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '');"
+                    pattern="^(?=.*[A-Za-z])[A-Za-z\s]{2,15}$"
+                    title="Child's name must contain at least one letter (2-15 characters, letters and spaces only)"
+                    maxlength="15" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '');"
                     class="capitalize-first w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
             </div>
 
