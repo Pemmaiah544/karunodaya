@@ -1,0 +1,208 @@
+{% extends "portal/base.html" %}
+{% load static %}
+
+{% block title %}Our Reading Plans - Karunodaya{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-4">
+        <!-- Standard Back Button at Top -->
+    <div class="mb-6">
+        <a href="{% url 'portal:dashboard' %}" 
+           class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-600 font-bold text-sm rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back
+        </a>
+    </div>
+    
+    <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-900 mb-1 uppercase tracking-tight">Our Reading Plans</h1>
+        <div class="w-12 h-1 bg-orange-500 mx-auto rounded-full"></div>
+        <p class="text-sm text-gray-500 mt-3">Choose the perfect journey for your child's growth</p>
+    </div>
+
+    <!-- Horizontal Carousel Container -->
+    <div class="plans-carousel-wrapper -mx-4 px-4 overflow-x-auto pb-16 hide-scrollbar snap-x snap-mandatory">
+        <div class="flex gap-4 min-w-max px-8 justify-center items-center h-[600px]">
+            {% for plan in all_subscription_plans %}
+            <div
+                class="plan-card snap-center flex-none w-[300px] bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-500 border border-gray-100 flex flex-col h-[540px] relative scale-90 opacity-60">
+
+                <!-- NEW TAG (Ribbon style) -->
+                <div
+                    class="absolute top-0 left-0 bg-yellow-400 text-white font-bold text-[10px] py-0.5 px-6 -rotate-45 -translate-x-5 translate-y-1.5 shadow-sm z-20">
+                    NEW
+                </div>
+
+                <!-- Plan Header (Same Color for All) -->
+                <div
+                    class="plan-header h-36 pt-4 flex flex-col items-center justify-center text-white relative bg-gradient-to-br from-orange-500 to-orange-600">
+                    <h2 class="text-2xl font-bold uppercase tracking-widest">{{ plan.name }}</h2>
+                    <div class="mt-1 flex items-baseline gap-1">
+                        <span class="text-xl font-bold">₹{{ plan.price_per_month|floatformat:0 }}</span>
+                        <span class="text-xs font-medium opacity-80">/Month</span>
+                    </div>
+                </div>
+
+                <!-- Features List -->
+                <div class="flex-1">
+                    <div class="divide-y divide-gray-50">
+                        <div class="flex items-center justify-between px-6 py-2.5 bg-gray-50/50">
+                            <span class="text-sm font-semibold text-gray-600">Hand-picked Books</span>
+                            <div class="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center">
+                                <span class="text-white text-[10px] font-bold">{{ plan.books_per_month }}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between px-6 py-2.5">
+                            <span class="text-sm font-semibold text-gray-600">Ages {{ plan.age_group_min }}-{{ plan.age_group_max }}</span>
+                            <div class="w-4 h-4 rounded-full bg-orange-500"></div>
+                        </div>
+                        <div class="flex items-center justify-between px-6 py-2.5 bg-gray-50/50">
+                            <span class="text-sm font-semibold text-gray-600">Free Doorstep Delivery</span>
+                            <div class="w-4 h-4 rounded-full bg-orange-500"></div>
+                        </div>
+                        <div class="flex items-center justify-between px-6 py-2.5">
+                            <span class="text-sm font-semibold text-gray-600">Monthly Book Exchange</span>
+                            <div class="w-4 h-4 rounded-full bg-orange-500"></div>
+                        </div>
+                        <div class="flex items-center justify-between px-6 py-2.5 bg-gray-50/50">
+                            <span class="text-sm font-semibold text-gray-600">Cancel Anytime</span>
+                            <div class="w-4 h-4 rounded-full bg-orange-500"></div>
+                        </div>
+                        <div class="flex items-center justify-between px-6 py-2.5">
+                            <span class="text-sm font-semibold text-gray-600">Digital Progress Reports</span>
+                            <div
+                                class="w-4 h-4 rounded-full {% if forloop.counter == 1 %}bg-gray-200{% else %}bg-orange-500{% endif %}">
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between px-6 py-2.5 bg-gray-50/50">
+                            <span class="text-sm font-semibold text-gray-600">Parental Consultation</span>
+                            <div
+                                class="w-4 h-4 rounded-full {% if forloop.counter < 3 %}bg-gray-200{% else %}bg-orange-500{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Purchase Button Area -->
+                <div class="p-4 bg-white border-t border-gray-50">
+                    <a href="{% url 'portal:subscribe' %}?plan={{ plan.id }}"
+                        class="block w-full text-center py-4 bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase tracking-widest text-xs rounded-lg transition-colors shadow-lg shadow-orange-100">
+                        PURCHASE
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+
+</div>
+
+<style>
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .plans-carousel-wrapper {
+        scroll-padding: 0 50%;
+    }
+
+    /* Fixed Card Transition */
+    .plan-card {
+        backface-visibility: hidden;
+        -webkit-font-smoothing: subpixel-antialiased;
+        will-change: transform, opacity;
+        transition: transform 0.3s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    /* Base state (Delarged) */
+    .plan-card {
+        transform: scale(0.9);
+        opacity: 0.5;
+        z-index: 1;
+    }
+
+    /* Active state (Enlarged) */
+    .plan-card.active {
+        transform: scale(1.1) !important;
+        opacity: 1 !important;
+        z-index: 10;
+        box-shadow: 0 25px 50px -12px rgba(234, 88, 12, 0.25);
+    }
+
+    /* Smooth entry animation */
+    .plan-card {
+        animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .plan-card:nth-child(1) {
+        animation-delay: 0.1s;
+    }
+
+    .plan-card:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .plan-card:nth-child(3) {
+        animation-delay: 0.3s;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(30px) scale(0.85);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0) scale(0.9);
+            opacity: 0.5;
+        }
+    }
+</style>
+
+<script>
+    const wrapper = document.querySelector('.plans-carousel-wrapper');
+    const cards = document.querySelectorAll('.plan-card');
+
+    function handleScroll() {
+        const wrapperCenter = wrapper.scrollLeft + (wrapper.offsetWidth / 2);
+
+        cards.forEach(card => {
+            const cardCenter = card.offsetLeft + (card.offsetWidth / 2);
+            const distance = Math.abs(wrapperCenter - cardCenter);
+
+            // If the card center is within 100px of the wrapper center, mark it as active
+            // This range can be adjusted for sensitivity
+            if (distance < 150) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        });
+    }
+
+    // High-performance scroll listener
+    wrapper.addEventListener('scroll', () => {
+        window.requestAnimationFrame(handleScroll);
+    });
+
+    window.addEventListener('load', () => {
+        // Center the middle card on load
+        const centerIdx = Math.floor(cards.length / 2);
+        const centerCard = cards[centerIdx];
+        if (centerCard) {
+            centerCard.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+            setTimeout(handleScroll, 50); // Initial check
+        }
+    });
+
+    window.addEventListener('resize', handleScroll);
+</script>
+{% endblock %}

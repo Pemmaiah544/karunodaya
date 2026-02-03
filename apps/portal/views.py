@@ -357,6 +357,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 })
         context['borrowed_books'] = borrowed_books
 
+        # Get active subscription plans for the modal
+        context['all_subscription_plans'] = SubscriptionPlan.objects.filter(is_active=True).order_by('price_per_month')
+
         # Get recent orders
         context['recent_orders'] = Order.objects.filter(
             parent=parent_profile
@@ -667,6 +670,16 @@ class EditChildView(LoginRequiredMixin, DetailView):
 # ===========================
 # Subscription Management
 # ===========================
+
+class PlansView(LoginRequiredMixin, TemplateView):
+    """View to display all available subscription plans in an appealing way."""
+    template_name = 'portal/plans.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['all_subscription_plans'] = SubscriptionPlan.objects.filter(is_active=True).order_by('price_per_month')
+        return context
+
 
 class SubscribeView(LoginRequiredMixin, TemplateView):
     """Subscribe to a plan for a child."""

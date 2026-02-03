@@ -67,6 +67,7 @@ urlpatterns = [
     path('profile/child/<int:child_id>/edit/', views.EditChildView.as_view(), name='edit_child'),
 
     # Subscriptions
+    path('plans/', views.PlansView.as_view(), name='plans'),
     path('subscribe/', views.SubscribeView.as_view(), name='subscribe'),
     path('subscribe/<int:child_id>/', views.SubscribeView.as_view(), name='subscribe_child'),
 
