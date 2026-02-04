@@ -111,14 +111,7 @@
                     </div>
                 </div>
                 {% else %}
-                <!-- Notifications & Cart -->
-                <button class="relative p-2 text-gray-400">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                            d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-                    </svg>
-                    <span class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                </button>
+                <!-- Cart Icon -->
                 <a href="{% url 'portal:cart' %}" class="relative p-2 text-gray-400">
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd"
@@ -128,7 +121,7 @@
                     {% with cart_count=request.session.cart|length %}
                     {% if cart_count > 0 %}
                     <span
-                        class="absolute top-2 right-2 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
+                        class="absolute top-0 right-0 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold border-2 border-white">
                         {{ cart_count }}
                     </span>
                     {% endif %}

@@ -57,7 +57,7 @@ class RegisterForm(forms.Form):
         validators=[RegexValidator(r'^[6-9]\d{9}$', 'Mobile number must be 10 digits and start with 6-9')],
         widget=forms.TextInput(attrs={
             'placeholder': '10-digit mobile number',
-            'class': 'w-full pl-16 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none',
+            'class': 'w-full pl-16 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none',
             'pattern': '[6-9]{1}[0-9]{9}',
             'required': True,
             'oninput': "this.value = this.value.replace(/[^0-9]/g, '');",
@@ -69,7 +69,7 @@ class RegisterForm(forms.Form):
         validators=[StrictEmailValidator()],
         widget=forms.EmailInput(attrs={
             'placeholder': 'Enter your email address (optional)',
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none',
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none',
             'pattern': r'^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$',
             'title': 'Enter a valid email address (e.g., user@example.com)',
         })
@@ -78,7 +78,7 @@ class RegisterForm(forms.Form):
         min_length=8,
         max_length=12,
         widget=forms.PasswordInput(attrs={
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none',
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none',
             'required': True,
             'maxlength': '12'
         })
@@ -86,7 +86,7 @@ class RegisterForm(forms.Form):
     password2 = forms.CharField(
         label="Confirm Password",
         widget=forms.PasswordInput(attrs={
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none',
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none',
             'required': True,
             'maxlength': '12'
         })
@@ -138,7 +138,7 @@ class PortalAuthenticationForm(AuthenticationForm):
         validators=[RegexValidator(r'^[6-9]\d{9}$', 'Mobile number must be 10 digits and start with 6-9')],
         widget=forms.TextInput(attrs={
             'placeholder': '10-digit mobile number',
-            'class': 'w-full pl-16 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none',
+            'class': 'w-full pl-16 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none',
             'pattern': '[6-9]{1}[0-9]{9}',
             'required': True,
             'oninput': "this.value = this.value.replace(/[^0-9]/g, '');",
@@ -148,7 +148,7 @@ class PortalAuthenticationForm(AuthenticationForm):
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'placeholder': 'Password',
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none',
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none',
             'required': True
         })
     )
