@@ -2596,6 +2596,10 @@ video {
   color: rgb(203 213 225 / var(--tw-text-opacity, 1));
 }
 
+.text-orange-700 {
+  color: #ffa500b0;
+}
+
 .underline {
   text-decoration-line: underline;
 }

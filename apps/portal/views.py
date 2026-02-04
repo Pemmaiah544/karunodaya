@@ -671,6 +671,18 @@ class EditChildView(LoginRequiredMixin, DetailView):
 # Subscription Management
 # ===========================
 
+def is_address_complete(parent_profile):
+    """Check if parent profile has complete delivery address."""
+    required_fields = [
+        parent_profile.phone_number,
+        parent_profile.address,
+        parent_profile.city,
+        parent_profile.state,
+        parent_profile.pincode
+    ]
+    return all(field and str(field).strip() for field in required_fields)
+
+
 class PlansView(LoginRequiredMixin, TemplateView):
     """View to display all available subscription plans in an appealing way."""
     template_name = 'portal/plans.html'
@@ -780,19 +792,35 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
             })
 
         # Create subscription order with payment method
+        # Get delivery address from form (not from profile)
+        delivery_phone = request.POST.get('delivery_phone', '').strip()
+        delivery_address = request.POST.get('delivery_address', '').strip()
+        delivery_city = request.POST.get('delivery_city', '').strip()
+        delivery_state = request.POST.get('delivery_state', '').strip()
+        delivery_pincode = request.POST.get('delivery_pincode', '').strip()
+        
+        # Validate delivery address
+        if not all([delivery_phone, delivery_address, delivery_city, delivery_state, delivery_pincode]):
+            return render(request, self.template_name, {
+                'error': 'Please provide complete delivery address.',
+                'child': child,
+                'children': Child.objects.filter(parent__user=request.user),
+                'subscription_plans': SubscriptionPlan.objects.filter(is_active=True)
+            })
+        
         order = Order.objects.create(
             parent=parent_profile,
             order_type='SUBSCRIPTION',
             status='PENDING',
             payment_method=payment_method,
             total_amount=plan.price_per_month,
-            # Save delivery address snapshot
+            # Save delivery address from form
             delivery_name=request.user.get_full_name() or request.user.username,
-            delivery_phone=parent_profile.phone_number,
-            delivery_address=parent_profile.address,
-            delivery_city=parent_profile.city,
-            delivery_state=parent_profile.state,
-            delivery_pincode=parent_profile.pincode
+            delivery_phone=delivery_phone,
+            delivery_address=delivery_address.title(),
+            delivery_city=delivery_city.title(),
+            delivery_state=delivery_state.title(),
+            delivery_pincode=delivery_pincode
         )
 
         # Create subscription cycle (books will be assigned after payment)
@@ -992,7 +1020,19 @@ def checkout(request):
             return redirect('portal:cart')
 
         parent_profile = request.user.parent_profile
-        payment_method = request.POST.get('payment_method', 'ONLINE')  # Get payment method
+        payment_method = request.POST.get('payment_method', 'ONLINE')
+        
+        # Get delivery address from form (not from profile)
+        delivery_phone = request.POST.get('delivery_phone', '').strip()
+        delivery_address = request.POST.get('delivery_address', '').strip()
+        delivery_city = request.POST.get('delivery_city', '').strip()
+        delivery_state = request.POST.get('delivery_state', '').strip()
+        delivery_pincode = request.POST.get('delivery_pincode', '').strip()
+        
+        # Validate delivery address
+        if not all([delivery_phone, delivery_address, delivery_city, delivery_state, delivery_pincode]):
+            messages.error(request, 'Please provide complete delivery address.')
+            return redirect('portal:cart')
 
         # Calculate total
         total = sum(item['price'] * item['quantity'] for item in cart.values())
@@ -1004,13 +1044,13 @@ def checkout(request):
             status='PENDING',
             payment_method=payment_method,
             total_amount=total,
-            # Save delivery address snapshot
+            # Save delivery address from form
             delivery_name=request.user.get_full_name() or request.user.username,
-            delivery_phone=parent_profile.phone_number,
-            delivery_address=parent_profile.address,
-            delivery_city=parent_profile.city,
-            delivery_state=parent_profile.state,
-            delivery_pincode=parent_profile.pincode
+            delivery_phone=delivery_phone,
+            delivery_address=delivery_address.title(),
+            delivery_city=delivery_city.title(),
+            delivery_state=delivery_state.title(),
+            delivery_pincode=delivery_pincode
         )
 
         # Create order items (we'll need to create OrderItem model)
@@ -1090,4 +1130,55 @@ View in Admin: {request.build_absolute_uri('/admin/portal/complaint/' + str(comp
         context = self.get_context_data()
         context['form'] = form
         return render(request, self.template_name, context)
+
+
+class UpdateDeliveryAddressView(LoginRequiredMixin, TemplateView):
+    """View to update delivery address before payment."""
+    template_name = 'portal/update_delivery_address.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['parent_profile'] = self.request.user.parent_profile
+        return context
+
+    def post(self, request):
+        parent_profile = request.user.parent_profile
+        
+        # Update delivery address
+        phone_number = request.POST.get('phone_number', '').strip()
+        address = request.POST.get('address', '').strip()
+        city = request.POST.get('city', '').strip()
+        state = request.POST.get('state', '').strip()
+        pincode = request.POST.get('pincode', '').strip()
+        
+        # Validate required fields
+        if not all([phone_number, address, city, state, pincode]):
+            messages.error(request, 'All address fields are required.')
+            return redirect('portal:update_delivery_address')
+        
+        # Update parent profile
+        parent_profile.phone_number = phone_number
+        parent_profile.address = address.title()
+        parent_profile.city = city.title()
+        parent_profile.state = state.title()
+        parent_profile.pincode = pincode
+        parent_profile.save()
+        
+        messages.success(request, 'Delivery address updated successfully!')
+        
+        # Check if there's a pending subscription - redirect back to subscribe page
+        pending_subscription = request.session.get('pending_subscription')
+        if pending_subscription:
+            child_id = pending_subscription['child_id']
+            # Keep the session data so the form remembers the selection
+            return redirect('portal:subscribe_child', child_id=child_id)
+        
+        # Check if there's a pending checkout - redirect back to cart
+        pending_checkout = request.session.get('pending_checkout')
+        if pending_checkout:
+            # Keep the session data
+            return redirect('portal:cart')
+        
+        # Default redirect to profile
+        return redirect('portal:profile')
 
