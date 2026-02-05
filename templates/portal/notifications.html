@@ -1,0 +1,64 @@
+{% extends "portal/base.html" %}
+{% load static %}
+
+{% block title %}Notifications - Karunodaya{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-lg">
+    <div class="mb-8">
+        <h1 class="text-2xl font-black text-gray-900 leading-tight mb-2">Notifications</h1>
+        <p class="text-sm text-gray-500">Important updates about your children's reading journey</p>
+    </div>
+
+    <div class="space-y-4">
+        {% if header_notification_count > 0 %}
+        {% for child in pending_test_children_list %}
+        <div
+            class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 animate-in fade-in slide-in-from-bottom duration-500">
+            <div class="flex gap-4">
+                <div
+                    class="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 font-black text-xl shrink-0">
+                    {{ child.name|first|upper }}
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span
+                            class="bg-orange-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">Test
+                            Needed</span>
+                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{{
+                            child.created_at|timesince }} ago</span>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-900 mb-2">Reading fluency check for {{ child.name }}</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed mb-6">
+                        Improving readability starts with understanding. Take a quick 1-minute test to help us curate
+                        the perfect books for {{ child.name }}.
+                    </p>
+                    <a href="{% url 'portal:fluency_check' child.id %}"
+                        class="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-lg shadow-orange-100 active:scale-95">
+                        Take Test Now
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-100">
+            <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">All caught up!</h3>
+            <p class="text-sm text-gray-500">You don't have any pending actions at the moment.</p>
+            <a href="{% url 'portal:dashboard' %}"
+                class="inline-block mt-8 text-orange-600 font-bold text-sm hover:underline">Return to Dashboard</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

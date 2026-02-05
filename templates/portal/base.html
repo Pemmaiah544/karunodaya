@@ -56,6 +56,51 @@
             padding-bottom: 5.5rem;
             min-height: 100vh;
         }
+
+        @keyframes bell-jiggle {
+
+            0%,
+            50%,
+            100% {
+                transform: rotate(0);
+            }
+
+            1%,
+            5%,
+            9%,
+            13%,
+            17%,
+            21%,
+            25%,
+            29%,
+            33%,
+            37%,
+            41%,
+            45% {
+                transform: rotate(-15deg);
+            }
+
+            3%,
+            7%,
+            11%,
+            15%,
+            19%,
+            23%,
+            27%,
+            31%,
+            35%,
+            39%,
+            43%,
+            47% {
+                transform: rotate(15deg);
+            }
+        }
+
+        .animate-jiggle {
+            animation: bell-jiggle 120s linear infinite;
+            transform-origin: top center;
+            display: inline-block;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -72,6 +117,21 @@
             <div class="flex items-center space-x-4">
                 {% block header_right %}
                 {% if user.is_authenticated %}
+                <!-- Notification Bell -->
+                <a href="{% url 'portal:notifications' %}"
+                    class="p-2 text-gray-400 hover:text-orange-600 focus:outline-none transition-colors relative {% if header_notification_count > 0 %}animate-jiggle{% endif %}">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {% if header_notification_count > 0 %}
+                    <span
+                        class="absolute top-1 right-1 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold border-2 border-white animate-pulse">
+                        {{ header_notification_count }}
+                    </span>
+                    {% endif %}
+                </a>
+
                 {% if "profile" in request.resolver_match.url_name or "child" in request.resolver_match.url_name %}
                 <!-- Settings Dropdown -->
                 <div class="relative">

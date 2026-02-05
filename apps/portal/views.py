@@ -18,6 +18,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from .forms import ComplaintForm, RegisterForm
 from .models import Complaint
+from .reading_passages import get_passage_for_grade
 from services.curation import get_curated_books
 
 
@@ -199,6 +200,10 @@ def onboarding_step3(request):
         parent_profile.onboarding_completed = True
         parent_profile.save()
 
+        # Redirect to fluency check if child was created, else dashboard
+        if 'child' in locals():
+            return redirect('portal:fluency_check', child_id=child.id)
+        
         # Redirect to dashboard - onboarding complete
         return redirect('portal:dashboard')
 
@@ -299,8 +304,15 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         
         # Get children with subscription info
         children = parent_profile.children.all()
+        context['children'] = children
+        context['has_children'] = children.exists()
         
-        # For each child, check if they have an active subscription
+        # Calculate onboarding flags
+        all_tests_completed = all(c.reading_test_completed for c in children) if children.exists() else False
+        context['all_tests_completed'] = all_tests_completed
+        context['pending_test_child'] = children.filter(reading_test_completed=False).first()
+        
+        # Children with borrowing info
         children_with_info = []
         for child in children:
             has_active_sub = SubscriptionCycle.objects.filter(
@@ -365,10 +377,87 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             parent=parent_profile
         ).order_by('-created_at')[:5]
 
-        # Get recommended books
-        context['recommended_books'] = Book.objects.filter(is_active=True).order_by('-created_at')[:10]
+        # Get recommended books only if child has completed reading test
+        if all_tests_completed:
+            # Get curated books for the first child or a mix
+            if children.exists():
+                context['recommended_books'] = get_curated_books(children[0].id, limit=10)
+            else:
+                context['recommended_books'] = Book.objects.filter(is_active=True).order_by('-created_at')[:10]
+        else:
+            context['recommended_books'] = Book.objects.none()
 
         return context
+
+
+class FluencyCheckView(LoginRequiredMixin, DetailView):
+    """View for the multi-step fluency check."""
+    model = Child
+    template_name = 'portal/fluency_check.html'
+    pk_url_kwarg = 'child_id'
+    context_object_name = 'child'
+
+    def get_queryset(self):
+        return Child.objects.filter(parent__user=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        child = self.get_object()
+        lang = self.request.GET.get('lang', 'EN').upper()
+        if lang not in ['EN', 'HI', 'KN']:
+            lang = 'EN'
+            
+        passage_idx = int(self.request.GET.get('p', 0))
+        passage = get_passage_for_grade(child.grade, lang=lang, passage_idx=passage_idx)
+        
+        context['passage'] = passage
+        context['current_lang'] = lang
+        context['current_passage_idx'] = passage_idx
+        return context
+
+
+@login_required
+def fluency_check_save(request, child_id):
+    """Save results of the fluency check."""
+    if request.method == 'POST':
+        child = get_object_or_404(Child, id=child_id, parent__user=request.user)
+        
+        wpm = request.POST.get('wpm')
+        accuracy = request.POST.get('accuracy')
+        strengths = request.POST.get('strengths')
+        gaps = request.POST.get('gaps')
+        
+        if wpm:
+            child.reading_wpm = int(float(wpm))
+            child.reading_test_completed = True
+            
+            if accuracy:
+                child.reading_accuracy = float(accuracy)
+            
+            if strengths:
+                child.reading_strengths = strengths
+            
+            if gaps:
+                child.reading_gaps = gaps
+            
+            # Determine difficulty level based on WPM and Grade
+            wpm_val = int(float(wpm))
+            if wpm_val < 40:
+                child.reading_difficulty_level = 'BEGINNER'
+            elif wpm_val < 80:
+                child.reading_difficulty_level = 'INTERMEDIATE'
+            else:
+                child.reading_difficulty_level = 'ADVANCED'
+            
+            child.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'wpm': child.reading_wpm,
+                'level': child.get_reading_difficulty_level_display()
+            })
+            
+    return JsonResponse({'status': 'error'}, status=400)
 
 
 class CuratedBoxView(LoginRequiredMixin, DetailView):
@@ -389,8 +478,11 @@ class CuratedBoxView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         child = self.get_object()
 
-        # Get curated books
-        context['curated_books'] = get_curated_books(child.id, limit=12)
+        # Get curated books only if test is completed
+        if child.reading_test_completed:
+            context['curated_books'] = get_curated_books(child.id, limit=20)
+        else:
+            context['curated_books'] = Book.objects.none()
 
         return context
 
@@ -424,9 +516,18 @@ class MarketplaceView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        parent_profile = self.request.user.parent_profile
+        children = parent_profile.children.all()
+        
         context['difficulty_levels'] = Book.DIFFICULTY_RATING_CHOICES
         context['grades'] = Book.GRADE_CHOICES
         context['difficulty_groups'] = get_marketplace_groups()
+        
+        # Onboarding flags
+        context['has_children'] = children.exists()
+        context['all_tests_completed'] = all(c.reading_test_completed for c in children) if children.exists() else False
+        context['pending_test_child'] = children.filter(reading_test_completed=False).first()
+        
         return context
 
 def get_marketplace_groups(difficulty=None):
@@ -679,6 +780,10 @@ class AddChildView(LoginRequiredMixin, TemplateView):
             date_of_birth=dob
         )
 
+        next_url = request.GET.get('next')
+        if next_url:
+            return redirect(next_url)
+
         return redirect('portal:profile')
 
 
@@ -893,6 +998,16 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
 # ===========================
 # Return Workflow
 # ===========================
+
+class NotificationsView(LoginRequiredMixin, TemplateView):
+    template_name = 'portal/notifications.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Mark as seen for this session
+        self.request.session['notifications_seen'] = True
+        return context
+
 
 class MyBooksView(LoginRequiredMixin, TemplateView):
     """View all borrowed books and their return status."""
