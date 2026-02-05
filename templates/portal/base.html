@@ -110,13 +110,19 @@
         {% block header %}
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center">
+                {% if "onboarding" in request.resolver_match.url_name %}
+                <div class="flex items-center">
+                    <img src="{% static 'images/foundation-logo.png' %}" alt="Karunodaya Foundation" class="h-10">
+                </div>
+                {% else %}
                 <a href="{% url 'portal:dashboard' %}" class="flex items-center">
                     <img src="{% static 'images/foundation-logo.png' %}" alt="Karunodaya Foundation" class="h-10">
                 </a>
+                {% endif %}
             </div>
             <div class="flex items-center space-x-4">
                 {% block header_right %}
-                {% if user.is_authenticated %}
+                {% if user.is_authenticated and "onboarding" not in request.resolver_match.url_name %}
                 <!-- Notification Bell -->
                 <a href="{% url 'portal:notifications' %}"
                     class="p-2 text-gray-400 hover:text-orange-600 focus:outline-none transition-colors relative {% if header_notification_count > 0 %}animate-jiggle{% endif %}">
@@ -188,7 +194,7 @@
                     {% endwith %}
                 </a>
                 {% endif %}
-                {% else %}
+                {% elif not user.is_authenticated %}
                 <a href="{% url 'portal:login' %}" class="text-sm text-primary-600 font-medium">Login</a>
                 {% endif %}
                 {% endblock %}
@@ -202,7 +208,7 @@
     </main>
 
     {% block bottom_nav %}
-    {% if user.is_authenticated %}
+    {% if user.is_authenticated and "onboarding" not in request.resolver_match.url_name %}
     <nav class="mobile-bottom-nav">
         <div class="flex justify-around items-center py-3">
             <a href="{% url 'portal:dashboard' %}"

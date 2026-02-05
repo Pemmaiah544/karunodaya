@@ -20,6 +20,37 @@ from .forms import ComplaintForm, RegisterForm
 from .models import Complaint
 from .reading_passages import get_passage_for_grade
 from services.curation import get_curated_books
+from functools import wraps
+
+def onboarding_required(view_func):
+    """Decorator to ensure user has completed onboarding."""
+    @login_required
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        try:
+            parent_profile = request.user.parent_profile
+            if not parent_profile.onboarding_completed:
+                return redirect('portal:onboarding')
+        except ParentProfile.DoesNotExist:
+            return redirect('portal:onboarding')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
+
+class OnboardingRequiredMixin:
+    """Mixin to ensure user has completed onboarding."""
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
+        
+        try:
+            parent_profile = request.user.parent_profile
+            if not parent_profile.onboarding_completed:
+                return redirect('portal:onboarding')
+        except ParentProfile.DoesNotExist:
+            return redirect('portal:onboarding')
+            
+        return super().dispatch(request, *args, **kwargs)
 
 
 class CustomPasswordResetView(PasswordResetView):
@@ -278,22 +309,9 @@ def onboarding_complete(request):
     return HttpResponse('Method not allowed', status=405)
 
 
-class DashboardView(LoginRequiredMixin, TemplateView):
+class DashboardView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
     """Main dashboard view."""
     template_name = 'portal/dashboard.html'
-
-    def dispatch(self, request, *args, **kwargs):
-        """Check if onboarding is complete before rendering dashboard."""
-        try:
-            parent_profile = request.user.parent_profile
-            # Check if onboarding is completed
-            if not parent_profile.onboarding_completed:
-                return redirect('portal:onboarding')
-        except ParentProfile.DoesNotExist:
-            # Redirect to onboarding if no profile
-            return redirect('portal:onboarding')
-        
-        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -390,7 +408,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class FluencyCheckView(LoginRequiredMixin, DetailView):
+class FluencyCheckView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
     """View for the multi-step fluency check."""
     model = Child
     template_name = 'portal/fluency_check.html'
@@ -460,7 +478,7 @@ def fluency_check_save(request, child_id):
     return JsonResponse({'status': 'error'}, status=400)
 
 
-class CuratedBoxView(LoginRequiredMixin, DetailView):
+class CuratedBoxView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
     """View curated books for a specific child."""
     template_name = 'portal/curated_box.html'
     context_object_name = 'child'
@@ -487,7 +505,7 @@ class CuratedBoxView(LoginRequiredMixin, DetailView):
         return context
 
 
-class MarketplaceView(LoginRequiredMixin, ListView):
+class MarketplaceView(LoginRequiredMixin, OnboardingRequiredMixin, ListView):
     """Marketplace view with all purchasable books."""
     template_name = 'portal/marketplace.html'
     context_object_name = 'books'
@@ -620,7 +638,7 @@ def marketplace_search(request):
     })
 
 
-class BookDetailView(LoginRequiredMixin, DetailView):
+class BookDetailView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
     """Book detail view."""
     model = Book
     template_name = 'portal/book_detail.html'
@@ -628,7 +646,7 @@ class BookDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'book'
 
 
-class OrdersView(LoginRequiredMixin, TemplateView):
+class OrdersView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
     """Orders history view with tabs for subscriptions and purchases."""
     template_name = 'portal/orders.html'
 
@@ -656,7 +674,7 @@ class OrdersView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class OrderDetailView(LoginRequiredMixin, DetailView):
+class OrderDetailView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
     """Order detail view."""
     template_name = 'portal/order_detail.html'
     context_object_name = 'order'
@@ -686,7 +704,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class ProfileView(LoginRequiredMixin, TemplateView):
+class ProfileView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
     """User profile view."""
     template_name = 'portal/profile.html'
 
@@ -697,7 +715,7 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         return context
 
 
-@login_required
+@onboarding_required
 def update_profile_name(request):
     """Update user's first and last name."""
     if request.method == 'POST':
@@ -746,7 +764,7 @@ def update_profile_name(request):
 
 
 
-class AddChildView(LoginRequiredMixin, TemplateView):
+class AddChildView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
     """Add child profile view."""
     template_name = 'portal/add_child.html'
 
@@ -787,7 +805,7 @@ class AddChildView(LoginRequiredMixin, TemplateView):
         return redirect('portal:profile')
 
 
-class EditChildView(LoginRequiredMixin, DetailView):
+class EditChildView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
     """Edit child profile view."""
     template_name = 'portal/edit_child.html'
     context_object_name = 'child'
@@ -835,7 +853,7 @@ def is_address_complete(parent_profile):
     return all(field and str(field).strip() for field in required_fields)
 
 
-class PlansView(LoginRequiredMixin, TemplateView):
+class PlansView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
     """View to display all available subscription plans in an appealing way."""
     template_name = 'portal/plans.html'
 
@@ -999,7 +1017,7 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
 # Return Workflow
 # ===========================
 
-class NotificationsView(LoginRequiredMixin, TemplateView):
+class NotificationsView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
     template_name = 'portal/notifications.html'
 
     def get_context_data(self, **kwargs):
@@ -1009,7 +1027,7 @@ class NotificationsView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class MyBooksView(LoginRequiredMixin, TemplateView):
+class MyBooksView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
     """View all borrowed books and their return status."""
     template_name = 'portal/my_books.html'
 
@@ -1032,7 +1050,7 @@ class MyBooksView(LoginRequiredMixin, TemplateView):
         return context
 
 
-@login_required
+@onboarding_required
 def initiate_return(request, cycle_id):
     """Initiate return request for a subscription cycle."""
     if request.method == 'POST':
@@ -1070,6 +1088,7 @@ def initiate_return(request, cycle_id):
 # ===========================
 
 @login_required
+@onboarding_required
 def add_to_cart(request, book_id):
     """Add a book to the shopping cart (session-based)."""
     if request.method == 'POST':
@@ -1104,7 +1123,7 @@ def add_to_cart(request, book_id):
     return HttpResponse('Method not allowed', status=405)
 
 
-@login_required
+@onboarding_required
 def remove_from_cart(request, book_id):
     """Remove a book from the cart."""
     if request.method == 'POST':
@@ -1121,7 +1140,7 @@ def remove_from_cart(request, book_id):
     return HttpResponse('Method not allowed', status=405)
 
 
-@login_required
+@onboarding_required
 def update_cart_quantity(request, book_id):
     """Update quantity of a book in cart."""
     if request.method == 'POST':
@@ -1142,7 +1161,7 @@ def update_cart_quantity(request, book_id):
     return HttpResponse('Method not allowed', status=405)
 
 
-class CartView(LoginRequiredMixin, TemplateView):
+class CartView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
     """Shopping cart view."""
     template_name = 'portal/cart.html'
 
@@ -1173,6 +1192,7 @@ class CartView(LoginRequiredMixin, TemplateView):
 
 
 @login_required
+@onboarding_required
 def checkout(request):
     """Process checkout and create purchase order."""
     if request.method == 'POST':
@@ -1236,7 +1256,7 @@ def checkout(request):
     return HttpResponse('Method not allowed', status=405)
 
 
-class SupportView(LoginRequiredMixin, TemplateView):
+class SupportView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
     """View for logging complaints and issues."""
     template_name = 'portal/support.html'
 
@@ -1294,7 +1314,7 @@ View in Admin: {request.build_absolute_uri('/admin/portal/complaint/' + str(comp
         return render(request, self.template_name, context)
 
 
-class UpdateDeliveryAddressView(LoginRequiredMixin, TemplateView):
+class UpdateDeliveryAddressView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
     """View to update delivery address before payment."""
     template_name = 'portal/update_delivery_address.html'
 
