@@ -13,11 +13,121 @@
         localStorage.removeItem('onboarding_plan_type');
     }
 
-    // Clear data when dashboard loads
-    document.addEventListener('DOMContentLoaded', clearOnboardingData);
+    function checkFluencyNudge() {
+        if (!sessionStorage.getItem('fluency_nudge_dismissed')) {
+            const widget = document.getElementById('reading-buddy-widget');
+            const banner = document.getElementById('fluency-adventure-banner');
+            if (widget) widget.classList.remove('hidden');
+            if (banner) banner.classList.remove('hidden');
+        }
+    }
+
+    function dismissFluencyNudge() {
+        sessionStorage.setItem('fluency_nudge_dismissed', 'true');
+        const widget = document.getElementById('reading-buddy-widget');
+        const banner = document.getElementById('fluency-adventure-banner');
+        if (widget) widget.classList.add('hidden');
+        if (banner) banner.classList.add('hidden');
+    }
+
+    // Initialize when dashboard loads
+    document.addEventListener('DOMContentLoaded', () => {
+        clearOnboardingData();
+        checkFluencyNudge();
+    });
 </script>
 
+<style>
+    @keyframes bounce-slow {
+
+        0%,
+        100% {
+            transform: translateY(0) rotate(0);
+        }
+
+        50% {
+            transform: translateY(-10px) rotate(5deg);
+        }
+    }
+
+    .buddy-float {
+        animation: bounce-slow 3s infinite ease-in-out;
+    }
+
+    .gradient-adventure {
+        background: linear-gradient(135deg, #ff9d00 0%, #ff5e00 100%);
+    }
+</style>
+
 <div class="container mx-auto px-4 py-4">
+    <!-- ONBOARDING FLOW BANNERS -->
+
+    <!-- State 1: No Child Profile -->
+    {% if not has_children %}
+    <div id="add-child-banner"
+        class="mb-6 relative overflow-hidden rounded-[24px] bg-gradient-to-r from-indigo-600 to-blue-700 p-8 text-white shadow-xl shadow-blue-100 animate-in fade-in slide-in-from-top duration-700">
+        <div class="relative z-10 flex items-center justify-between">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-3">
+                    <span
+                        class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">New
+                        Journey</span>
+                </div>
+                <h2 class="text-2xl font-black mb-2 leading-tight">Welcome to Karunodaya! ✨</h2>
+                <p class="text-sm text-white/90 mb-6 max-w-xs leading-relaxed">Add your child's profile to start their
+                    personalized reading journey and get curated book boxes.</p>
+                <div class="flex gap-4">
+                    <a href="{% url 'portal:profile' %}"
+                        class="bg-white text-blue-600 px-8 py-3 rounded-full font-bold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all">
+                        Add My Child
+                    </a>
+                </div>
+            </div>
+            <div class="hidden sm:block w-40 h-40 opacity-90 bounce-slow">
+                <img src="{% static 'images/onboarding_hero.png' %}" alt="Onboarding"
+                    class="w-full h-full object-contain">
+            </div>
+        </div>
+        <!-- Decorative shapes -->
+        <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+        <div class="absolute -left-10 -top-10 w-48 h-48 bg-blue-400/20 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- State 2: Child exists but no test completed -->
+    {% elif pending_test_child %}
+    <div id="fluency-adventure-banner"
+        class="hidden mb-6 relative overflow-hidden rounded-[24px] gradient-adventure p-8 text-white shadow-xl shadow-orange-100 animate-in fade-in slide-in-from-top duration-700">
+        <div class="relative z-10 flex items-center justify-between">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-3">
+                    <span
+                        class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">Level
+                        Check</span>
+                </div>
+                <h2 class="text-2xl font-black mb-2 leading-tight">Unlock {{ pending_test_child.name }}'s Level! 🏆</h2>
+                <p class="text-sm text-white/90 mb-6 max-w-xs leading-relaxed">Take a quick 60-second reading test so we
+                    can fill your box with books they'll love.</p>
+                <div class="flex gap-4">
+                    <a href="{% url 'portal:fluency_check' pending_test_child.id %}"
+                        class="bg-white text-orange-600 px-8 py-3 rounded-full font-bold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all">
+                        Start Reading Test
+                    </a>
+                    <button onclick="dismissFluencyNudge()"
+                        class="text-white/80 text-xs font-bold hover:text-white transition-colors">
+                        Maybe Later
+                    </button>
+                </div>
+            </div>
+            <div class="hidden sm:block w-40 h-40 buddy-float opacity-90">
+                <img src="{% static 'images/reading_buddy.png' %}" alt="Buddy" class="w-full h-full object-contain">
+            </div>
+        </div>
+        <!-- Decorative shapes -->
+        <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+        <div class="absolute -left-10 -top-10 w-48 h-48 bg-orange-400/20 rounded-full blur-3xl"></div>
+    </div>
+    {% endif %}
+
     <!-- Welcome Section -->
     <div class="mb-6 flex justify-between items-start">
         <div>
@@ -36,101 +146,165 @@
         </a>
     </div>
 
-    <!-- Child Profiles Section -->
-    <div class="mb-6">
-        <div class="mb-3">
-            <h2 class="text-base font-bold text-gray-900">Child Profiles</h2>
+    <!-- Learning Progress Section -->
+    <div class="mb-8">
+        <div class="flex items-center gap-2 mb-4 px-1">
+            <h2 class="text-xl font-bold text-gray-900">Learning Progress</h2>
+            <span
+                class="bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Live
+                Tracking</span>
         </div>
 
-        <div class="flex overflow-x-auto pb-4 gap-4 hide-scrollbar -mx-4 px-4 scroll-smooth">
-            {% for child_info in children_with_info %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for child in children %}
             <div
-                class="flex-none w-[280px] bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow duration-200">
-                <!-- Child Avatar and Info -->
-                <div class="flex flex-col items-center mb-4">
-                    <div
-                        class="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-md mb-3">
-                        {{ child_info.child.name|first|upper }}
+                class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-shadow">
+                <!-- Header -->
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">
+                            {{ child.name|slice:":1" }}
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">{{ child.name }}</h3>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{{
+                                child.get_grade_display }}</p>
+                        </div>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900">{{ child_info.child.name }}</h3>
-                    <p class="text-xs text-gray-500 uppercase tracking-wide">{{ child_info.child.age }} YRS • {{ child_info.child.get_grade_display }}</p>
-                </div>
-
-                <!-- Reading Goal Progress -->
-                <div class="mb-4">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Reading Goal</span>
-                        <span class="text-xs font-bold text-orange-600">65%</span>
-                    </div>
-                    <div class="w-full bg-gray-100 rounded-full h-2">
-                        <div class="bg-orange-500 h-2 rounded-full" style="width: 65%"></div>
-                    </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex gap-2">
-                    <a href="{% url 'portal:curated_box' child_info.child.id %}"
-                        class="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-center py-2.5 px-3 rounded-full font-bold text-xs transition-colors duration-200 shadow-sm">
-                        View Books
-                    </a>
-                    {% if child_info.can_subscribe %}
-                    <a href="{% url 'portal:subscribe_child' child_info.child.id %}"
-                        class="flex-1 bg-white hover:bg-gray-50 text-orange-600 border-2 border-orange-600 text-center py-2.5 px-3 rounded-full font-bold text-xs transition-colors duration-200">
-                        Subscribe
-                    </a>
+                    {% if child.reading_test_completed %}
+                    <span
+                        class="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border border-green-100">
+                        {{ child.get_reading_difficulty_level_display|default:"Evaluated" }}
+                    </span>
                     {% else %}
-                    <div
-                        class="flex-1 bg-green-50 text-green-700 border border-green-200 text-center py-2.5 px-3 rounded-full font-bold text-xs cursor-not-allowed">
-                        ✓ Subscribed
-                    </div>
+                    <span
+                        class="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border border-orange-100">
+                        Pending Test
+                    </span>
                     {% endif %}
                 </div>
-            </div>
-            {% empty %}
-            <div class="w-full">
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
-                    <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
+
+                {% if child.reading_test_completed %}
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Reading Speed</p>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-xl font-black text-gray-900">{{ child.reading_wpm }}</span>
+                            <span class="text-[10px] font-bold text-gray-500">WPM</span>
+                        </div>
+                        <!-- Simple Progress Bar -->
+                        <div class="mt-2 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-indigo-500 rounded-full"
+                                style="width: {% if child.reading_wpm > 120 %}100{% else %}{{ child.reading_wpm }}{% endif %}%">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Accuracy</p>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-xl font-black text-gray-900">{{ child.reading_accuracy|floatformat:0
+                                }}</span>
+                            <span class="text-[10px] font-bold text-gray-500">%</span>
+                        </div>
+                        <!-- Simple Progress Bar -->
+                        <div class="mt-2 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-green-500 rounded-full"
+                                style="width: {{ child.reading_accuracy|default:0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Summary -->
+                <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
-                        </path>
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    <h3 class="text-base font-bold text-gray-900 mb-2">No children added yet</h3>
-                    <p class="text-sm text-gray-600 mb-4">Add your child from your profile to get started</p>
-                    <a href="{% url 'portal:profile' %}"
-                        class="inline-block bg-orange-600 hover:bg-orange-700 text-white py-2.5 px-6 rounded-full font-bold text-sm transition-colors duration-200">
-                        Go to Profile
+                    <span>Keep reading to unlock the next level!</span>
+                </div>
+                {% else %}
+                <div class="py-4 text-center">
+                    <p class="text-xs text-gray-500 mb-4">Take a reading check to see {{ child.name }}'s progress
+                        metrics.</p>
+                    <a href="{% url 'portal:fluency_check' child.id %}"
+                        class="inline-flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-full text-[11px] font-bold shadow-indigo-100 shadow-lg active:scale-95 transition-all">
+                        Start Fluency Check
                     </a>
+                </div>
+                {% endif %}
+
+                <!-- Decorative elements -->
+                <div
+                    class="absolute -right-6 -bottom-6 w-24 h-24 bg-indigo-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- Active Subscriptions -->
-    {% if active_subscriptions %}
+
+    <!-- My Books Section -->
     <div class="mb-8">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-base font-bold text-gray-900">Active Subscriptions ({{ active_subscriptions|length }})</h2>
-            <a href="{% url 'portal:my_books' %}"
-                class="text-orange-500 hover:text-orange-600 font-medium text-xs flex items-center gap-1">
-                View All
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
+        <div class="flex justify-between items-center mb-4 px-1">
+            <h2 class="text-xl font-bold text-gray-900">My Books</h2>
+            {% if active_subscriptions %}
+            <a href="{% url 'portal:my_books' %}" class="text-orange-500 hover:text-orange-600 font-medium text-sm">
+                Manage
             </a>
+            {% endif %}
         </div>
 
+        {% if active_subscriptions %}
+        {% if borrowed_books %}
+        <!-- Books List Display -->
+        <div class="flex overflow-x-auto pb-4 gap-4 hide-scrollbar -mx-4 px-4 scroll-smooth">
+            {% for item in borrowed_books %}
+            <div class="flex-none w-40 group relative">
+                <a href="{% url 'portal:book_detail' item.book.id %}">
+                    <div
+                        class="bg-gray-100 rounded-2xl p-3 mb-2 aspect-[3/4] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shadow-sm border border-gray-50 relative overflow-hidden">
+                        {% if item.book.cover_image %}
+                        <img src="{{ item.book.cover_image.url }}" alt="{{ item.book.title }}"
+                            class="w-full h-full object-contain rounded-sm shadow-md">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center bg-gray-200 rounded-sm">
+                            <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                            </svg>
+                        </div>
+                        {% endif %}
+
+                        <!-- Child Badge -->
+                        <div
+                            class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-[10px] font-bold text-gray-700 shadow-sm border border-gray-100">
+                            {{ item.child.name|truncatechars:10 }}
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-sm text-gray-900 truncate px-1">{{ item.book.title }}</h3>
+                    <p class="text-xs text-orange-600 truncate px-1 font-medium">Due: {{ item.due_date|date:"M d" }}</p>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Fallback: Subscription Summary (No books assigned yet) -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <!-- Stats Grid -->
             <div class="grid grid-cols-2 gap-6 mb-4">
                 <div>
-                    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Borrowed</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ total_books_count }} Book{{ total_books_count|pluralize }}</p>
+                    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Limit</p>
+                    <p class="text-2xl font-bold text-gray-900">
+                        {{ total_books_count }} Book{{ total_books_count|pluralize }}
+                    </p>
                 </div>
                 <div class="text-right">
-                    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Earliest Due</p>
-                    <p class="text-2xl font-bold text-gray-900">{% for cycle in active_subscriptions %}{% if forloop.first %}{{ cycle.expected_return_date|date:"M d" }}{% endif %}{% endfor %}</p>
+                    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Status</p>
+                    <p class="text-lg font-bold text-orange-600">
+                        Preparing Box
+                    </p>
                 </div>
             </div>
 
@@ -152,45 +326,126 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                Manage All Subscriptions
+                Manage Subscriptions
             </a>
         </div>
+        {% endif %}
+        {% else %}
+        <!-- No Active Subscription State -->
+        <div class="bg-gray-50 rounded-2xl p-6 text-center border border-dashed border-gray-200">
+            <p class="text-sm text-gray-500 mb-4 px-4">Subscribe to a plan to start receiving curated book boxes for
+                your children!</p>
+            <a href="{% url 'portal:plans' %}"
+                class="inline-block bg-white text-orange-600 border border-orange-200 px-6 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-orange-50 transition-colors">
+                View Plans
+            </a>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
 
-    <!-- Recommended for You -->
-    {% if recommended_books %}
+    <!-- Recommended Books -->
     <div class="mt-8 mb-6">
         <div class="flex justify-between items-center mb-4 px-1">
-            <h2 class="text-xl font-bold text-gray-900">Explore, Read & Learn</h2>
+            <h2 class="text-xl font-bold text-gray-900">Recommended Books</h2>
             <a href="{% url 'portal:marketplace' %}" class="text-orange-500 hover:text-orange-600 font-medium text-sm">
                 See All
             </a>
         </div>
 
-        <div class="flex overflow-x-auto pb-4 gap-4 hide-scrollbar -mx-4 px-4 scroll-smooth">
-            {% for book in recommended_books %}
-            <a href="{% url 'portal:book_detail' book.id %}" class="flex-none w-40 group">
-                <div
-                    class="bg-gray-100 rounded-2xl p-3 mb-2 aspect-[3/4] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shadow-sm border border-gray-50">
-                    {% if book.cover_image %}
-                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }}"
-                        class="w-full h-full object-contain rounded-sm shadow-md">
-                    {% else %}
-                    <div class="w-full h-full flex items-center justify-center bg-gray-200 rounded-sm">
-                        <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-                        </svg>
+        {% if recommendations_by_child %}
+        {% for item in recommendations_by_child %}
+        <div class="mb-8 last:mb-0">
+            <div class="flex items-center gap-2 mb-3 px-1">
+                <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
+                <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider">For {{ item.child.name }}</h3>
+            </div>
+
+            <div class="flex overflow-x-auto pb-4 gap-4 hide-scrollbar -mx-4 px-4 scroll-smooth">
+                {% for book in item.books %}
+                <a href="{% url 'portal:book_detail' book.id %}" class="flex-none w-40 group">
+                    <div
+                        class="bg-gray-100 rounded-2xl p-3 mb-2 aspect-[3/4] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shadow-sm border border-gray-50">
+                        {% if book.cover_image %}
+                        <img src="{{ book.cover_image.url }}" alt="{{ book.title }}"
+                            class="w-full h-full object-contain rounded-sm shadow-md">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center bg-gray-200 rounded-sm">
+                            <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                            </svg>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
-                </div>
-                <h3 class="font-bold text-sm text-gray-900 truncate px-1">{{ book.title }}</h3>
-                <p class="text-xs text-gray-500 truncate px-1">{{ book.author }}</p>
+                    <h3 class="font-bold text-sm text-gray-900 truncate px-1">{{ book.title }}</h3>
+                    <p class="text-xs text-gray-500 truncate px-1">{{ book.author }}</p>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="bg-gray-100 rounded-3xl p-8 text-center border border-dashed border-gray-300 mx-1">
+            <div class="w-16 h-16 mx-auto mb-4 opacity-40 grayscale">
+                <img src="{% static 'images/reading_buddy.png' %}" alt="Reading Buddy"
+                    class="w-full h-full object-contain">
+            </div>
+            <p class="text-sm font-medium text-gray-600 mb-6 px-4">Complete a quick reading check to see personalized
+                recommendations for your child!</p>
+            {% if children %}
+            <a href="{% url 'portal:fluency_check' children.0.id %}"
+                class="inline-block bg-orange-600 text-white px-8 py-3 rounded-full text-sm font-bold shadow-lg shadow-orange-100 active:scale-95 transition-all">
+                Take Fluency Check
             </a>
-            {% endfor %}
+            {% else %}
+            <a href="{% url 'portal:add_child' %}?next={{ request.path }}"
+                class="inline-block bg-orange-600 text-white px-8 py-3 rounded-full text-sm font-bold shadow-lg shadow-orange-100 active:scale-95 transition-all">
+                Add a Child
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Creative Floating Reading Buddy Widget -->
+    {% if pending_test_child %}
+    <div id="reading-buddy-widget"
+        class="hidden fixed bottom-6 right-6 z-[60] animate-in slide-in-from-right fade-in duration-700">
+        <div class="relative">
+            <!-- Speech Bubble -->
+            <div
+                class="absolute bottom-full right-0 mb-4 w-48 bg-white rounded-2xl shadow-2xl p-4 border border-orange-100 animate-bounce duration-[2000ms]">
+                <p class="text-xs font-bold text-gray-800 leading-relaxed text-center">
+                    Hey! Want to check <span class="text-orange-600">{{ pending_test_child.name }}'s</span> reading
+                    speed? ⏱️
+                </p>
+                <!-- Tail -->
+                <div
+                    class="absolute top-full right-8 -mt-1 w-4 h-4 bg-white border-r border-b border-orange-100 rotate-45">
+                </div>
+            </div>
+
+            <!-- Buddy Icon -->
+            <a href="{% url 'portal:fluency_check' pending_test_child.id %}" class="block group relative">
+                <div
+                    class="buddy-float w-20 h-20 bg-white rounded-full shadow-2xl border-4 border-orange-400 p-2 transform transition-transform group-hover:scale-110">
+                    <img src="{% static 'images/reading_buddy.png' %}" alt="Reading Buddy"
+                        class="w-full h-full object-contain">
+                </div>
+                <div
+                    class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">
+                    1</div>
+            </a>
+
+            <!-- Close button for widget -->
+            <button onclick="dismissFluencyNudge()"
+                class="absolute -top-2 -left-2 w-6 h-6 bg-gray-900/10 hover:bg-gray-900/20 backdrop-blur-sm text-gray-800 rounded-full flex items-center justify-center text-[10px] transition-colors">
+                ✕
+            </button>
         </div>
     </div>
+    {% endif %}
+
 
     <style>
         .hide-scrollbar::-webkit-scrollbar {
@@ -201,8 +456,40 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-    </style>
-    {% endif %}
 
+        .animate-in {
+            animation-duration: 0.3s;
+            animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            animation-fill-mode: forwards;
+        }
+
+        .fade-in {
+            animation-name: fadeIn;
+        }
+
+        .zoom-in {
+            animation-name: zoomIn;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.95);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+    </style>
 </div>
 {% endblock %}

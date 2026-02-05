@@ -13,6 +13,36 @@
         </div>
     </div>
 
+    <!-- ONBOARDING FLOW BANNERS -->
+    {% if not has_children %}
+    <div
+        class="mb-6 relative overflow-hidden rounded-[24px] bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white shadow-xl shadow-blue-100">
+        <div class="relative z-10">
+            <h2 class="text-lg font-extrabold mb-1">Unlock Personalized Recommendations!</h2>
+            <p class="text-xs text-white/90 mb-4">Add your child's profile to see books that match their reading level
+                perfectly.</p>
+            <a href="{% url 'portal:profile' %}"
+                class="inline-block bg-white text-blue-600 px-6 py-2 rounded-full font-bold text-xs shadow-lg">
+                Add My Child
+            </a>
+        </div>
+        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+    </div>
+    {% elif pending_test_child %}
+    <div
+        class="mb-6 relative overflow-hidden rounded-[24px] bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white shadow-xl shadow-orange-100">
+        <div class="relative z-10">
+            <h2 class="text-lg font-extrabold mb-1">Check {{ pending_test_child.name }}'s Level! 📚</h2>
+            <p class="text-xs text-white/90 mb-4">Take a 60-second reading test to get curated book picks.</p>
+            <a href="{% url 'portal:fluency_check' pending_test_child.id %}"
+                class="inline-block bg-white text-orange-600 px-6 py-2 rounded-full font-bold text-xs shadow-lg">
+                Start Reading Test
+            </a>
+        </div>
+        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+    </div>
+    {% endif %}
+
     <!-- Hidden Filter State -->
     <div id="filter-state" class="hidden">
         <input type="hidden" name="difficulty" id="difficulty-input">
@@ -33,14 +63,7 @@
             <input type="text" name="q" id="search-input" placeholder="Search by title, author, or level..."
                 hx-get="{% url 'portal:marketplace_search' %}" hx-trigger="keyup changed delay:300ms, search"
                 hx-target="#book-results" hx-include="#search-input, #difficulty-input, #grade-input, #sort-input"
-                class="w-full pl-12 pr-12 py-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-orange-100 focus:border-orange-500 outline-none text-base shadow-sm transition-all">
-            <div class="absolute inset-y-0 right-0 pr-4 flex items-center">
-                <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                    <path
-                        d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                </svg>
-            </div>
+                class="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-orange-100 focus:border-orange-500 outline-none text-base shadow-sm transition-all">
         </div>
     </div>
 

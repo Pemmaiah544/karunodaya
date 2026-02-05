@@ -49,6 +49,9 @@ urlpatterns = [
     # Main Portal
     path('', views.HomeView.as_view(), name='home'),
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
+    path('notifications/', views.NotificationsView.as_view(), name='notifications'),
+    path('fluency-check/<int:child_id>/', views.FluencyCheckView.as_view(), name='fluency_check'),
+    path('fluency-check/<int:child_id>/save/', views.fluency_check_save, name='fluency_check_save'),
     path('curated-box/<int:child_id>/', views.CuratedBoxView.as_view(), name='curated_box'),
 
     # Marketplace

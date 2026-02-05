@@ -93,6 +93,12 @@ class Child(models.Model):
         null=True
     )
     date_of_birth = models.DateField(blank=True, null=True)
+    interests = models.TextField(blank=True, null=True, help_text="Child's interests (e.g., animals, space, adventures)")
+    reading_wpm = models.IntegerField(blank=True, null=True, help_text="Words per minute from fluency check")
+    reading_test_completed = models.BooleanField(default=False, help_text="Whether the child has completed their first reading test")
+    reading_accuracy = models.FloatField(blank=True, null=True, help_text="Accuracy percentage from fluency check")
+    reading_strengths = models.TextField(blank=True, null=True, help_text="Strengths identified in reading")
+    reading_gaps = models.TextField(blank=True, null=True, help_text="Areas for improvement identified in reading")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
