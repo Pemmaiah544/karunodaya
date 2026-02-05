@@ -426,7 +426,34 @@ class MarketplaceView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['difficulty_levels'] = Book.DIFFICULTY_RATING_CHOICES
         context['grades'] = Book.GRADE_CHOICES
+        context['difficulty_groups'] = get_marketplace_groups()
         return context
+
+def get_marketplace_groups(difficulty=None):
+    """Helper to get sectioned book groups for marketplace."""
+    difficulty_groups = []
+    
+    # If difficulty is specified, we only show that group
+    if difficulty:
+        choices = [(val, label) for val, label in Book.DIFFICULTY_RATING_CHOICES if val == difficulty]
+    else:
+        choices = Book.DIFFICULTY_RATING_CHOICES
+        
+    for val, label in choices:
+        group_books = Book.objects.filter(
+            is_purchase_eligible=True,
+            is_active=True,
+            stock_count__gt=0,
+            difficulty_rating=val
+        ).order_by('?')[:10]
+        
+        if group_books.exists():
+            difficulty_groups.append({
+                'value': val,
+                'label': label,
+                'books': group_books
+            })
+    return difficulty_groups
 
 
 @login_required
@@ -442,6 +469,14 @@ def marketplace_search(request):
         is_active=True,
         stock_count__gt=0
     )
+
+    # If all primary search/filter fields are empty and we are using default sort, return the sectioned view
+    # If a specific sort is applied (like New Arrivals or Popular), we want the grid view
+    if not query and not difficulty and not grade and sort == 'title':
+        return render(request, 'portal/components/marketplace_sectioned.html', {
+            'difficulty_groups': get_marketplace_groups(),
+            'difficulty_levels': Book.DIFFICULTY_RATING_CHOICES
+        })
 
     # Apply search query
     if query:
@@ -469,7 +504,11 @@ def marketplace_search(request):
     else:
         books = books.order_by('title')
 
-    return render(request, 'portal/components/book_grid.html', {'books': books})
+    return render(request, 'portal/components/book_results_grid.html', {
+        'books': books,
+        'difficulty_levels': Book.DIFFICULTY_RATING_CHOICES,
+        'grades': Book.GRADE_CHOICES
+    })
 
 
 class BookDetailView(LoginRequiredMixin, DetailView):
