@@ -710,57 +710,87 @@ class ProfileView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['parent_profile'] = self.request.user.parent_profile
-        context['children'] = self.request.user.parent_profile.children.all()
+        parent_profile = self.request.user.parent_profile
+        context['parent_profile'] = parent_profile
+        context['children'] = parent_profile.children.all()
+        
+        # Calculate completion percentage
+        user = self.request.user
+        fields = [
+            user.first_name,
+            user.email,
+            parent_profile.phone_number,
+            parent_profile.address,
+            parent_profile.city,
+            parent_profile.state,
+            parent_profile.pincode,
+            parent_profile.children.exists()
+        ]
+        completed = sum(1 for f in fields if f)
+        context['profile_completion'] = int((completed / len(fields)) * 100)
+        
         return context
 
 
 @onboarding_required
 def update_profile_name(request):
-    """Update user's first and last name."""
+    """Update parent's core information."""
     if request.method == 'POST':
         first_name = request.POST.get('first_name', '').strip()
         last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone_number', '').strip()
+        address = request.POST.get('address', '').strip()
+        city = request.POST.get('city', '').strip()
+        state = request.POST.get('state', '').strip()
+        pincode = request.POST.get('pincode', '').strip()
         
-        # Validate first name (required)
-        if not first_name or len(first_name) < 2 or len(first_name) > 15:
-            messages.error(request, 'First name must be between 2 and 15 characters.')
+        # Standard validation for name
+        if not first_name or len(first_name) < 2:
+            messages.error(request, 'First name is required.')
             return redirect('portal:profile')
         
-        # Check if first name contains at least one letter
-        if not any(c.isalpha() for c in first_name):
-            messages.error(request, 'First name must contain at least one letter.')
-            return redirect('portal:profile')
-        
-        # Check if first name contains only letters and spaces
-        if not all(c.isalpha() or c.isspace() for c in first_name):
-            messages.error(request, 'First name can only contain letters and spaces.')
-            return redirect('portal:profile')
-        
-        # Validate last name (optional, but if provided must be valid)
-        if last_name:
-            if len(last_name) < 2 or len(last_name) > 15:
-                messages.error(request, 'Last name must be between 2 and 15 characters.')
-                return redirect('portal:profile')
-            
-            if not any(c.isalpha() for c in last_name):
-                messages.error(request, 'Last name must contain at least one letter.')
-                return redirect('portal:profile')
-            
-            if not all(c.isalpha() or c.isspace() for c in last_name):
-                messages.error(request, 'Last name can only contain letters and spaces.')
-                return redirect('portal:profile')
-        
-        # Update user's name (capitalize first letter of each word)
         user = request.user
+        parent_profile = user.parent_profile
+        
+        # Update User model
         user.first_name = first_name.title()
         user.last_name = last_name.title() if last_name else ''
+        if email:
+            user.email = email
         user.save()
         
-        messages.success(request, 'Your name has been updated successfully!')
+        # Update ParentProfile model
+        if phone:
+            parent_profile.phone_number = phone
+        if address:
+            parent_profile.address = address
+        if city:
+            parent_profile.city = city
+        if state:
+            parent_profile.state = state
+        if pincode:
+            parent_profile.pincode = pincode
+            
+        parent_profile.save()
+        
+        messages.success(request, 'Profile updated successfully!')
         return redirect('portal:profile')
     
     return redirect('portal:profile')
+
+
+@onboarding_required
+def toggle_child_status(request, child_id):
+    """Toggle is_active status for a child profile."""
+    if request.method == 'POST':
+        child = get_object_or_404(Child, id=child_id, parent__user=request.user)
+        child.is_active = not child.is_active
+        child.save()
+        status_text = "activated" if child.is_active else "paused"
+        messages.success(request, f"{child.name}'s profile has been {status_text}.")
+        return redirect('portal:profile')
+    return HttpResponse('Method not allowed', status=405)
 
 
 

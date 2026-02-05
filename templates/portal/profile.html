@@ -1,256 +1,436 @@
 {% extends "portal/base.html" %}
 {% load static %}
 
-{% block title %}My Profile - Karunodaya{% endblock %}
+{% block title %}Profile Management - Karunodaya{% endblock %}
 
 {% block extra_head %}
 <style>
     .capitalize-first {
         text-transform: capitalize;
     }
+
+    /* Progress Ring for Avatar */
+    .avatar-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+
+    .progress-ring__circle {
+        transition: stroke-dashoffset 0.8s ease-in-out;
+        transform-origin: 50% 50%;
+    }
+
+    .avatar-percentage {
+        position: absolute;
+        bottom: 0px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #f97316;
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 2px solid white;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    /* Switch Component */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 22px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #e2e8f0;
+        transition: .4s;
+        border-radius: 22px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked+.slider {
+        background-color: #22c55e;
+    }
+
+    input:checked+.slider:before {
+        transform: translateX(18px);
+    }
+
+    /* Custom Gradients/Backgrounds */
+    .banner-gradient {
+        background: linear-gradient(135deg, #fff 0%, #fff7ed 100%);
+        border: 1px solid #ffedd5;
+    }
+
+    .support-card {
+        background: #0f172a;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="container mx-auto px-4 py-4">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">My Profile</h1>
+{% block header %}
+<div class="container mx-auto px-4 py-4 flex items-center justify-between bg-white border-b border-gray-50">
+    <a href="javascript:history.back()" class="p-2 text-gray-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+    </a>
+    <h1 class="text-lg font-bold text-gray-900">Profile Management</h1>
+    <button class="p-2 text-gray-600">
+        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+                d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.533 1.533 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                clip-rule="evenodd" />
+        </svg>
+    </button>
+</div>
+{% endblock %}
 
+{% block content %}
+<div class="container mx-auto px-4 pb-24 max-w-lg">
     <!-- Messages -->
     {% if messages %}
-    <div class="mb-6">
+    <div class="mt-4">
         {% for message in messages %}
-        <div class="{% if message.tags == 'success' %}bg-green-50 border-l-4 border-green-500 text-green-700{% elif message.tags == 'error' %}bg-red-50 border-l-4 border-red-500 text-red-700{% else %}bg-blue-50 border-l-4 border-blue-500 text-blue-700{% endif %} p-4 rounded mb-3"
+        <div class="{% if message.tags == 'success' %}bg-green-50 text-green-700 border-green-200{% else %}bg-red-50 text-red-700 border-red-200{% endif %} p-4 rounded-xl border mb-4 text-sm font-bold shadow-sm"
             role="alert">
-            <p class="font-medium">{{ message }}</p>
+            {{ message }}
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
-    <!-- User Information -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Account Information</h2>
-            <button id="edit-name-btn" onclick="toggleNameEdit()"
-                class="text-orange-600 hover:text-orange-700 text-sm font-medium flex items-center">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Edit Name
-            </button>
-        </div>
-
-        <!-- Display Mode -->
-        <div id="name-display" class="space-y-3">
-            <div>
-                <label class="block text-sm text-gray-600">Full Name</label>
-                <p class="font-medium">{{ user.first_name }} {{ user.last_name }}</p>
-            </div>
-            <div>
-                <label class="block text-sm text-gray-600">Email</label>
-                <p class="font-medium">{{ user.email|default:"Not provided" }}</p>
-            </div>
-            <div>
-                <label class="block text-sm text-gray-600">Mobile Number</label>
-                <p class="font-medium">{{ user.username }}</p>
-            </div>
-        </div>
-
-        <!-- Edit Mode (Hidden by default) -->
-        <div id="name-edit" class="hidden">
-            <form method="post" action="{% url 'portal:update_profile_name' %}" class="space-y-4">
-                {% csrf_token %}
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name <span
-                                class="text-red-500">*</span></label>
-                        <input type="text" name="first_name" value="{{ user.first_name }}" required
-                            pattern="^(?=.*[A-Za-z])[A-Za-z\s]{2,15}$"
-                            title="First name must contain at least one letter (2-15 characters, letters and spaces only)"
-                            maxlength="15" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '');"
-                            class="capitalize-first w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name <span
-                                class="text-gray-400 text-xs">(Optional)</span></label>
-                        <input type="text" name="last_name" value="{{ user.last_name }}"
-                            pattern="^(?=.*[A-Za-z])[A-Za-z\s]{2,15}$"
-                            title="Last name must contain at least one letter (2-15 characters, letters and spaces only)"
-                            maxlength="15" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '');"
-                            class="capitalize-first w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">Email</label>
-                    <p class="font-medium text-gray-400">{{ user.email|default:"Not provided" }}</p>
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">Mobile Number</label>
-                    <p class="font-medium text-gray-400">{{ user.username }}</p>
-                </div>
-
-                <div class="flex gap-3 pt-2">
-                    <button type="submit"
-                        class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors">
-                        Save Changes
-                    </button>
-                    <button type="button" onclick="toggleNameEdit()"
-                        class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Parent Profile Information -->
-    {% if parent_profile %}
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Contact Information</h2>
-        <div class="space-y-3">
-            <div>
-                <label class="block text-sm text-gray-600">Phone Number</label>
-                <p class="font-medium">{{ parent_profile.phone_number }}</p>
-            </div>
-            <div>
-                <label class="block text-sm text-gray-600">Address</label>
-                <p class="font-medium">{{ parent_profile.address|default:"Not provided" }}</p>
-            </div>
-            {% if parent_profile.city %}
-            <div>
-                <label class="block text-sm text-gray-600">City</label>
-                <p class="font-medium">{{ parent_profile.city }}</p>
-            </div>
-            {% endif %}
-            {% if parent_profile.state %}
-            <div>
-                <label class="block text-sm text-gray-600">State</label>
-                <p class="font-medium">{{ parent_profile.state }}</p>
-            </div>
-            {% endif %}
-            {% if parent_profile.pincode %}
-            <div>
-                <label class="block text-sm text-gray-600">PIN Code</label>
-                <p class="font-medium">{{ parent_profile.pincode }}</p>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Children Section -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">My Children</h2>
-            {% if children|length < 5 %} <a href="{% url 'portal:add_child' %}"
-                class="text-orange-600 hover:text-orange-700 text-sm font-medium">
-                + Add Child
-                </a>
-                {% endif %}
-        </div>
-
-        {% if children %}
-        <div class="space-y-3">
-            {% for child in children %}
-            <div class="border border-gray-200 rounded-lg p-4">
-                <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <h3 class="font-semibold text-gray-900">{{ child.name }}</h3>
-                        <p class="text-sm text-gray-600">{{ child.age }} years • {{ child.get_grade_display }}</p>
-                    </div>
-                    <a href="{% url 'portal:edit_child' child.id %}"
-                        class="text-orange-600 hover:text-orange-700 text-sm">
-                        Edit
-                    </a>
-                </div>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                        <span class="text-gray-600">Reading Level:</span>
-                        <span class="font-medium">{{ child.get_reading_level_display }}</span>
-                    </div>
-                    <div>
-                        <span class="text-gray-600">Date of Birth:</span>
-                        <span class="font-medium">{{ child.date_of_birth|date:"d M Y" }}</span>
-                    </div>
-                </div>
-                <a href="{% url 'portal:curated_box' child.id %}"
-                    class="inline-block mt-2 text-orange-600 hover:text-orange-700 text-sm font-medium">
-                    View Curated Books →
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p class="text-gray-600 text-center py-4">No children added yet.</p>
-        {% endif %}
-
-        {% if children|length >= 5 %}
-        <p class="text-sm text-amber-600 mt-4 flex items-center">
-            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clip-rule="evenodd" />
+    <!-- Top Profile Section -->
+    <div class="flex flex-col items-center mt-6 mb-8 text-center">
+        <div class="avatar-container mb-4">
+            <svg class="progress-ring" width="120" height="120">
+                <circle class="text-gray-100" stroke-width="4" stroke="currentColor" fill="transparent" r="56" cx="60"
+                    cy="60" />
+                <circle id="profile-progress-circle" class="progress-ring__circle text-orange-500" stroke-width="4"
+                    stroke-dasharray="351" stroke-dashoffset="351" stroke-linecap="round" stroke="currentColor"
+                    fill="transparent" r="56" cx="60" cy="60" />
             </svg>
-            Maximum of 5 children reached
-        </p>
+            <div class="absolute inset-0 flex items-center justify-center p-3">
+                <div class="w-full h-full rounded-full overflow-hidden border-4 border-white shadow-lg">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ user.username }}" alt="Profile"
+                        class="w-full h-full object-cover">
+                </div>
+            </div>
+            <span class="avatar-percentage">{{ profile_completion|default:"0" }}%</span>
+        </div>
+
+        <div class="flex items-center justify-center gap-1.5 mb-1">
+            <h2 class="text-2xl font-bold text-gray-900 tracking-tight">{{ user.get_full_name|default:user.username }}
+            </h2>
+            <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                    d="M23,12L20.56,9.22L20.9,5.54L17.29,4.72L15.4,1.54L12,3L8.6,1.54L6.71,4.72L3.1,5.53L3.44,9.21L1,12L3.44,14.78L3.1,18.47L6.71,19.29L8.6,22.47L12,21L15.4,22.46L17.29,19.28L20.9,18.46L20.56,14.78L23,12M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z" />
+            </svg>
+        </div>
+        <p class="text-gray-400 font-bold text-sm mb-4">Parent Account</p>
+        <button onclick="enableAllEditing()"
+            class="flex items-center gap-2 mx-auto text-orange-500 font-bold text-xs uppercase tracking-widest border border-orange-100 px-4 py-2 rounded-full hover:bg-orange-50 transition-colors bg-white">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            Edit Profile
+        </button>
+    </div>
+
+    <!-- Completion Banner -->
+    {% if profile_completion < 100 %} <div
+        class="banner-gradient rounded-3xl p-5 mb-10 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-500">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z"
+                        clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-gray-900 font-bold text-sm mb-0.5">Complete Your Profile</h3>
+                <p class="text-gray-400 text-xs font-bold">Add address to reach 100%</p>
+            </div>
+        </div>
+        <button onclick="toggleEdit('contact')"
+            class="bg-orange-100 text-orange-600 text-xs font-bold py-2 px-5 rounded-xl hover:bg-orange-200 transition-colors">Finish</button>
+</div>
+{% endif %}
+
+<!-- My Children Section -->
+<div class="mb-10">
+    <div class="flex items-center justify-between mb-4 px-1">
+        <h2 class="text-xl font-bold text-gray-900 tracking-tight">My Children</h2>
+        <a href="{% url 'portal:add_child' %}" class="text-[10px] font-bold text-orange-500 uppercase tracking-widest">+
+            Add Child</a>
+    </div>
+
+    <div class="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-hide">
+        {% if children %}
+        {% for child in children %}
+        <div class="min-w-[170px] bg-white rounded-3xl p-5 border border-gray-100 shadow-sm flex flex-col items-center">
+            <div
+                class="w-14 h-14 rounded-full {% if forloop.counter|divisibleby:2 %}bg-pink-50 text-pink-500{% else %}bg-blue-50 text-blue-500{% endif %} flex items-center justify-center text-xl mb-3">
+                {% if forloop.counter|divisibleby:2 %}👧{% else %}👦{% endif %}
+            </div>
+            <h4 class="font-bold text-gray-900 mb-1">{{ child.name }}</h4>
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Grade {{
+                child.get_grade_display|default:"Unknown" }}</p>
+
+            <div class="flex items-center justify-between w-full pt-3 border-t border-gray-50">
+                <span
+                    class="text-[10px] font-bold {% if child.is_active %}text-green-500{% else %}text-gray-400{% endif %} uppercase tracking-widest">
+                    {% if child.is_active %}ACTIVE{% else %}PAUSED{% endif %}
+                </span>
+                <form action="{% url 'portal:toggle_child' child.id %}" method="post" id="toggle-form-{{ child.id }}">
+                    {% csrf_token %}
+                    <label class="switch">
+                        <input type="checkbox" {% if child.is_active %}checked{% endif %}
+                            onchange="document.getElementById('toggle-form-{{ child.id }}').submit()">
+                        <span class="slider"></span>
+                    </label>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div
+            class="w-full bg-white rounded-3xl p-10 border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center opacity-60">
+            <div class="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center text-2xl mb-4">👶</div>
+            <p class="text-gray-400 font-bold text-xs uppercase tracking-widest">No children added yet</p>
+        </div>
         {% endif %}
     </div>
 </div>
 
+<!-- Edit Forms -->
+<form method="post" action="{% url 'portal:update_profile_name' %}" id="profile-master-form" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- Account Information Card -->
+    <div>
+        <div class="flex items-center justify-between mb-4 px-1">
+            <h2 class="text-xl font-bold text-gray-900 tracking-tight">Account Information</h2>
+            <button type="button" onclick="toggleEdit('account')"
+                class="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Edit</button>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="p-5 flex items-start gap-4 border-b border-gray-50">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0 text-gray-400">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Full Name</p>
+                    <div id="account-view-name" class="font-bold text-gray-900"> {{
+                        user.get_full_name|default:user.username }} </div>
+                    <div id="account-edit-name" class="hidden grid grid-cols-2 gap-2 mt-1">
+                        <input type="text" name="first_name" value="{{ user.first_name }}"
+                            class="w-full px-3 py-2 bg-gray-50 border-none rounded-xl font-bold text-sm outline-none focus:ring-1 focus:ring-orange-200">
+                        <input type="text" name="last_name" value="{{ user.last_name }}"
+                            class="w-full px-3 py-2 bg-gray-50 border-none rounded-xl font-bold text-sm outline-none focus:ring-1 focus:ring-orange-200">
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5 flex items-start gap-4">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0 text-gray-400">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Email Address</p>
+                    <div class="flex items-center justify-between">
+                        <div id="account-view-email"
+                            class="font-bold {% if not user.email %}text-gray-300 italic{% else %}text-gray-900{% endif %}">
+                            {{ user.email|default:"Not provided" }}
+                        </div>
+                        {% if not user.email %}
+                        <span id="account-view-badge"
+                            class="bg-orange-50 text-orange-600 text-[9px] font-bold px-2 py-0.5 rounded uppercase">Missing</span>
+                        {% endif %}
+                    </div>
+                    <div id="account-edit-email" class="hidden mt-1">
+                        <input type="email" name="email" value="{{ user.email }}"
+                            class="w-full px-3 py-2 bg-gray-50 border-none rounded-xl font-bold text-sm outline-none focus:ring-1 focus:ring-orange-200">
+                    </div>
+                </div>
+            </div>
+
+            <div id="account-actions" class="hidden p-4 bg-gray-50 flex gap-3">
+                <button type="submit"
+                    class="flex-1 py-3 bg-orange-500 text-white text-xs font-bold uppercase tracking-widest rounded-2xl">Save
+                    Changes</button>
+                <button type="button" onclick="toggleEdit('account')"
+                    class="flex-1 py-3 bg-white text-gray-500 text-xs font-bold uppercase tracking-widest rounded-2xl border border-gray-100">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Information Card -->
+    <div>
+        <div class="flex items-center justify-between mb-4 px-1">
+            <h2 class="text-xl font-bold text-gray-900 tracking-tight">Contact Information</h2>
+            <button type="button" onclick="toggleEdit('contact')"
+                class="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Edit</button>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="p-5 flex items-start gap-4 border-b border-gray-50">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0 text-gray-400">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 004.529 4.528l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Mobile Number</p>
+                    <div id="contact-view-phone" class="font-bold text-gray-900">{{ parent_profile.phone_number }}</div>
+                    <div id="contact-edit-phone" class="hidden mt-1">
+                        <input type="tel" name="phone_number" value="{{ parent_profile.phone_number }}"
+                            class="w-full px-3 py-2 bg-gray-50 border-none rounded-xl font-bold text-sm outline-none focus:ring-1 focus:ring-orange-200">
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5 flex items-start gap-4">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0 text-gray-400">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Full Address</p>
+                    <div id="contact-view-address"
+                        class="font-bold {% if not parent_profile.address %}text-gray-300 italic{% else %}text-gray-900{% endif %} leading-snug">
+                        {{ parent_profile.address|default:"Not provided" }}
+                        {% if parent_profile.city %}
+                        <br><span class="text-xs text-gray-400">{{ parent_profile.city|default:"" }}</span>
+                        {% endif %}
+                    </div>
+                    <div id="contact-edit-address" class="hidden space-y-2 mt-1">
+                        <textarea name="address" rows="2"
+                            class="w-full px-3 py-2 bg-gray-50 border-none rounded-xl font-bold text-sm outline-none focus:ring-1 focus:ring-orange-200">{{ parent_profile.address }}</textarea>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" name="city" value="{{ parent_profile.city }}" placeholder="City"
+                                class="px-3 py-2 bg-gray-50 border-none rounded-xl font-bold text-sm outline-none focus:ring-1 focus:ring-orange-200">
+                            <input type="text" name="pincode" value="{{ parent_profile.pincode }}" placeholder="Pincode"
+                                class="px-3 py-2 bg-gray-50 border-none rounded-xl font-bold text-sm outline-none focus:ring-1 focus:ring-orange-200">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="contact-actions" class="hidden p-4 bg-gray-50 flex gap-3">
+                <button type="submit"
+                    class="flex-1 py-3 bg-orange-500 text-white text-xs font-bold uppercase tracking-widest rounded-2xl">Update
+                    Stats</button>
+                <button type="button" onclick="toggleEdit('contact')"
+                    class="flex-1 py-3 bg-white text-gray-500 text-xs font-bold uppercase tracking-widest rounded-2xl border border-gray-100">Cancel</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+
+
 {% block extra_scripts %}
 <script>
-    // Toggle name edit mode
-    function toggleNameEdit() {
-        const displayDiv = document.getElementById('name-display');
-        const editDiv = document.getElementById('name-edit');
+    function toggleEdit(section) {
+        const sections = {
+            'account': ['account-view-name', 'account-edit-name', 'account-view-email', 'account-view-badge', 'account-edit-email', 'account-actions'],
+            'contact': ['contact-view-phone', 'contact-edit-phone', 'contact-view-address', 'contact-edit-address', 'contact-actions']
+        };
 
-        if (displayDiv.classList.contains('hidden')) {
-            // Switch to display mode
-            displayDiv.classList.remove('hidden');
-            editDiv.classList.add('hidden');
-        } else {
-            // Switch to edit mode
-            displayDiv.classList.add('hidden');
-            editDiv.classList.remove('hidden');
-        }
+        sections[section].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('hidden');
+        });
+    }
+
+    function enableAllEditing() {
+        // Only toggle if not already visible
+        const accountEdit = document.getElementById('account-edit-name');
+        const contactEdit = document.getElementById('contact-edit-phone');
+
+        if (accountEdit && accountEdit.classList.contains('hidden')) toggleEdit('account');
+        if (contactEdit && contactEdit.classList.contains('hidden')) toggleEdit('contact');
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Auto-dismiss messages after 2 seconds
-        const messages = document.querySelectorAll('[role="alert"]');
+        // Progress Ring Calculation
+        const circle = document.getElementById('profile-progress-circle');
+        if (circle) {
+            const radius = circle.r.baseVal.value;
+            const circumference = 2 * Math.PI * radius;
 
-        messages.forEach(function (message) {
-            // Add transition for smooth fade-out
-            message.style.transition = 'opacity 0.5s ease-out';
+            // Get percentage from the DOM element to avoid linter errors with Django tags
+            const percentElement = document.querySelector('.avatar-percentage');
+            const percent = percentElement ? parseInt(percentElement.textContent) || 0 : 0;
 
-            // After 2 seconds, start fade-out
-            setTimeout(function () {
-                message.style.opacity = '0';
-
-                // After fade-out completes, remove the element
-                setTimeout(function () {
-                    message.remove();
-                }, 500); // 500ms matches the transition duration
-            }, 2000); // 2000ms = 2 seconds
-        });
-
-        const btn = document.getElementById('settings-btn');
-        const dropdown = document.getElementById('settings-dropdown');
-
-        if (btn && dropdown) {
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                dropdown.classList.toggle('hidden');
-            });
-
-            document.addEventListener('click', function (e) {
-                if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.classList.add('hidden');
-                }
-            });
+            const offset = circumference - (percent / 100 * circumference);
+            circle.style.strokeDashoffset = offset;
         }
+
+        // Auto-dismiss alerts
+        const alerts = document.querySelectorAll('[role="alert"]');
+        alerts.forEach(function (alert) {
+            setTimeout(function () {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            }, 3000);
+        });
     });
 </script>
 {% endblock %}

@@ -99,6 +99,7 @@ class Child(models.Model):
     reading_accuracy = models.FloatField(blank=True, null=True, help_text="Accuracy percentage from fluency check")
     reading_strengths = models.TextField(blank=True, null=True, help_text="Strengths identified in reading")
     reading_gaps = models.TextField(blank=True, null=True, help_text="Areas for improvement identified in reading")
+    is_active = models.BooleanField(default=True, help_text="Whether this child's profile is currently active")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
