@@ -1,7 +1,9 @@
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+<div class="grid grid-cols-3 md:grid-cols-5 gap-3 w-full">
     {% for book in books %}
     <div class="flex justify-center">
-        {% include "portal/components/book_card.html" with book=book %}
+        <div class="w-full max-w-[160px]">
+            {% include "portal/components/book_card.html" with book=book %}
+        </div>
     </div>
     {% empty %}
     <div class="col-span-full text-center py-12">

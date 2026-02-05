@@ -1209,6 +1209,10 @@ video {
   max-width: 320px;
 }
 
+.max-w-\[160px\] {
+  max-width: 160px;
+}
+
 .flex-1 {
   flex: 1 1 0%;
 }
@@ -1337,6 +1341,10 @@ video {
 
 .grid-cols-2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .flex-col {
@@ -1723,6 +1731,10 @@ video {
 
 .border-gray-50\/80 {
   border-color: rgb(249 250 251 / 0.8);
+}
+
+.border-orange-100 {
+  border-color: #ffa50020;
 }
 
 .bg-black {
@@ -3325,6 +3337,10 @@ video {
 
   .md\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .md\:gap-4 {

@@ -448,9 +448,17 @@ def get_marketplace_groups(difficulty=None):
         ).order_by('?')[:10]
         
         if group_books.exists():
+            # Split "Beginner (Ages 3-6)" into "Beginner" and "Ages 3-6"
+            name = label
+            age = ""
+            if " (" in label:
+                name, age = label.split(" (", 1)
+                age = age.replace("(", "").replace(")", "").strip()
+
             difficulty_groups.append({
                 'value': val,
-                'label': label,
+                'name': name,
+                'age': age,
                 'books': group_books
             })
     return difficulty_groups
