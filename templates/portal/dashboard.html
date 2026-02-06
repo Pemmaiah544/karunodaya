@@ -146,38 +146,164 @@
         </a>
     </div>
 
-
-    <!-- Active Subscriptions -->
-    {% if active_subscriptions %}
+    <!-- Learning Progress Section -->
     <div class="mb-8">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-base font-bold text-gray-900">Active Subscriptions ({{ active_subscriptions|length }})</h2>
-            <a href="{% url 'portal:my_books' %}"
-                class="text-orange-500 hover:text-orange-600 font-medium text-xs flex items-center gap-1">
-                View All
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </a>
+        <div class="flex items-center gap-2 mb-4 px-1">
+            <h2 class="text-xl font-bold text-gray-900">Learning Progress</h2>
+            <span
+                class="bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Live
+                Tracking</span>
         </div>
 
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for child in children %}
+            <div
+                class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-shadow">
+                <!-- Header -->
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">
+                            {{ child.name|slice:":1" }}
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">{{ child.name }}</h3>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{{
+                                child.get_grade_display }}</p>
+                        </div>
+                    </div>
+                    {% if child.reading_test_completed %}
+                    <span
+                        class="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border border-green-100">
+                        {{ child.get_reading_difficulty_level_display|default:"Evaluated" }}
+                    </span>
+                    {% else %}
+                    <span
+                        class="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border border-orange-100">
+                        Pending Test
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if child.reading_test_completed %}
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Reading Speed</p>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-xl font-black text-gray-900">{{ child.reading_wpm }}</span>
+                            <span class="text-[10px] font-bold text-gray-500">WPM</span>
+                        </div>
+                        <!-- Simple Progress Bar -->
+                        <div class="mt-2 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-indigo-500 rounded-full"
+                                style="width: {% if child.reading_wpm > 120 %}100{% else %}{{ child.reading_wpm }}{% endif %}%">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Accuracy</p>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-xl font-black text-gray-900">{{ child.reading_accuracy|floatformat:0
+                                }}</span>
+                            <span class="text-[10px] font-bold text-gray-500">%</span>
+                        </div>
+                        <!-- Simple Progress Bar -->
+                        <div class="mt-2 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-green-500 rounded-full"
+                                style="width: {{ child.reading_accuracy|default:0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Summary -->
+                <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>Keep reading to unlock the next level!</span>
+                </div>
+                {% else %}
+                <div class="py-4 text-center">
+                    <p class="text-xs text-gray-500 mb-4">Take a reading check to see {{ child.name }}'s progress
+                        metrics.</p>
+                    <a href="{% url 'portal:fluency_check' child.id %}"
+                        class="inline-flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-full text-[11px] font-bold shadow-indigo-100 shadow-lg active:scale-95 transition-all">
+                        Start Fluency Check
+                    </a>
+                </div>
+                {% endif %}
+
+                <!-- Decorative elements -->
+                <div
+                    class="absolute -right-6 -bottom-6 w-24 h-24 bg-indigo-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+
+    <!-- My Books Section -->
+    <div class="mb-8">
+        <div class="flex justify-between items-center mb-4 px-1">
+            <h2 class="text-xl font-bold text-gray-900">My Books</h2>
+            {% if active_subscriptions %}
+            <a href="{% url 'portal:my_books' %}" class="text-orange-500 hover:text-orange-600 font-medium text-sm">
+                Manage
+            </a>
+            {% endif %}
+        </div>
+
+        {% if active_subscriptions %}
+        {% if borrowed_books %}
+        <!-- Books List Display -->
+        <div class="flex overflow-x-auto pb-4 gap-4 hide-scrollbar -mx-4 px-4 scroll-smooth">
+            {% for item in borrowed_books %}
+            <div class="flex-none w-40 group relative">
+                <a href="{% url 'portal:book_detail' item.book.id %}">
+                    <div
+                        class="bg-gray-100 rounded-2xl p-3 mb-2 aspect-[3/4] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shadow-sm border border-gray-50 relative overflow-hidden">
+                        {% if item.book.cover_image %}
+                        <img src="{{ item.book.cover_image.url }}" alt="{{ item.book.title }}"
+                            class="w-full h-full object-contain rounded-sm shadow-md">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center bg-gray-200 rounded-sm">
+                            <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                            </svg>
+                        </div>
+                        {% endif %}
+
+                        <!-- Child Badge -->
+                        <div
+                            class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-[10px] font-bold text-gray-700 shadow-sm border border-gray-100">
+                            {{ item.child.name|truncatechars:10 }}
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-sm text-gray-900 truncate px-1">{{ item.book.title }}</h3>
+                    <p class="text-xs text-orange-600 truncate px-1 font-medium">Due: {{ item.due_date|date:"M d" }}</p>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Fallback: Subscription Summary (No books assigned yet) -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <!-- Stats Grid -->
             <div class="grid grid-cols-2 gap-6 mb-4">
                 <div>
-                    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Borrowed</p>
+                    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Limit</p>
                     <p class="text-2xl font-bold text-gray-900">
                         {{ total_books_count }} Book{{ total_books_count|pluralize }}
                     </p>
                 </div>
                 <div class="text-right">
-                    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Earliest Due</p>
-                    <p class="text-2xl font-bold text-gray-900">
-                        {% for cycle in active_subscriptions %}
-                        {% if forloop.first %}
-                        {{ cycle.expected_return_date|date:"M d" }}
-                        {% endif %}
-                        {% endfor %}
+                    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Status</p>
+                    <p class="text-lg font-bold text-orange-600">
+                        Preparing Box
                     </p>
                 </div>
             </div>
@@ -200,44 +326,64 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                Manage All Subscriptions
+                Manage Subscriptions
             </a>
         </div>
+        {% endif %}
+        {% else %}
+        <!-- No Active Subscription State -->
+        <div class="bg-gray-50 rounded-2xl p-6 text-center border border-dashed border-gray-200">
+            <p class="text-sm text-gray-500 mb-4 px-4">Subscribe to a plan to start receiving curated book boxes for
+                your children!</p>
+            <a href="{% url 'portal:plans' %}"
+                class="inline-block bg-white text-orange-600 border border-orange-200 px-6 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-orange-50 transition-colors">
+                View Plans
+            </a>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
 
-    <!-- Recommended for You -->
+    <!-- Recommended Books -->
     <div class="mt-8 mb-6">
         <div class="flex justify-between items-center mb-4 px-1">
-            <h2 class="text-xl font-bold text-gray-900">Explore, Read & Learn</h2>
+            <h2 class="text-xl font-bold text-gray-900">Recommended Books</h2>
             <a href="{% url 'portal:marketplace' %}" class="text-orange-500 hover:text-orange-600 font-medium text-sm">
                 See All
             </a>
         </div>
 
-        {% if recommended_books %}
-        <div class="flex overflow-x-auto pb-4 gap-4 hide-scrollbar -mx-4 px-4 scroll-smooth">
-            {% for book in recommended_books %}
-            <a href="{% url 'portal:book_detail' book.id %}" class="flex-none w-40 group">
-                <div
-                    class="bg-gray-100 rounded-2xl p-3 mb-2 aspect-[3/4] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shadow-sm border border-gray-50">
-                    {% if book.cover_image %}
-                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }}"
-                        class="w-full h-full object-contain rounded-sm shadow-md">
-                    {% else %}
-                    <div class="w-full h-full flex items-center justify-center bg-gray-200 rounded-sm">
-                        <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-                        </svg>
+        {% if recommendations_by_child %}
+        {% for item in recommendations_by_child %}
+        <div class="mb-8 last:mb-0">
+            <div class="flex items-center gap-2 mb-3 px-1">
+                <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
+                <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider">For {{ item.child.name }}</h3>
+            </div>
+
+            <div class="flex overflow-x-auto pb-4 gap-4 hide-scrollbar -mx-4 px-4 scroll-smooth">
+                {% for book in item.books %}
+                <a href="{% url 'portal:book_detail' book.id %}" class="flex-none w-40 group">
+                    <div
+                        class="bg-gray-100 rounded-2xl p-3 mb-2 aspect-[3/4] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shadow-sm border border-gray-50">
+                        {% if book.cover_image %}
+                        <img src="{{ book.cover_image.url }}" alt="{{ book.title }}"
+                            class="w-full h-full object-contain rounded-sm shadow-md">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center bg-gray-200 rounded-sm">
+                            <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                            </svg>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
-                </div>
-                <h3 class="font-bold text-sm text-gray-900 truncate px-1">{{ book.title }}</h3>
-                <p class="text-xs text-gray-500 truncate px-1">{{ book.author }}</p>
-            </a>
-            {% endfor %}
+                    <h3 class="font-bold text-sm text-gray-900 truncate px-1">{{ book.title }}</h3>
+                    <p class="text-xs text-gray-500 truncate px-1">{{ book.author }}</p>
+                </a>
+                {% endfor %}
+            </div>
         </div>
+        {% endfor %}
         {% else %}
         <div class="bg-gray-100 rounded-3xl p-8 text-center border border-dashed border-gray-300 mx-1">
             <div class="w-16 h-16 mx-auto mb-4 opacity-40 grayscale">

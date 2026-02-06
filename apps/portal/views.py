@@ -313,6 +313,22 @@ class DashboardView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
     """Main dashboard view."""
     template_name = 'portal/dashboard.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        """Check if onboarding is complete before rendering dashboard."""
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+            
+        try:
+            parent_profile = request.user.parent_profile
+            # Check if onboarding is completed
+            if not parent_profile.onboarding_completed:
+                return redirect('portal:onboarding')
+        except ParentProfile.DoesNotExist:
+            # Redirect to onboarding if no profile
+            return redirect('portal:onboarding')
+        
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -395,15 +411,19 @@ class DashboardView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
             parent=parent_profile
         ).order_by('-created_at')[:5]
 
-        # Get recommended books only if child has completed reading test
-        if all_tests_completed:
-            # Get curated books for the first child or a mix
-            if children.exists():
-                context['recommended_books'] = get_curated_books(children[0].id, limit=10)
-            else:
-                context['recommended_books'] = Book.objects.filter(is_active=True).order_by('-created_at')[:10]
-        else:
-            context['recommended_books'] = Book.objects.none()
+        # Get recommended books for each child who has completed reading test
+        completed_children = children.filter(reading_test_completed=True)
+        recommendations_by_child = []
+
+        for child in completed_children:
+            recommendations_by_child.append({
+                'child': child,
+                'books': get_curated_books(child.id, limit=10)
+            })
+            
+        context['recommendations_by_child'] = recommendations_by_child
+        # Keep recommended_books for backward compatibility or simple display
+        context['recommended_books'] = recommendations_by_child[0]['books'] if recommendations_by_child else Book.objects.none()
 
         return context
 
