@@ -30,6 +30,31 @@
         if (banner) banner.classList.add('hidden');
     }
 
+    function dismissBuddyOnly() {
+        const widget = document.getElementById('reading-buddy-widget');
+        if (widget) widget.classList.add('hidden');
+    }
+
+    function dismissLanguageBanner(childId) {
+        const banner = document.getElementById('language-exploration-banner-' + childId);
+        if (banner) {
+            banner.style.display = 'none';
+        }
+
+        // Call API to dismiss permanently
+        fetch(`/dismiss-language-banner/${childId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                console.log('Banner dismissed permanently');
+            }
+        }).catch(err => console.error('Error dismissing banner:', err));
+    }
+
     // Initialize when dashboard loads
     document.addEventListener('DOMContentLoaded', () => {
         clearOnboardingData();
@@ -128,6 +153,55 @@
     </div>
     {% endif %}
 
+    <!-- Language Exploration Banner -->
+    {% if children %}
+    {% for child in children %}
+    {% if child.is_active and child.reading_test_completed and not child.has_tried_other_languages %}
+    <div id="language-exploration-banner-{{ child.id }}"
+        class="mb-4 relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 p-4 text-white shadow-lg animate-in fade-in slide-in-from-top duration-700">
+        <div class="relative z-10 flex items-center justify-between">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                    <span
+                        class="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest">🌍
+                        New Adventure</span>
+                </div>
+                <h3 class="text-lg font-black mb-1 leading-tight">Boost {{ child.name }}'s Skills! 🚀</h3>
+                <p class="text-xs text-white/90 mb-3 max-w-sm leading-relaxed">
+                    Try reading in Hindi or Kannada to improve language skills! Bilingual children show 30% better
+                    cognitive development.
+                </p>
+                <div class="flex gap-2">
+                    <a href="{% url 'portal:fluency_check' child.id %}?lang=HI"
+                        class="bg-white text-purple-600 px-3 py-1.5 rounded-full font-bold text-xs shadow-md hover:scale-105 active:scale-95 transition-all">
+                        🇮🇳 Try Hindi
+                    </a>
+                    <a href="{% url 'portal:fluency_check' child.id %}?lang=KN"
+                        class="bg-white/20 backdrop-blur-md text-white px-3 py-1.5 rounded-full font-bold text-xs border border-white/30 hover:bg-white/30 transition-all">
+                        🏯 Try Kannada
+                    </a>
+                </div>
+            </div>
+            <div class="hidden sm:block w-20 h-20 opacity-80">
+                <div class="w-full h-full bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <span class="text-2xl">📚</span>
+                </div>
+            </div>
+        </div>
+        <!-- Decorative elements -->
+        <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+        <div class="absolute -left-6 -top-6 w-24 h-24 bg-indigo-400/20 rounded-full blur-2xl"></div>
+
+        <!-- Dismiss button -->
+        <button onclick="dismissLanguageBanner({{ child.id }})"
+            class="absolute top-3 right-3 w-5 h-5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-full flex items-center justify-center text-[9px] transition-colors z-50">
+            ✕
+        </button>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
     <!-- Welcome Section -->
     <div class="mb-6 flex justify-between items-start">
         <div>
@@ -164,13 +238,11 @@
                 <div class="flex justify-between items-start mb-4">
                     <div class="flex items-center gap-3">
                         <div
-                            class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">
-                            {{ child.name|slice:":1" }}
+                            class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg"> {{ child.name|slice:":1" }}
                         </div>
                         <div>
                             <h3 class="font-bold text-gray-900">{{ child.name }}</h3>
-                            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{{
-                                child.get_grade_display }}</p>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{{ child.get_grade_display }}</p>
                         </div>
                     </div>
                     {% if child.reading_test_completed %}
@@ -195,24 +267,18 @@
                             <span class="text-xl font-black text-gray-900">{{ child.reading_wpm }}</span>
                             <span class="text-[10px] font-bold text-gray-500">WPM</span>
                         </div>
-                        <!-- Simple Progress Bar -->
                         <div class="mt-2 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                            <div class="h-full bg-indigo-500 rounded-full"
-                                style="width: {% if child.reading_wpm > 120 %}100{% else %}{{ child.reading_wpm }}{% endif %}%">
-                            </div>
+                            <div class="h-full bg-indigo-500 rounded-full" style="width: {% if child.reading_wpm > 120 %}100{% else %}{{ child.reading_wpm }}{% endif %}%"></div>
                         </div>
                     </div>
                     <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
                         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Accuracy</p>
                         <div class="flex items-baseline gap-1">
-                            <span class="text-xl font-black text-gray-900">{{ child.reading_accuracy|floatformat:0
-                                }}</span>
+                            <span class="text-xl font-black text-gray-900">{{ child.reading_accuracy|floatformat:0 }}</span>
                             <span class="text-[10px] font-bold text-gray-500">%</span>
                         </div>
-                        <!-- Simple Progress Bar -->
                         <div class="mt-2 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                            <div class="h-full bg-green-500 rounded-full"
-                                style="width: {{ child.reading_accuracy|default:0 }}%"></div>
+                            <div class="h-full bg-green-500 rounded-full" style="width: {{ child.reading_accuracy|default:0 }}%"></div>
                         </div>
                     </div>
                 </div>
@@ -412,10 +478,10 @@
     <!-- Creative Floating Reading Buddy Widget -->
     {% if pending_test_child %}
     <div id="reading-buddy-widget"
-        class="hidden fixed bottom-6 right-6 z-[60] animate-in slide-in-from-right fade-in duration-700">
+        class="hidden fixed bottom-24 right-6 z-[60] animate-in slide-in-from-right fade-in duration-700">
         <div class="relative">
             <!-- Speech Bubble -->
-            <div
+            <div id="speech-bubble"
                 class="absolute bottom-full right-0 mb-4 w-48 bg-white rounded-2xl shadow-2xl p-4 border border-orange-100 animate-bounce duration-[2000ms]">
                 <p class="text-xs font-bold text-gray-800 leading-relaxed text-center">
                     Hey! Want to check <span class="text-orange-600">{{ pending_test_child.name }}'s</span> reading
@@ -430,18 +496,18 @@
             <!-- Buddy Icon -->
             <a href="{% url 'portal:fluency_check' pending_test_child.id %}" class="block group relative">
                 <div
-                    class="buddy-float w-20 h-20 bg-white rounded-full shadow-2xl border-4 border-orange-400 p-2 transform transition-transform group-hover:scale-110">
+                    class="buddy-float w-14 h-14 bg-white rounded-full shadow-2xl border-4 border-orange-400 p-2 transform transition-transform group-hover:scale-110">
                     <img src="{% static 'images/reading_buddy.png' %}" alt="Reading Buddy"
                         class="w-full h-full object-contain">
                 </div>
                 <div
-                    class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">
+                    class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-white">
                     1</div>
             </a>
 
             <!-- Close button for widget -->
-            <button onclick="dismissFluencyNudge()"
-                class="absolute -top-2 -left-2 w-6 h-6 bg-gray-900/10 hover:bg-gray-900/20 backdrop-blur-sm text-gray-800 rounded-full flex items-center justify-center text-[10px] transition-colors">
+            <button onclick="dismissBuddyOnly()"
+                class="absolute -top-2 -left-2 w-5 h-5 bg-gray-900/10 hover:bg-gray-900/20 backdrop-blur-sm text-gray-800 rounded-full flex items-center justify-center text-[9px] transition-colors">
                 ✕
             </button>
         </div>

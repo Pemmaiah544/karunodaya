@@ -248,27 +248,7 @@
             </div>
         </div>
 
-        <!-- Language Selector & Poke -->
-        <div class="px-2">
-            <div class="flex items-end gap-3 mb-2">
-                <div class="poke-bubble">Try Hindi or Kannada? ✨</div>
-            </div>
-            <div class="flex gap-2 bg-gray-100 p-1 rounded-2xl">
-                <a href="?lang=EN"
-                    class="flex-1 text-center lang-btn {% if current_lang == 'EN' %}active{% else %}inactive{% endif %}">
-                    English
-                </a>
-                <a href="?lang=HI"
-                    class="flex-1 text-center lang-btn {% if current_lang == 'HI' %}active{% else %}inactive{% endif %}">
-                    Hindi
-                </a>
-                <a href="?lang=KN"
-                    class="flex-1 text-center lang-btn {% if current_lang == 'KN' %}active{% else %}inactive{% endif %}">
-                    Kannada
-                </a>
-            </div>
-        </div>
-
+        
         <div class="reading-card p-8 text-center bg-orange-50/50">
             <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                 <svg class="w-10 h-10 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -348,81 +328,95 @@
 
     <!-- Step 4: Results Screen -->
     <div id="step-4" class="hidden space-y-6 animate-fade-in">
-        <div class="text-center">
-            <h2 class="text-2xl font-bold text-gray-900 mb-1">Phenomenal Job!</h2>
-            <p class="text-gray-500">Here is your reading profile for today.</p>
-        </div>
-
-        <!-- WPM Gauge -->
-        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col items-center">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Reading Fluency</p>
-            <div class="gauge-container mb-2">
-                <svg viewBox="0 0 200 120" class="w-full h-full">
-                    <path class="gauge-arc" d="M20,100 A80,80 0 0,1 180,100" />
-                    <path id="gauge-progress" class="gauge-progress" d="M20,100 A80,80 0 0,1 180,100" />
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-end pb-2">
-                    <span id="result-wpm" class="text-4xl font-bold text-gray-900">0</span>
-                    <span class="text-xs font-bold text-gray-400">WPM</span>
-                </div>
+        <!-- Analyzing State -->
+        <div id="analyzing-state" class="hidden space-y-6">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-gray-900 mb-1">Analyzing Results...</h2>
+                <p class="text-gray-500">Please wait while we evaluate the reading performance</p>
             </div>
-            <span id="level-tag"
-                class="px-4 py-1 rounded-full bg-orange-100 text-orange-600 text-[10px] font-bold uppercase tracking-wider mb-4">Intermediate</span>
-
-            <div class="w-full grid grid-cols-2 gap-4 mt-4 border-t border-gray-50 pt-6">
-                <div class="text-center">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Accuracy</p>
-                    <p class="text-xl font-bold text-green-600"><span id="result-accuracy">0</span>%</p>
+            
+            <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col items-center">
+                <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+                    <div class="animate-spin w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full"></div>
                 </div>
-                <div class="text-center">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Time Taken</p>
-                    <p class="text-xl font-bold text-gray-800"><span id="result-time">0</span>s</p>
-                </div>
+                <p class="text-sm text-gray-600 font-medium">Analyzing fluency patterns and identifying improvement areas...</p>
             </div>
         </div>
 
-        <!-- Strengths & Gaps -->
-        <div class="grid grid-cols-1 gap-4">
-            <div class="bg-green-50/50 p-5 rounded-3xl border border-green-100">
-                <h4 class="text-xs font-bold text-green-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clip-rule="evenodd" />
+        <!-- Results State -->
+        <div id="results-state" class="hidden space-y-6">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-gray-900 mb-1">Phenomenal Job!</h2>
+                <p class="text-gray-500">Here is your reading profile for today.</p>
+            </div>
+
+            <!-- WPM Gauge -->
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col items-center">
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Reading Fluency</p>
+                <div class="gauge-container mb-2">
+                    <svg viewBox="0 0 200 120" class="w-full h-full">
+                        <path class="gauge-arc" d="M20,100 A80,80 0 0,1 180,100" />
+                        <path id="gauge-progress" class="gauge-progress" d="M20,100 A80,80 0 0,1 180,100" />
                     </svg>
-                    Strengths
-                </h4>
-                <ul id="strengths-list" class="space-y-2 text-sm text-gray-700 font-medium">
-                    <!-- Dynamic -->
-                </ul>
-            </div>
-            <div class="bg-blue-50/50 p-5 rounded-3xl border border-blue-100">
-                <h4 class="text-xs font-bold text-blue-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                            d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM5.884 6.608L4.47 5.193a1 1 0 111.414-1.414l1.414 1.415a1 1 0 11-1.414 1.414zm11.41 1.414l1.415-1.414a1 1 0 111.414 1.414l-1.414 1.414a1 1 0 11-1.414-1.414zM8 11a1 1 0 100-2H7a1 1 0 100 2h1zm2 5a1 1 0 100-2v-1a1 1 0 10-2 0v1a1 1 0 102 0zM15 11a1 1 0 100-2h-1a1 1 0 100 2h1zM4.47 14.807l1.414 1.414a1 1 0 11-1.414 1.414l-1.414-1.414a1 1 0 111.414-1.414zm11.414 1.414l-1.414-1.414a1 1 0 111.414-1.414l1.414 1.414a1 1 0 11-1.414 1.414z" />
-                    </svg>
-                    Points to Improve
-                </h4>
-                <p id="gaps-text" class="text-sm text-gray-600 leading-relaxed"></p>
-            </div>
-        </div>
+                    <div class="absolute inset-0 flex flex-col items-center justify-end pb-2">
+                        <span id="result-wpm" class="text-4xl font-bold text-gray-900">0</span>
+                        <span class="text-xs font-bold text-gray-400">WPM</span>
+                    </div>
+                </div>
+                <span id="level-tag"
+                    class="px-4 py-1 rounded-full bg-orange-100 text-orange-600 text-[10px] font-bold uppercase tracking-wider mb-4">Intermediate</span>
+                
+                <!-- Benchmark Info -->
+                <div id="benchmark-info" class="w-full mt-4">
+                    <!-- Dynamic content will be inserted here -->
+                </div>
 
-        <div class="grid grid-cols-2 gap-3">
-            <a href="?lang={{current_lang}}&p={{current_passage_idx}}"
-                class="bg-white border-2 border-orange-100 text-orange-600 text-center font-bold py-4 rounded-full hover:bg-orange-50 transition-colors text-sm">
-                Retake Test
-            </a>
-            <a href="?lang={{current_lang}}&p={{current_passage_idx|add:1}}"
-                class="bg-white border-2 border-orange-100 text-orange-600 text-center font-bold py-4 rounded-full hover:bg-orange-50 transition-colors text-sm">
-                Change Story
-            </a>
-        </div>
+                <div class="w-full grid grid-cols-2 gap-4 mt-4 border-t border-gray-50 pt-6">
+                    <div class="text-center">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Accuracy</p>
+                        <p class="text-xl font-bold text-green-600"><span id="result-accuracy">0</span>%</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Time Taken</p>
+                        <p class="text-xl font-bold text-gray-800"><span id="result-time">0</span>s</p>
+                    </div>
+                </div>
+            </div>
 
-        <button id="see-recommendations-btn"
-            class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-full shadow-lg transition-transform active:scale-95">
-            See Recommended Books
-        </button>
+            <!-- Strengths & Gaps -->
+            <div class="grid grid-cols-1 gap-4">
+                <div class="bg-red-50/50 p-5 rounded-3xl border border-red-100 shadow-sm">
+                    <h4 class="text-xs font-bold text-red-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM5.884 6.608L4.47 5.193a1 1 0 111.414-1.414l1.414 1.415a1 1 0 11-1.414 1.414zm11.41 1.414l1.415-1.414a1 1 0 111.414 1.414l-1.414 1.414a1 1 0 11-1.414-1.414zM8 11a1 1 0 100-2H7a1 1 0 100 2h1zm2 5a1 1 0 100-2v-1a1 1 0 10-2 0v1a1 1 0 102 0zM15 11a1 1 0 100-2h-1a1 1 0 100 2h1zM4.47 14.807l1.414 1.414a1 1 0 11-1.414 1.414l-1.414-1.414a1 1 0 111.414-1.414zm11.414 1.414l-1.414-1.414a1 1 0 111.414-1.414l1.414 1.414a1 1 0 11-1.414 1.414z" />
+                        </svg>
+                        Points to Improve
+                    </h4>
+                    <ul id="gaps-list" class="space-y-2 text-sm text-gray-700 font-medium">
+                        <!-- Dynamic -->
+                    </ul>
+                </div>
+                <div class="bg-green-50/50 p-5 rounded-3xl border border-green-100">
+                    <h4 class="text-xs font-bold text-green-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Strengths
+                    </h4>
+                    <ul id="strengths-list" class="space-y-2 text-sm text-gray-700 font-medium">
+                        <!-- Dynamic -->
+                    </ul>
+                </div>
+            </div>
+
+            <button id="see-recommendations-btn"
+                class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-full shadow-lg transition-transform active:scale-95">
+                See Recommended Books
+            </button>
+        </div>
     </div>
 
     <!-- Step 5: Recommendations -->
@@ -636,52 +630,200 @@
         if (accuracy > 100) accuracy = 100;
 
         const wpm = Math.round(wordCountTotal / (duration / 60));
+        
+        // Grade-specific WPM benchmarks
+        const gradeBenchmarks = {
+            'Grade 1': { min: 30, avg: 50, max: 80, description: "beginning reader" },
+            'Grade 2': { min: 40, avg: 65, max: 90, description: "developing reader" },
+            'Grade 3': { min: 50, avg: 80, max: 110, description: "fluent reader" },
+            'Grade 4': { min: 60, avg: 90, max: 120, description: "confident reader" },
+            'Grade 5': { min: 70, avg: 100, max: 140, description: "proficient reader" },
+            'Grade 6': { min: 80, avg: 110, max: 150, description: "advanced reader" },
+            'Grade 7': { min: 90, avg: 120, max: 160, description: "skilled reader" },
+            'Grade 8': { min: 100, avg: 130, max: 170, description: "accomplished reader" },
+            'Grade 9': { min: 110, avg: 140, max: 180, description: "experienced reader" },
+            'Grade 10': { min: 120, avg: 150, max: 190, description: "mature reader" }
+        };
 
-        // Define Strengths and Gaps
+        // Get child's grade
+        const childGrade = '{{ child.grade|default:"GRADE_3" }}';
+        const childGradeDisplay = '{{ child.get_grade_display|default:"Grade 3" }}';
+        const benchmark = gradeBenchmarks[childGradeDisplay] || gradeBenchmarks['Grade 3'];
+
+        // Analyze performance against grade benchmarks
+        let performance = '';
         let strengths = ["Clear pronunciation", "Good volume"];
-        let gaps = "Try to focus on pausing briefly at periods and commas to keep a steady flow.";
+        let gaps = '';
+        let recommendations = [];
 
-        if (wpm > 80) strengths.push("Excellent reading pace");
-        if (accuracy > 95) strengths.push("Perfect word recognition");
+        if (wpm >= benchmark.max) {
+            performance = 'Excellent';
+            strengths.push(`Outstanding reading speed for ${childGrade}!`);
+        } else if (wpm >= benchmark.avg) {
+            performance = 'Good';
+            strengths.push(`Strong reading pace for ${childGrade}`);
+        } else if (wpm >= benchmark.min) {
+            performance = 'Developing';
+            strengths.push(`Making good progress for ${childGrade}`);
+        } else {
+            performance = 'Needs Practice';
+            gaps = `Keep practicing! Focus on daily reading to reach the ${benchmark.min}-${benchmark.max} WPM range for ${childGrade}.`;
+        }
 
-        if (wpm < 40) gaps = "Keep practicing! Focus on looking ahead to the next word to increase your speed.";
-        else if (accuracy < 90) gaps = "Focus on clearly sounding out multi-syllable words and endings like '-ed' or '-ing'.";
+        // Specific improvement areas based on performance
+        if (wpm < benchmark.min) {
+            recommendations.push("Practice reading aloud for 10 minutes daily");
+            recommendations.push("Try finger-tracking to maintain steady pace");
+            recommendations.push("Focus on one-syllable words first");
+        }
+        if (accuracy < 90) {
+            recommendations.push("Focus on clearly pronouncing word endings");
+            recommendations.push("Take brief pauses at punctuation marks");
+            recommendations.push("Sound out difficult words slowly");
+        }
+        if (wpm > benchmark.max && accuracy < 95) {
+            recommendations.push("Slow down slightly to improve accuracy");
+            recommendations.push("Focus on comprehension over speed");
+        }
+        
+        // Ensure we have at least 3-4 improvement points
+        if (recommendations.length < 3) {
+            recommendations.push("Read age-appropriate books daily");
+            recommendations.push("Practice with stories your child loves");
+            recommendations.push("Create a consistent reading routine");
+        }
 
-        saveAndShowResults(wpm, accuracy, strengths.join(","), gaps, duration);
+        // Create detailed feedback as array
+        if (recommendations.length >= 3) {
+            gaps = recommendations;
+        } else if (performance === 'Excellent') {
+            gaps = [
+                "Challenge yourself with more complex texts",
+                "Try reading different genres to expand vocabulary", 
+                "Practice comprehension questions after reading"
+            ];
+        } else if (performance === 'Good') {
+            gaps = [
+                `Continue regular practice to reach ${benchmark.max} WPM`,
+                "Focus on understanding story details",
+                "Try reading slightly more challenging books"
+            ];
+        } else if (performance === 'Developing') {
+            gaps = [
+                `Practice daily to reach ${benchmark.min} WPM minimum`,
+                "Focus on reading confidence building",
+                "Choose books with familiar topics",
+                "Practice sight words recognition"
+            ];
+        } else {
+            gaps = [
+                "Start with 15 minutes daily reading practice",
+                "Focus on basic phonics and letter sounds",
+                "Use picture books to build interest",
+                "Practice with very simple texts first"
+            ];
+        }
+
+        if (accuracy > 95) strengths.push("Excellent word recognition");
+        else if (accuracy > 85) strengths.push("Good word recognition");
+
+        // Limit strengths to maximum 2 points
+        if (strengths.length > 2) {
+            strengths = strengths.slice(0, 2);
+        }
+
+        // Add delay to build curiosity
+        setTimeout(() => {
+            saveAndShowResults(wpm, accuracy, strengths.join(","), gaps, duration, performance, benchmark);
+        }, 3000); // 3 second delay for analysis
     }
 
-    function saveAndShowResults(wpm, accuracy, strengths, gaps, duration) {
+    function saveAndShowResults(wpm, accuracy, strengths, gaps, duration, performance, benchmark) {
+        // Show analyzing state first
+        document.getElementById('step-3').classList.add('hidden');
+        document.getElementById('step-4').classList.remove('hidden');
+        document.getElementById('analyzing-state').classList.remove('hidden');
+        document.getElementById('results-state').classList.add('hidden');
+        document.getElementById('step-progress').style.width = '100%';
+        document.getElementById('step-title').textContent = 'Step 4 of 4: Results';
+
         const formData = new FormData();
         formData.append('wpm', wpm);
         formData.append('accuracy', accuracy);
         formData.append('strengths', strengths);
-        formData.append('gaps', gaps);
+        formData.append('gaps', gaps.join(". "));
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
         fetch(config.saveUrl, { method: 'POST', body: formData })
             .then(r => r.json())
             .then(data => {
-                document.getElementById('step-3').classList.add('hidden');
-                document.getElementById('step-4').classList.remove('hidden');
-                document.getElementById('step-progress').style.width = '100%';
-                document.getElementById('step-title').textContent = 'Step 4 of 4: Results';
+                // Hide analyzing state and show results
+                document.getElementById('analyzing-state').classList.add('hidden');
+                document.getElementById('results-state').classList.remove('hidden');
 
                 document.getElementById('result-wpm').textContent = wpm;
                 document.getElementById('result-accuracy').textContent = accuracy;
                 document.getElementById('result-time').textContent = Math.round(duration);
                 document.getElementById('level-tag').textContent = data.level;
 
-                // Gauge
+                // Update gauge with grade-specific coloring
                 const gauge = document.getElementById('gauge-progress');
-                const percentage = Math.min(wpm / 150, 1);
+                const percentage = Math.min(wpm / 200, 1); // Updated max for higher grades
                 gauge.style.strokeDashoffset = 283 - (percentage * 283);
+                
+                // Color code gauge based on performance
+                if (performance === 'Excellent') {
+                    gauge.style.stroke = '#10b981'; // green
+                } else if (performance === 'Good') {
+                    gauge.style.stroke = '#3b82f6'; // blue
+                } else if (performance === 'Developing') {
+                    gauge.style.stroke = '#f59e0b'; // amber
+                } else {
+                    gauge.style.stroke = '#ef4444'; // red
+                }
 
                 // Populate lists
-                const sList = document.getElementById('strengths-list');
-                strengths.split(",").forEach(s => {
-                    sList.innerHTML += `<li>• ${s}</li>`;
-                });
-                document.getElementById('gaps-text').textContent = gaps;
+                const strengthsList = document.getElementById('strengths-list');
+                const gapsList = document.getElementById('gaps-list');
+                
+                if (strengthsList) {
+                    strengthsList.innerHTML = strengths.split(',').map(s => `<li class="flex items-start gap-2"><svg class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 016 0zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l2-2z" clip-rule="evenodd"></path></svg><span>${s.trim()}</span></li>`).join('');
+                }
+                
+                if (gapsList) {
+                    gapsList.innerHTML = gaps.map(gap => `<li class="flex items-start gap-2"><svg class="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000-2v3a1 1 0 102 0V9zM9 5a1 1 0 012 0v1a1 1 0 11-2 0V5z" clip-rule="evenodd"></path></svg><span>${gap}</span></li>`).join('');
+                }
+
+                // Update title based on performance
+                const titleElement = document.querySelector('#results-state h2');
+                if (titleElement) {
+                    if (performance === 'Excellent') {
+                        titleElement.textContent = 'Outstanding Performance!';
+                    } else if (performance === 'Good') {
+                        titleElement.textContent = 'Great Progress!';
+                    } else if (performance === 'Developing') {
+                        titleElement.textContent = 'Good Effort!';
+                    } else {
+                        titleElement.textContent = 'Keep Practicing!';
+                    }
+                }
+
+                // Add benchmark info
+                const benchmarkInfo = document.getElementById('benchmark-info');
+                if (benchmarkInfo) {
+                    benchmarkInfo.innerHTML = `
+                        <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                            <p class="text-sm text-gray-600 font-medium">Grade ${childGradeDisplay} Reading Range: <span class="font-bold text-gray-900">${benchmark.min}-${benchmark.max} WPM</span></p>
+                            <p class="text-xs text-gray-500 mt-1">Current: <span class="font-bold">${performance}</span> (${wpm} WPM)</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error saving results:', error);
+                // Still show results even if save fails
+                document.getElementById('analyzing-state').classList.add('hidden');
+                document.getElementById('results-state').classList.remove('hidden');
             });
     }
 

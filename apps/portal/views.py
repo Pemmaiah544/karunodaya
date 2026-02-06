@@ -418,6 +418,16 @@ class FluencyCheckView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
     def get_queryset(self):
         return Child.objects.filter(parent__user=self.request.user)
 
+    def get(self, request, *args, **kwargs):
+        child = self.get_object()
+        # If they are starting a test (even if it's the first one), 
+        # we can consider the "Language Exploration" banner as seen/dismissed
+        # since they are already in the test flow.
+        if not child.has_tried_other_languages:
+            child.has_tried_other_languages = True
+            child.save()
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         child = self.get_object()
@@ -805,6 +815,18 @@ def toggle_child_status(request, child_id):
         messages.success(request, message)
         return redirect('portal:profile')
     return HttpResponse('Method not allowed', status=405)
+
+
+@login_required
+def dismiss_language_banner(request, child_id):
+    """API endpoint to dismiss the language exploration banner for a child."""
+    if request.method == 'POST':
+        child = get_object_or_404(Child, id=child_id, parent__user=request.user)
+        child.has_tried_other_languages = True
+        child.save()
+        return JsonResponse({'status': 'success'})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
 
 
 
