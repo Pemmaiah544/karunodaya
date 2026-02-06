@@ -128,9 +128,9 @@
 <div class="container mx-auto px-4 pb-24 max-w-lg">
     <!-- Messages -->
     {% if messages %}
-    <div class="mt-4">
+    <div class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none max-w-sm">
         {% for message in messages %}
-        <div class="{% if message.tags == 'success' %}bg-green-50 text-green-700 border-green-200{% else %}bg-red-50 text-red-700 border-red-200{% endif %} p-4 rounded-xl border mb-4 text-sm font-bold shadow-sm"
+        <div class="{% if message.tags == 'success' %}bg-green-500 text-white{% else %}bg-red-500 text-white{% endif %} p-2 px-3 rounded-lg shadow-lg mb-2 text-xs font-bold pointer-events-auto transform transition-all duration-300 translate-y-0 opacity-100 text-center whitespace-nowrap"
             role="alert">
             {{ message }}
         </div>
@@ -208,27 +208,30 @@
     <div class="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-hide">
         {% if children %}
         {% for child in children %}
-        <div class="min-w-[170px] bg-white rounded-3xl p-5 border border-gray-100 shadow-sm flex flex-col items-center">
+        <div onclick="document.getElementById('toggle-form-{{ child.id }}').submit()"
+            class="min-w-[170px] bg-white rounded-3xl p-5 border-2 {% if child.is_active %}border-green-500 bg-green-50{% else %}border-gray-100{% endif %} shadow-sm flex flex-col items-center cursor-pointer transition-all hover:scale-[1.02]">
             <div
                 class="w-14 h-14 rounded-full {% if forloop.counter|divisibleby:2 %}bg-pink-50 text-pink-500{% else %}bg-blue-50 text-blue-500{% endif %} flex items-center justify-center text-xl mb-3">
                 {% if forloop.counter|divisibleby:2 %}👧{% else %}👦{% endif %}
             </div>
             <h4 class="font-bold text-gray-900 mb-1">{{ child.name }}</h4>
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Grade {{
-                child.get_grade_display|default:"Unknown" }}</p>
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Grade {{ child.get_grade_display|default:"Unknown" }}</p>
 
             <div class="flex items-center justify-between w-full pt-3 border-t border-gray-50">
                 <span
                     class="text-[10px] font-bold {% if child.is_active %}text-green-500{% else %}text-gray-400{% endif %} uppercase tracking-widest">
                     {% if child.is_active %}ACTIVE{% else %}PAUSED{% endif %}
                 </span>
-                <form action="{% url 'portal:toggle_child' child.id %}" method="post" id="toggle-form-{{ child.id }}">
+                {% if child.is_active %}
+                <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                {% endif %}
+                <form action="{% url 'portal:toggle_child' child.id %}" method="post" id="toggle-form-{{ child.id }}"
+                    class="hidden">
                     {% csrf_token %}
-                    <label class="switch">
-                        <input type="checkbox" {% if child.is_active %}checked{% endif %}
-                            onchange="document.getElementById('toggle-form-{{ child.id }}').submit()">
-                        <span class="slider"></span>
-                    </label>
                 </form>
             </div>
         </div>
@@ -266,8 +269,7 @@
                 </div>
                 <div class="flex-1">
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Full Name</p>
-                    <div id="account-view-name" class="font-bold text-gray-900"> {{
-                        user.get_full_name|default:user.username }} </div>
+                    <div id="account-view-name" class="font-bold text-gray-900"> {{ user.get_full_name|default:user.username }} </div>
                     <div id="account-edit-name" class="hidden grid grid-cols-2 gap-2 mt-1">
                         <input type="text" name="first_name" value="{{ user.first_name }}"
                             class="w-full px-3 py-2 bg-gray-50 border-none rounded-xl font-bold text-sm outline-none focus:ring-1 focus:ring-orange-200">
@@ -427,8 +429,9 @@
         const alerts = document.querySelectorAll('[role="alert"]');
         alerts.forEach(function (alert) {
             setTimeout(function () {
+                alert.style.transform = 'translateY(-20px)';
                 alert.style.opacity = '0';
-                setTimeout(() => alert.remove(), 500);
+                setTimeout(() => alert.remove(), 300);
             }, 3000);
         });
     });

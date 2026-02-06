@@ -333,97 +333,77 @@ class DashboardView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
 
         parent_profile = self.request.user.parent_profile
-        
         context['parent_profile'] = parent_profile
         
-        # Get children with subscription info
+        # Get children and identify the active one
         children = parent_profile.children.all()
+        active_child = children.filter(is_active=True).first()
+        
+        # fallback if none active
+        if not active_child and children.exists():
+            active_child = children.first()
+            active_child.is_active = True
+            active_child.save()
+            
         context['children'] = children
+        context['active_child'] = active_child
         context['has_children'] = children.exists()
         
-        # Calculate onboarding flags
-        all_tests_completed = all(c.reading_test_completed for c in children) if children.exists() else False
-        context['all_tests_completed'] = all_tests_completed
-        context['pending_test_child'] = children.filter(reading_test_completed=False).first()
-        
-        # Children with borrowing info
-        children_with_info = []
-        for child in children:
-            has_active_sub = SubscriptionCycle.objects.filter(
-                child=child,
-                status__in=['ACTIVE', 'OVERDUE']
-            ).exists()
+        # Dashboard displays data for the ACTIVE child only
+        if active_child:
+            # Onboarding flags for active child
+            context['all_tests_completed'] = active_child.reading_test_completed
+            context['pending_test_child'] = active_child if not active_child.reading_test_completed else None
             
-            children_with_info.append({
-                'child': child,
-                'can_subscribe': not has_active_sub  # Can only subscribe if no active subscription
-            })
-        
-        context['children'] = children
-        context['children_with_info'] = children_with_info
+            # Active subscriptions for ACTIVE child
+            active_subscriptions = SubscriptionCycle.objects.filter(
+                parent=parent_profile,
+                child=active_child,
+                status__in=['ACTIVE', 'OVERDUE']
+            ).select_related('child', 'plan').prefetch_related('physical_copies__book')
+            
+            context['active_subscriptions'] = active_subscriptions
 
-        # Get active subscriptions
-        active_subscriptions = SubscriptionCycle.objects.filter(
-            parent=parent_profile,
-            status__in=['ACTIVE', 'OVERDUE']
-        ).select_related('child', 'plan').prefetch_related('physical_copies__book')
-        
-        context['active_subscriptions'] = active_subscriptions
+            # Summary for active child highlight
+            context['child_subscriptions_summary'] = [
+                {'name': active_child.name, 'count': active_subscriptions.count()}
+            ]
 
-        # Summary grouped by child
-        child_summary = {}
-        for cycle in active_subscriptions:
-            child_name = cycle.child.name
-            if child_name not in child_summary:
-                child_summary[child_name] = 0
-            child_summary[child_name] += 1
-        
-        context['child_subscriptions_summary'] = [
-            {'name': name, 'count': count} for name, count in child_summary.items()
-        ]
+            # Calculate total books count for active child
+            total_books = sum(
+                cycle.books_count if cycle.books_count > 0 else cycle.plan.books_per_month 
+                for cycle in active_subscriptions
+            )
+            context['total_books_count'] = total_books
 
-        # Calculate total books count across all active subscriptions
-        # Use actual books_count if available, otherwise use plan's books_per_month
-        total_books = sum(
-            cycle.books_count if cycle.books_count > 0 else cycle.plan.books_per_month 
-            for cycle in active_subscriptions
-        )
-        context['total_books_count'] = total_books
+            # Get borrowed books for active child
+            borrowed_books = []
+            for cycle in active_subscriptions:
+                for physical_copy in cycle.physical_copies.all():
+                    borrowed_books.append({
+                        'book': physical_copy.book,
+                        'child': active_child,
+                        'due_date': cycle.expected_return_date,
+                        'is_overdue': cycle.is_overdue,
+                        'cycle': cycle
+                    })
+            context['borrowed_books'] = borrowed_books
 
-        # Get borrowed books (from active subscriptions)
-        borrowed_books = []
-        for cycle in context['active_subscriptions']:
-            for physical_copy in cycle.physical_copies.all():
-                borrowed_books.append({
-                    'book': physical_copy.book,
-                    'child': cycle.child,
-                    'due_date': cycle.expected_return_date,
-                    'is_overdue': cycle.is_overdue,
-                    'cycle': cycle
+            # Get recommended books for active child if test completed
+            recommendations_by_child = []
+            if active_child.reading_test_completed:
+                recommendations_by_child.append({
+                    'child': active_child,
+                    'books': get_curated_books(active_child.id, limit=10)
                 })
-        context['borrowed_books'] = borrowed_books
+            context['recommendations_by_child'] = recommendations_by_child
+            context['recommended_books'] = recommendations_by_child[0]['books'] if recommendations_by_child else Book.objects.none()
 
-        # Get active subscription plans for the modal
+        # Global dashboard context
         context['all_subscription_plans'] = SubscriptionPlan.objects.filter(is_active=True).order_by('price_per_month')
-
-        # Get recent orders
         context['recent_orders'] = Order.objects.filter(
             parent=parent_profile
         ).order_by('-created_at')[:5]
-
-        # Get recommended books for each child who has completed reading test
-        completed_children = children.filter(reading_test_completed=True)
-        recommendations_by_child = []
-
-        for child in completed_children:
-            recommendations_by_child.append({
-                'child': child,
-                'books': get_curated_books(child.id, limit=10)
-            })
-            
-        context['recommendations_by_child'] = recommendations_by_child
-        # Keep recommended_books for backward compatibility or simple display
-        context['recommended_books'] = recommendations_by_child[0]['books'] if recommendations_by_child else Book.objects.none()
 
         return context
 
@@ -556,15 +536,20 @@ class MarketplaceView(LoginRequiredMixin, OnboardingRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         parent_profile = self.request.user.parent_profile
         children = parent_profile.children.all()
+        active_child = children.filter(is_active=True).first()
         
         context['difficulty_levels'] = Book.DIFFICULTY_RATING_CHOICES
         context['grades'] = Book.GRADE_CHOICES
         context['difficulty_groups'] = get_marketplace_groups()
         
-        # Onboarding flags
+        # Onboarding flags focused on ACTIVE child
         context['has_children'] = children.exists()
-        context['all_tests_completed'] = all(c.reading_test_completed for c in children) if children.exists() else False
-        context['pending_test_child'] = children.filter(reading_test_completed=False).first()
+        if active_child:
+            context['all_tests_completed'] = active_child.reading_test_completed
+            context['pending_test_child'] = active_child if not active_child.reading_test_completed else None
+        else:
+            context['all_tests_completed'] = False
+            context['pending_test_child'] = children.first() if children.exists() else None
         
         return context
 
@@ -802,13 +787,22 @@ def update_profile_name(request):
 
 @onboarding_required
 def toggle_child_status(request, child_id):
-    """Toggle is_active status for a child profile."""
+    """Set a child as the active profile and deactivate others."""
     if request.method == 'POST':
         child = get_object_or_404(Child, id=child_id, parent__user=request.user)
-        child.is_active = not child.is_active
+        
+        # Deactivate all other children
+        Child.objects.filter(parent=child.parent).exclude(id=child.id).update(is_active=False)
+        
+        # Activate this child
+        child.is_active = True
         child.save()
-        status_text = "activated" if child.is_active else "paused"
-        messages.success(request, f"{child.name}'s profile has been {status_text}.")
+        
+        message = f"{child.name} is now the active profile."
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1':
+            return JsonResponse({'status': 'success', 'message': message})
+            
+        messages.success(request, message)
         return redirect('portal:profile')
     return HttpResponse('Method not allowed', status=405)
 
