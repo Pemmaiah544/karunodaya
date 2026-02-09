@@ -506,11 +506,25 @@ class CuratedBoxView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         child = self.get_object()
 
-        # Get curated books only if test is completed
-        if child.reading_test_completed:
+        # Check if child has an active subscription
+        from apps.orders.models import SubscriptionCycle
+        active_subscription = SubscriptionCycle.objects.filter(
+            child=child,
+            status__in=['ACTIVE', 'OVERDUE']
+        ).first()
+
+        # Get curated books only if test is completed AND has active subscription
+        if child.reading_test_completed and active_subscription:
             context['curated_books'] = get_curated_books(child.id, limit=20)
-        else:
+            context['active_subscription'] = active_subscription
+        elif child.reading_test_completed and not active_subscription:
+            # Reading test completed but no active subscription
             context['curated_books'] = Book.objects.none()
+            context['no_subscription_message'] = f'{child.name} has completed the reading test! Subscribe to a plan to access curated book recommendations.'
+        else:
+            # Reading test not completed
+            context['curated_books'] = Book.objects.none()
+            context['active_subscription'] = None
 
         return context
 
@@ -975,14 +989,17 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
                 context['subscription_plans'] = all_plans
         else:
             context['subscription_plans'] = all_plans
+            
+        # Check if address is complete
+        context['address_complete'] = is_address_complete(self.request.user.parent_profile)
         
         return context
 
     def post(self, request, child_id=None):
-        """Create subscription order and redirect to payment."""
+        """Create subscription order and redirect to COD confirmation."""
         plan_id = request.POST.get('plan_id')
         child_id = request.POST.get('child_id', child_id)
-        payment_method = request.POST.get('payment_method', 'ONLINE')
+        payment_method = request.POST.get('payment_method', 'COD')
 
         if not plan_id or not child_id:
             return render(request, self.template_name, {
@@ -1074,7 +1091,7 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
             status='ACTIVE'
         )
 
-        # Redirect to payment
+        # Redirect to payment initiation (handles both COD and Online)
         return redirect('payments:initiate_payment', order_id=order.id)
 
 

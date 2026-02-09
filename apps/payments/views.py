@@ -13,6 +13,7 @@ import json
 from apps.orders.models import Order, SubscriptionCycle
 from apps.payments.models import Transaction
 from services.curation import assign_subscription_books
+from services.email_service import send_order_confirmation_email
 
 
 # Initialize Razorpay client
@@ -137,6 +138,9 @@ def payment_callback(request):
                     except SubscriptionCycle.DoesNotExist:
                         print(f"SubscriptionCycle not found for order {order.id}")
 
+            # Send confirmation email
+            send_order_confirmation_email(order)
+
             messages.success(request, 'Payment successful! Your order has been confirmed.')
             return redirect('portal:payment_success', transaction_id=transaction.id)
         else:
@@ -179,6 +183,9 @@ def cod_confirmation(request, order_id):
                 'note': 'Payment to be collected on delivery'
             }
         )
+        
+        # Send confirmation email
+        send_order_confirmation_email(order)
 
     # Assign books for subscription COD orders
     if order.order_type == 'SUBSCRIPTION':
