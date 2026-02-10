@@ -203,10 +203,7 @@ SITE_ID = 1
 
 
 # Debug Toolbar Configuration (for development)
-INTERNAL_IPS = [
-    '127.0.0.1',
-    'localhost',
-]
+INTERNAL_IPS = []
 
 
 from django.templatetags.static import static

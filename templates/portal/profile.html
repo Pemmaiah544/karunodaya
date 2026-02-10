@@ -114,13 +114,41 @@
         </svg>
     </a>
     <h1 class="text-lg font-bold text-gray-900">Profile Management</h1>
-    <button class="p-2 text-gray-600">
-        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd"
-                d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.533 1.533 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
-                clip-rule="evenodd" />
-        </svg>
-    </button>
+    <div class="relative">
+        <button id="settings-btn" class="p-2 text-gray-600">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                    d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.533 1.533 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                    clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div id="settings-dropdown"
+            class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-50">
+            <a href="{% url 'portal:support' %}"
+                class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors">
+                <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z">
+                    </path>
+                </svg>
+                Support/Help
+            </a>
+            <form method="post" action="{% url 'portal:logout' %}" class="w-full">
+                {% csrf_token %}
+                <button type="submit"
+                    class="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                    <svg class="w-5 h-5 mr-3 text-red-400" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                        </path>
+                    </svg>
+                    Logout
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -222,13 +250,20 @@
                     class="text-[10px] font-bold {% if child.is_active %}text-green-500{% else %}text-gray-400{% endif %} uppercase tracking-widest">
                     {% if child.is_active %}ACTIVE{% else %}PAUSED{% endif %}
                 </span>
-                {% if child.is_active %}
-                <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                    </svg>
+                <div class="flex items-center gap-2">
+                    <button type="button"
+                        onclick="openEditChildModal({{ child.id }}, '{{ child.name|escapejs }}', '{{ child.get_grade_display|default:""|escapejs }}', '{{ child.reading_wpm|default:0 }}', '{{ child.reading_accuracy|default:0 }}')"
+                        class="text-[9px] font-bold text-orange-500 uppercase tracking-widest border border-orange-200 px-2 py-1 rounded hover:bg-orange-50 transition-colors">
+                        Edit
+                    </button>
+                    {% if child.is_active %}
+                    <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
                 <form action="{% url 'portal:toggle_child' child.id %}" method="post" id="toggle-form-{{ child.id }}"
                     class="hidden">
                     {% csrf_token %}
@@ -385,6 +420,74 @@
     </div>
 </form>
 
+<!-- Edit Child Modal -->
+<div id="edit-child-modal"
+    class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 relative">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-900">Edit Child Details</h3>
+            <button onclick="closeEditChildModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <form method="post" action="#" id="edit-child-form">
+            {% csrf_token %}
+            <input type="hidden" name="child_id" id="edit-child-id">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Child Name</label>
+                    <input type="text" name="name" id="edit-child-name" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+                    <select name="grade" id="edit-child-grade" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                        <option value="">Select Grade</option>
+                        <option value="NURSERY">Nursery</option>
+                        <option value="LKG">LKG</option>
+                        <option value="UKG">UKG</option>
+                        <option value="GRADE1">Grade 1</option>
+                        <option value="GRADE2">Grade 2</option>
+                        <option value="GRADE3">Grade 3</option>
+                        <option value="GRADE4">Grade 4</option>
+                        <option value="GRADE5">Grade 5</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Reading Speed (WPM)</label>
+                    <input type="number" name="reading_wpm" id="edit-child-wpm" min="0" max="500"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Accuracy (%)</label>
+                    <input type="number" name="reading_accuracy" id="edit-child-accuracy" min="0" max="100"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button type="submit"
+                    class="flex-1 bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                    Save Changes
+                </button>
+                <button type="button" onclick="closeEditChildModal()"
+                    class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 
 
 {% block extra_scripts %}
@@ -410,7 +513,62 @@
         if (contactEdit && contactEdit.classList.contains('hidden')) toggleEdit('contact');
     }
 
+    function openEditChildModal(childId, childName, childGrade, childWPM, childAccuracy) {
+        document.getElementById('edit-child-id').value = childId;
+        document.getElementById('edit-child-name').value = childName;
+        document.getElementById('edit-child-grade').value = childGrade;
+        document.getElementById('edit-child-wpm').value = childWPM;
+        document.getElementById('edit-child-accuracy').value = childAccuracy;
+
+        // Set the form action to update the specific child
+        document.getElementById('edit-child-form').action = `/profile/child/${childId}/update/`;
+
+        document.getElementById('edit-child-modal').classList.remove('hidden');
+    }
+
+    function closeEditChildModal() {
+        document.getElementById('edit-child-modal').classList.add('hidden');
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
+        // Settings dropdown functionality
+        const btn = document.getElementById('settings-btn');
+        const dropdown = document.getElementById('settings-dropdown');
+        
+        console.log('Settings button found:', !!btn);
+        console.log('Settings dropdown found:', !!dropdown);
+        
+        if (btn && dropdown) {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                console.log('Settings button clicked');
+                dropdown.classList.toggle('hidden');
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        } else {
+            console.log('Settings elements not found - checking if profile page...');
+            // Fallback: try to find settings elements with a different approach
+            setTimeout(() => {
+                const fallbackBtn = document.getElementById('settings-btn');
+                const fallbackDropdown = document.getElementById('settings-dropdown');
+                console.log('Fallback - Settings button found:', !!fallbackBtn);
+                console.log('Fallback - Settings dropdown found:', !!fallbackDropdown);
+                
+                if (fallbackBtn && fallbackDropdown) {
+                    fallbackBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        console.log('Fallback: Settings button clicked');
+                        fallbackDropdown.classList.toggle('hidden');
+                    });
+                }
+            }, 100);
+        }
+
         // Progress Ring Calculation
         const circle = document.getElementById('profile-progress-circle');
         if (circle) {
@@ -434,6 +592,16 @@
                 setTimeout(() => alert.remove(), 300);
             }, 3000);
         });
+
+        // Close modal when clicking outside
+        const editModal = document.getElementById('edit-child-modal');
+        if (editModal) {
+            editModal.addEventListener('click', function (e) {
+                if (e.target === this) {
+                    closeEditChildModal();
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

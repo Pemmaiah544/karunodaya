@@ -235,7 +235,7 @@
                     <path
                         d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                 </svg>
-                <span class="text-[10px] font-bold mt-1 uppercase">Home</span>
+                <span class="text-[10px] font-bold mt-1">Home</span>
             </a>
             <a href="{% url 'portal:marketplace' %}"
                 class="flex flex-col items-center flex-1 {% if request.resolver_match.url_name == 'marketplace' or request.resolver_match.url_name == 'book_detail' %}text-orange-600{% else %}text-gray-400{% endif %}">
@@ -243,7 +243,7 @@
                     <path
                         d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                 </svg>
-                <span class="text-[10px] font-bold mt-1 uppercase">Books</span>
+                <span class="text-[10px] font-bold mt-1">Books</span>
             </a>
             <a href="{% url 'portal:orders' %}"
                 class="flex flex-col items-center flex-1 {% if request.resolver_match.url_name == 'orders' or request.resolver_match.url_name == 'order_detail' %}text-orange-600{% else %}text-gray-400{% endif %}">
@@ -253,7 +253,7 @@
                         d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
                         clip-rule="evenodd" />
                 </svg>
-                <span class="text-[10px] font-bold mt-1 uppercase">Orders</span>
+                <span class="text-[10px] font-bold mt-1">Orders</span>
             </a>
             <a href="{% url 'portal:profile' %}"
                 class="flex flex-col items-center flex-1 {% if 'profile' in request.resolver_match.url_name or 'child' in request.resolver_match.url_name %}text-orange-600{% else %}text-gray-400{% endif %}">
@@ -261,7 +261,7 @@
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
                         clip-rule="evenodd" />
                 </svg>
-                <span class="text-[10px] font-bold mt-1 uppercase">Profile</span>
+                <span class="text-[10px] font-bold mt-1">Profile</span>
             </a>
         </div>
     </nav>

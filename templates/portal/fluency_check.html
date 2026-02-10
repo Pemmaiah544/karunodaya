@@ -81,19 +81,105 @@
         animation-delay: 0.4s;
     }
 
-    /* Analyzing Loader */
-    .loader-circle {
-        width: 80px;
-        height: 80px;
-        border: 8px solid #f3f4f6;
-        border-top-color: #ffa500;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
+    /* Book Page Turning Animation */
+    .book-loader {
+        position: relative;
+        width: 120px;
+        height: 90px;
+        perspective: 1200px;
     }
 
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
+    .book-page {
+        position: absolute;
+        width: 60px;
+        height: 90px;
+        background: linear-gradient(to right, #fafafa 0%, #fff 50%, #fafafa 100%);
+        border: 2px solid #e5e7eb;
+        border-left: none;
+        border-radius: 0 6px 6px 0;
+        transform-origin: left center;
+        box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.15);
+        right: 0;
+    }
+
+    /* Create page lines for realism */
+    .book-page::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 8px;
+        right: 8px;
+        height: 1px;
+        background: repeating-linear-gradient(to bottom,
+                #e5e7eb 0px,
+                #e5e7eb 1px,
+                transparent 1px,
+                transparent 8px);
+        height: 60px;
+    }
+
+    .book-page:nth-child(1) {
+        z-index: 3;
+        animation: pageTurn 3s ease-in-out infinite;
+    }
+
+    .book-page:nth-child(2) {
+        z-index: 2;
+        animation: pageTurn 3s ease-in-out infinite;
+        animation-delay: 0.1s;
+        opacity: 0.9;
+    }
+
+    .book-page:nth-child(3) {
+        z-index: 1;
+        animation: pageTurn 3s ease-in-out infinite;
+        animation-delay: 0.2s;
+        opacity: 0.8;
+    }
+
+    .book-spine {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 8px;
+        height: 90px;
+        background: linear-gradient(to right, #ea580c, #f97316, #ea580c);
+        border-radius: 4px 0 0 4px;
+        box-shadow: inset -2px 0 4px rgba(0, 0, 0, 0.2);
+        z-index: 5;
+    }
+
+    /* Base book cover */
+    .book-cover {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 60px;
+        height: 90px;
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        border: 2px solid #c2410c;
+        border-right: none;
+        border-radius: 6px 0 0 6px;
+        box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    @keyframes pageTurn {
+
+        0%,
+        100% {
+            transform: rotateY(0deg);
+            z-index: 3;
+        }
+
+        25% {
+            transform: rotateY(180deg);
+            z-index: 1;
+        }
+
+        50%,
+        100% {
+            transform: rotateY(180deg);
+            z-index: 1;
         }
     }
 
@@ -225,14 +311,116 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8 max-w-lg">
-    <!-- Header -->
-    <div class="mb-8 text-center">
-        <div class="progress-bar-container mb-4">
-            <div id="step-progress" class="progress-bar-fill" style="width: 25%"></div>
+<div class="container mx-auto px-4 py-8 max-w-lg relative">
+    <!-- CUSTOMIZE JOURNEY OVERLAY -->
+    <div id="pre-test-overlay"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-gray-50/95 backdrop-blur-sm animate-in fade-in duration-500 overflow-y-auto py-8">
+
+        <div
+            class="bg-white w-full max-w-md mx-4 rounded-[40px] shadow-xl p-8 relative border border-gray-100 mt-auto mb-auto">
+
+            <!-- Header -->
+            <div class="text-center mb-8 relative">
+                <!-- Back Button -->
+                <a href="{% url 'portal:dashboard' %}"
+                    class="absolute left-0 top-0 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </a>
+
+                <h2 class="text-2xl font-black text-gray-900 mb-2 px-12">Customize Your Reading Journey</h2>
+                <p class="text-gray-500 text-sm">Let's find the perfect story for you to read today.</p>
+            </div>
+
+            <!-- Interest Areas -->
+            <div class="mb-8">
+                <div class="flex justify-between items-end mb-4">
+                    <h3 class="font-bold text-gray-900">Interest Areas</h3>
+                    <span class="text-[10px] font-bold text-orange-500">Pick as many as you like</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Adventure -->
+                    <button onclick="toggleInterest(this)"
+                        class="interest-btn group border-2 border-orange-500 bg-orange-50/30 rounded-3xl p-4 flex flex-col items-center gap-3 transition-all duration-200">
+                        <div
+                            class="w-14 h-14 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                            🧭
+                        </div>
+                        <span class="text-sm font-bold text-gray-900">Adventure</span>
+                    </button>
+
+                    <!-- Animals -->
+                    <button onclick="toggleInterest(this)"
+                        class="interest-btn group border-2 border-gray-100 bg-white hover:border-green-200 rounded-3xl p-4 flex flex-col items-center gap-3 transition-all duration-200">
+                        <div
+                            class="w-14 h-14 rounded-full bg-green-100 text-green-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                            🐾
+                        </div>
+                        <span class="text-sm font-bold text-gray-900">Animals</span>
+                    </button>
+
+                    <!-- Space -->
+                    <button onclick="toggleInterest(this)"
+                        class="interest-btn group border-2 border-gray-100 bg-white hover:border-purple-200 rounded-3xl p-4 flex flex-col items-center gap-3 transition-all duration-200">
+                        <div
+                            class="w-14 h-14 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                            🚀
+                        </div>
+                        <span class="text-sm font-bold text-gray-900">Space</span>
+                    </button>
+
+                    <!-- Fairy Tales -->
+                    <button onclick="toggleInterest(this)"
+                        class="interest-btn group border-2 border-gray-100 bg-white hover:border-pink-200 rounded-3xl p-4 flex flex-col items-center gap-3 transition-all duration-200">
+                        <div
+                            class="w-14 h-14 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                            ✨
+                        </div>
+                        <span class="text-sm font-bold text-gray-900">Fairy Tales</span>
+                    </button>
+                </div>
+            </div>
+
+
+            <!-- Action Area -->
+            <div class="sticky bottom-0 bg-white pt-4">
+                <button onclick="proceedToMicCheck()" id="dive-in-btn"
+                    class="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-4 rounded-full shadow-xl shadow-orange-200 transition-transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                    <span>Dive In</span>
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <p
+                    class="text-center text-[10px] font-bold text-gray-400 mt-4 uppercase tracking-wider flex items-center justify-center gap-1">
+
+            </div>
         </div>
-        <p id="step-title" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Step 1 of 4: Voice
-            Check</p>
+
+    </div>
+
+    <!-- Header (Initially Hidden via opacity logic if needed, but we overlay covers it) -->
+    <div class="mb-8">
+        <!-- Back Button -->
+        <button onclick="showCustomizeJourney()"
+            class="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span class="text-sm font-semibold">Back</span>
+        </button>
+
+        <div class="text-center">
+            <div class="progress-bar-container mb-4">
+                <div id="step-progress" class="progress-bar-fill" style="width: 25%"></div>
+            </div>
+            <p id="step-title" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Step 1 of 4: Voice
+                Check</p>
+        </div>
     </div>
 
     <!-- Step 1: Ready / Microphone Access -->
@@ -248,7 +436,7 @@
             </div>
         </div>
 
-        
+
         <div class="reading-card p-8 text-center bg-orange-50/50">
             <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                 <svg class="w-10 h-10 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -265,10 +453,10 @@
 
         <!-- Quick Action Buttons -->
         <div class="flex gap-3">
-            <a href="?lang={{current_lang}}&p={{current_passage_idx|add:1}}"
+            <button onclick="showCustomizeJourney()"
                 class="flex-1 bg-white border border-gray-200 text-gray-600 font-bold py-2.5 rounded-2xl text-[10px] uppercase tracking-wider hover:bg-gray-50 transition-colors text-center">
                 Change Story
-            </a>
+            </button>
             <a href="{% url 'portal:dashboard' %}"
                 class="flex-1 bg-white border border-gray-200 text-gray-600 font-bold py-2.5 rounded-2xl text-[10px] uppercase tracking-wider hover:bg-gray-50 transition-colors text-center">
                 Maybe Later
@@ -290,7 +478,6 @@
         </div>
 
         <div class="reading-card p-8 bg-white relative">
-            <div id="retry-prompt" class="hidden retry-nudge">Retry / Speak Clearer 📣</div>
             <div class="absolute -top-3 left-8">
                 <span
                     class="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
@@ -316,7 +503,13 @@
 
     <!-- Step 3: Analyzing Transition -->
     <div id="step-3" class="hidden flex flex-col items-center justify-center py-12 space-y-8">
-        <div class="loader-circle"></div>
+        <div class="book-loader">
+            <div class="book-cover"></div>
+            <div class="book-spine"></div>
+            <div class="book-page"></div>
+            <div class="book-page"></div>
+            <div class="book-page"></div>
+        </div>
         <div class="text-center">
             <h2 id="loading-msg" class="text-xl font-bold text-gray-900 mb-2">Analyzing your voice...</h2>
             <p class="text-sm text-gray-500">Our Reading Buddy is listening carefully!</p>
@@ -334,12 +527,19 @@
                 <h2 class="text-2xl font-bold text-gray-900 mb-1">Analyzing Results...</h2>
                 <p class="text-gray-500">Please wait while we evaluate the reading performance</p>
             </div>
-            
+
             <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col items-center">
-                <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                    <div class="animate-spin w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full"></div>
+                <div class="mb-4">
+                    <div class="book-loader">
+                        <div class="book-cover"></div>
+                        <div class="book-spine"></div>
+                        <div class="book-page"></div>
+                        <div class="book-page"></div>
+                        <div class="book-page"></div>
+                    </div>
                 </div>
-                <p class="text-sm text-gray-600 font-medium">Analyzing fluency patterns and identifying improvement areas...</p>
+                <p class="text-sm text-gray-600 font-medium">Analyzing fluency patterns and identifying improvement
+                    areas...</p>
             </div>
         </div>
 
@@ -365,7 +565,7 @@
                 </div>
                 <span id="level-tag"
                     class="px-4 py-1 rounded-full bg-orange-100 text-orange-600 text-[10px] font-bold uppercase tracking-wider mb-4">Intermediate</span>
-                
+
                 <!-- Benchmark Info -->
                 <div id="benchmark-info" class="w-full mt-4">
                     <!-- Dynamic content will be inserted here -->
@@ -383,39 +583,67 @@
                 </div>
             </div>
 
-            <!-- Strengths & Gaps -->
-            <div class="grid grid-cols-1 gap-4">
-                <div class="bg-red-50/50 p-5 rounded-3xl border border-red-100 shadow-sm">
-                    <h4 class="text-xs font-bold text-red-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <!-- Motivational Call-to-Action Box -->
+            <div
+                class="bg-gradient-to-br from-orange-50 to-amber-50 p-6 rounded-3xl border-2 border-orange-200 shadow-lg">
+                <div class="text-center mb-4">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-orange-500 rounded-full mb-3">
+                        <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path
-                                d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM5.884 6.608L4.47 5.193a1 1 0 111.414-1.414l1.414 1.415a1 1 0 11-1.414 1.414zm11.41 1.414l1.415-1.414a1 1 0 111.414 1.414l-1.414 1.414a1 1 0 11-1.414-1.414zM8 11a1 1 0 100-2H7a1 1 0 100 2h1zm2 5a1 1 0 100-2v-1a1 1 0 10-2 0v1a1 1 0 102 0zM15 11a1 1 0 100-2h-1a1 1 0 100 2h1zM4.47 14.807l1.414 1.414a1 1 0 11-1.414 1.414l-1.414-1.414a1 1 0 111.414-1.414zm11.414 1.414l-1.414-1.414a1 1 0 111.414-1.414l1.414 1.414a1 1 0 11-1.414 1.414z" />
+                                d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                         </svg>
-                        Points to Improve
-                    </h4>
-                    <ul id="gaps-list" class="space-y-2 text-sm text-gray-700 font-medium">
-                        <!-- Dynamic -->
-                    </ul>
+                    </div>
+                    <h3 class="text-xl font-black text-gray-900 mb-2">🎉 Great Job, {{ child.name }}!</h3>
+                    <p class="text-sm text-gray-600 mb-4">Your reading journey has just begun!</p>
                 </div>
-                <div class="bg-green-50/50 p-5 rounded-3xl border border-green-100">
-                    <h4 class="text-xs font-bold text-green-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 mb-4">
+                    <h4 class="text-sm font-bold text-orange-600 mb-3 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
                                 clip-rule="evenodd" />
                         </svg>
-                        Strengths
+                        Unlock Your Child's Full Potential
                     </h4>
-                    <ul id="strengths-list" class="space-y-2 text-sm text-gray-700 font-medium">
-                        <!-- Dynamic -->
+                    <ul class="space-y-2 text-sm text-gray-700">
+                        <li class="flex items-start gap-2">
+                            <span class="text-orange-500 font-bold">✓</span>
+                            <span><strong>Personalized book recommendations</strong> matched to {{ child.name }}'s
+                                reading level</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-orange-500 font-bold">✓</span>
+                            <span><strong>Track progress</strong> and celebrate every milestone</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-orange-500 font-bold">✓</span>
+                            <span><strong>Access 1000+ curated books</strong> for all reading levels</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-orange-500 font-bold">✓</span>
+                            <span><strong>Build confidence</strong> with stories they'll love</span>
+                        </li>
                     </ul>
+                </div>
+
+                <div class="text-center">
+                    <p class="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">
+                        🚀 Start Building Better Reading Habits Today
+                    </p>
                 </div>
             </div>
 
-            <button id="see-recommendations-btn"
-                class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-full shadow-lg transition-transform active:scale-95">
-                See Recommended Books
-            </button>
+            <div class="flex gap-3">
+                <a href="{% url 'portal:subscribe' %}"
+                    class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-full shadow-lg transition-transform active:scale-95 text-center">
+                    Subscribe
+                </a>
+                <a href="{% url 'portal:marketplace' %}"
+                    class="flex-1 bg-white border-2 border-orange-600 text-orange-600 hover:bg-orange-50 font-bold py-4 rounded-full shadow-lg transition-transform active:scale-95 text-center">
+                    Browse Books
+                </a>
+            </div>
         </div>
     </div>
 
@@ -546,6 +774,68 @@
         document.getElementById('retry-prompt').classList.add('hidden');
     }
 
+    // Interest Area Logic
+    function toggleInterest(btn) {
+        btn.classList.toggle('active');
+        const isActive = btn.classList.contains('active');
+
+        if (isActive) {
+            btn.classList.add('ring-2', 'ring-orange-500', 'bg-orange-50');
+            btn.classList.remove('border-gray-100', 'bg-white');
+        } else {
+            btn.classList.remove('ring-2', 'ring-orange-500', 'bg-orange-50');
+            btn.classList.add('border-gray-100', 'bg-white');
+        }
+    }
+
+    // Comfort Selection Logic
+    function selectComfort(btn, level) {
+        // Reset all
+        document.querySelectorAll('.comfort-btn').forEach(b => {
+            b.classList.remove('active', 'border-orange-500', 'bg-orange-50/30');
+            b.classList.add('border-gray-100', 'bg-white');
+
+            // Reset circle icon
+            const circle = b.querySelector('div');
+            circle.classList.remove('border-[6px]', 'border-orange-500');
+            circle.classList.add('border-2', 'border-gray-300');
+        });
+
+        // Activate selected
+        btn.classList.add('active', 'border-orange-500', 'bg-orange-50/30');
+        btn.classList.remove('border-gray-100', 'bg-white');
+
+        const circle = btn.querySelector('div');
+        circle.classList.remove('border-2', 'border-gray-300');
+        circle.classList.add('border-[6px]', 'border-orange-500');
+    }
+
+    // Proceed to Mic Check Screen (Step 1)
+    function proceedToMicCheck() {
+        // Hide the customize journey overlay
+        document.getElementById('pre-test-overlay').classList.add('opacity-0');
+        setTimeout(() => {
+            document.getElementById('pre-test-overlay').classList.add('hidden');
+            // Step 1 is already visible, just needs the overlay removed
+        }, 300);
+    }
+
+    // Show Customize Journey (for retake or change story)
+    function showCustomizeJourney() {
+        // Show the overlay again
+        const overlay = document.getElementById('pre-test-overlay');
+        overlay.classList.remove('hidden', 'opacity-0');
+
+        // Reset to step 1 if needed
+        document.getElementById('step-1').classList.remove('hidden');
+        document.getElementById('step-2').classList.add('hidden');
+        document.getElementById('step-3').classList.add('hidden');
+        document.getElementById('step-4').classList.add('hidden');
+        document.getElementById('step-progress').style.width = '25%';
+        document.getElementById('step-title').textContent = 'Step 1 of 4: Voice Check';
+    }
+
+
     const startBtn = document.getElementById('start-btn');
     const finishBtn = document.getElementById('finish-btn');
     const secondsSpan = document.getElementById('seconds');
@@ -630,7 +920,7 @@
         if (accuracy > 100) accuracy = 100;
 
         const wpm = Math.round(wordCountTotal / (duration / 60));
-        
+
         // Grade-specific WPM benchmarks
         const gradeBenchmarks = {
             'Grade 1': { min: 30, avg: 50, max: 80, description: "beginning reader" },
@@ -685,7 +975,7 @@
             recommendations.push("Slow down slightly to improve accuracy");
             recommendations.push("Focus on comprehension over speed");
         }
-        
+
         // Ensure we have at least 3-4 improvement points
         if (recommendations.length < 3) {
             recommendations.push("Read age-appropriate books daily");
@@ -699,7 +989,7 @@
         } else if (performance === 'Excellent') {
             gaps = [
                 "Challenge yourself with more complex texts",
-                "Try reading different genres to expand vocabulary", 
+                "Try reading different genres to expand vocabulary",
                 "Practice comprehension questions after reading"
             ];
         } else if (performance === 'Good') {
@@ -770,7 +1060,7 @@
                 const gauge = document.getElementById('gauge-progress');
                 const percentage = Math.min(wpm / 200, 1); // Updated max for higher grades
                 gauge.style.strokeDashoffset = 283 - (percentage * 283);
-                
+
                 // Color code gauge based on performance
                 if (performance === 'Excellent') {
                     gauge.style.stroke = '#10b981'; // green
@@ -785,11 +1075,11 @@
                 // Populate lists
                 const strengthsList = document.getElementById('strengths-list');
                 const gapsList = document.getElementById('gaps-list');
-                
+
                 if (strengthsList) {
                     strengthsList.innerHTML = strengths.split(',').map(s => `<li class="flex items-start gap-2"><svg class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 016 0zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l2-2z" clip-rule="evenodd"></path></svg><span>${s.trim()}</span></li>`).join('');
                 }
-                
+
                 if (gapsList) {
                     gapsList.innerHTML = gaps.map(gap => `<li class="flex items-start gap-2"><svg class="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000-2v3a1 1 0 102 0V9zM9 5a1 1 0 012 0v1a1 1 0 11-2 0V5z" clip-rule="evenodd"></path></svg><span>${gap}</span></li>`).join('');
                 }
