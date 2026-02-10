@@ -46,7 +46,8 @@
                     <span class="text-3xl font-black text-gray-900">₹{{plan.price_per_month|floatformat:0}}</span>
                     <span class="text-gray-400 text-xs font-medium">/month</span>
                 </div>
-                <p class="text-gray-500 text-xs leading-relaxed mb-4">{{ plan.description|default:"Foundation building with playful phonics." }}</p>
+                <p class="text-gray-500 text-xs leading-relaxed mb-4">{{ plan.description|default:"Foundation building
+                    with playful phonics." }}</p>
                 <ul class="space-y-3 mb-6 flex-grow">
                     <li class="flex items-center gap-2 text-gray-700 text-xs font-semibold">
                         <span
@@ -74,8 +75,8 @@
                     </li>
                 </ul>
                 <a href="{% url 'portal:subscribe' %}?plan={{plan.id}}"
-                    class="block w-full bg-orange-500 text-white py-4 rounded-[20px] text-center font-bold text-sm shadow-lg hover:bg-orange-600 transition-all active:scale-[0.98]">Purchase
-                    Now</a>
+                    class="block w-full bg-orange-500 text-white py-4 rounded-[20px] text-center font-bold text-sm shadow-lg hover:bg-orange-600 transition-all active:scale-[0.98]">Subscribe
+                </a>
             </div>
         </div>
         {% endfor %}

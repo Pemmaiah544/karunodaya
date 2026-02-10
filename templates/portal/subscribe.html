@@ -16,14 +16,14 @@
     <p class="text-gray-600 mb-8">Choose the perfect reading journey for your child</p>
 
     {% if error %}
-    <div class="bg-red-50 p-4 rounded-lg mb-6 text-red-800">{{error}}</div>
+    <div class="bg-red-50 p-4 rounded-lg mb-6 text-red-800">{{ error }}</div>
     {% endif %}
 
     {% if active_subscription %}
     <div class="bg-green-50 border-2 border-green-300 rounded-2xl p-6 mb-6 text-center">
         <h3 class="text-xl font-bold text-green-900 mb-2">Active Subscription Found!</h3>
-        <p class="text-green-800 mb-4">{{child.name}} is already subscribed to
-            <strong>{{active_subscription.plan.name}}</strong>.</p>
+        <p class="text-green-800 mb-4">{{ child.name }} is already subscribed to
+            <strong>{{ active_subscription.plan.name }}</strong>. </p>
         <a href="{% url 'portal:dashboard' %}"
             class="inline-block px-6 py-2 bg-green-600 text-white rounded-lg font-bold">Go to Dashboard</a>
     </div>
@@ -33,16 +33,18 @@
         <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mb-8">
             <h2 class="text-xl font-bold mb-4">1. Select Child</h2>
             {% if child %}
-            <input type="hidden" name="child_id" value="{{child.id}}">
+            <input type="hidden" name="child_id" value="{{ child.id }}">
             <div class="p-4 bg-orange-50 rounded-2xl border border-orange-100">
-                <p class="font-bold text-gray-900">{{child.name}}</p>
-                <p class="text-sm text-gray-600">Age: {{child.age}} • Level: {{child.get_reading_difficulty_level_display}}</p>
+                <p class="font-bold text-gray-900">{{ child.name }}</p>
+                <p class="text-sm text-gray-600">Age: {{ child.age }} • Level: {{ child.get_reading_difficulty_level_display }}</p>
             </div>
             {% else %}
             <select name="child_id" required
                 class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-orange-500">
                 <option value="">-- Select Child --</option>
-                {% for c in children %}<option value="{{c.id}}">{{c.name}}</option>{% endfor %}
+                {% for c in children %}
+                <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
             </select>
             {% endif %}
         </div>
@@ -52,44 +54,42 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {% for plan in subscription_plans %}
                 <label class="cursor-pointer group relative">
-                    <input type="radio" name="plan_id" value="{{plan.id}}" required class="sr-only peer">
+                    <input type="radio" name="plan_id" value="{{ plan.id }}" {% if selected_plan_id == plan.id|stringformat:"s" %}checked{% elif subscription_plans|length == 1 %}checked{% endif %} required class="sr-only peer">
                     <div
                         class="h-full bg-white rounded-[40px] p-6 border-4 border-transparent peer-checked:border-orange-500 peer-checked:bg-orange-50/30 transition-all duration-300 shadow-sm hover:shadow-md flex flex-col">
                         <div class="aspect-square bg-[#FAF6EE] rounded-[30px] mb-4 overflow-hidden">
-                            {% if "Little Readers" in plan.name %}<img
-                                src="{% static 'images/plans/little_readers.png' %}" class="w-full h-full object-cover">
-                            {% elif "Young Explorers" in plan.name %}<img
-                                src="{% static 'images/plans/young_explorers.png' %}"
-                                class="w-full h-full object-cover">
-                            {% elif "Teen Scholars" in plan.name %}<img
-                                src="{% static 'images/plans/teen_scholars.png' %}" class="w-full h-full object-cover">
+                            {% if "Little Readers" in plan.name %}
+                            <img src="{% static 'images/plans/little_readers.png' %}" class="w-full h-full object-cover">
+                            {% elif "Young Explorers" in plan.name %}
+                            <img src="{% static 'images/plans/young_explorers.png' %}" class="w-full h-full object-cover">
+                            {% elif "Teen Scholars" in plan.name %}
+                            <img src="{% static 'images/plans/teen_scholars.png' %}" class="w-full h-full object-cover">
                             {% endif %}
                         </div>
-                        <h3 class="font-bold text-lg text-gray-900">{{plan.name}}</h3>
+                        <h3 class="font-bold text-lg text-gray-900">{{ plan.name }}</h3>
                         <div class="flex items-baseline gap-1 my-2">
-                            <span
-                                class="text-2xl font-black text-gray-900">₹{{plan.price_per_month|floatformat:0}}</span>
+                            <span class="text-2xl font-black text-gray-900">₹{{ plan.price_per_month|floatformat:0 }}</span>
                             <span class="text-gray-400 text-xs">/mo</span>
                         </div>
                         <ul class="text-xs text-gray-600 space-y-3 mt-4 flex-grow">
-                            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-orange-500" fill="currentColor"
-                                    viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clip-rule="evenodd" />
-                                </svg>{{plan.books_per_month}} books per month</li>
-                            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-orange-500" fill="currentColor"
-                                    viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clip-rule="evenodd" />
-                                </svg>Curated Recommendations</li>
-                            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-orange-500" fill="currentColor"
-                                    viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clip-rule="evenodd" />
-                                </svg>Free Doorstep Delivery</li>
+                            <li class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                {{ plan.books_per_month }} books per month
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                Curated Recommendations
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                Free Doorstep Delivery
+                            </li>
                         </ul>
                     </div>
                 </label>
@@ -100,18 +100,18 @@
         <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mb-8">
             <h2 class="text-xl font-bold mb-4">3. Delivery Details</h2>
             <div class="space-y-4">
-                <input type="tel" name="delivery_phone" value="{{request.user.parent_profile.phone_number}}" required
+                <input type="tel" name="delivery_phone" value="{{ request.user.parent_profile.phone_number }}" required
                     class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none"
                     placeholder="Mobile Number">
                 <textarea name="delivery_address" required
                     class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none" rows="2"
-                    placeholder="Complete Address">{{request.user.parent_profile.address}}</textarea>
+                    placeholder="Complete Address">{{ request.user.parent_profile.address }}</textarea>
                 <div class="grid grid-cols-3 gap-4">
-                    <input type="text" name="delivery_city" value="{{request.user.parent_profile.city}}" required
+                    <input type="text" name="delivery_city" value="{{ request.user.parent_profile.city }}" required
                         class="p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none" placeholder="City">
-                    <input type="text" name="delivery_state" value="{{request.user.parent_profile.state}}" required
+                    <input type="text" name="delivery_state" value="{{ request.user.parent_profile.state }}" required
                         class="p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none" placeholder="State">
-                    <input type="text" name="delivery_pincode" value="{{request.user.parent_profile.pincode}}" required
+                    <input type="text" name="delivery_pincode" value="{{ request.user.parent_profile.pincode }}" required
                         class="p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none" placeholder="Pincode">
                 </div>
             </div>
@@ -145,12 +145,12 @@
     <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white p-8 rounded-[40px] max-w-md w-full text-center shadow-2xl">
             <h3 class="font-black text-2xl text-gray-900 mb-2">Change Plan?</h3>
-            <p class="text-gray-600 mb-6">Switching to <strong>{{level_change_confirmation.new_plan}}</strong>.</p>
+            <p class="text-gray-600 mb-6">Switching to <strong>{{ level_change_confirmation.new_plan }}</strong>.</p>
             <form method="POST" class="space-y-4">
                 {% csrf_token %}
-                <input type="hidden" name="child_id" value="{{child.id}}">
-                <input type="hidden" name="plan_id" value="{{level_change_confirmation.plan_id}}">
-                <input type="hidden" name="payment_method" value="{{level_change_confirmation.payment_method}}">
+                <input type="hidden" name="child_id" value="{{ child.id }}">
+                <input type="hidden" name="plan_id" value="{{ level_change_confirmation.plan_id }}">
+                <input type="hidden" name="payment_method" value="{{ level_change_confirmation.payment_method }}">
                 <input type="hidden" name="confirm_level_change" value="true">
                 <button type="submit" class="w-full bg-orange-600 text-white font-bold py-4 rounded-2xl">Confirm
                     Switch</button>

@@ -1061,8 +1061,20 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
 
         context['children'] = Child.objects.filter(parent__user=self.request.user)
         
-        # Show all active plans
-        context['subscription_plans'] = SubscriptionPlan.objects.filter(is_active=True)
+        # Check if a specific plan was selected from the plans page
+        selected_plan_id = self.request.GET.get('plan')
+        if selected_plan_id:
+            try:
+                selected_plan = SubscriptionPlan.objects.get(id=selected_plan_id, is_active=True)
+                # Show only the selected plan
+                context['subscription_plans'] = [selected_plan]
+                context['selected_plan_id'] = selected_plan_id
+            except SubscriptionPlan.DoesNotExist:
+                # If plan doesn't exist, show all plans
+                context['subscription_plans'] = SubscriptionPlan.objects.filter(is_active=True)
+        else:
+            # Show all active plans
+            context['subscription_plans'] = SubscriptionPlan.objects.filter(is_active=True)
             
         # Check if address is complete
         context['address_complete'] = is_address_complete(self.request.user.parent_profile)
