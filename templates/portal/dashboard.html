@@ -251,7 +251,10 @@
                     {% if child.reading_test_completed %}
                     <span
                         class="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border border-green-100">
-                        {{ child.get_reading_difficulty_level_display|default:"Evaluated" }}
+                        {% if child.reading_difficulty_level == 'BEGINNER' %}BEGINNER LEVEL
+                        {% elif child.reading_difficulty_level == 'INTERMEDIATE' %}INTERMEDIATE LEVEL
+                        {% elif child.reading_difficulty_level == 'ADVANCED' %}ADVANCED LEVEL
+                        {% else %}Evaluated{% endif %}
                     </span>
                     {% else %}
                     <span

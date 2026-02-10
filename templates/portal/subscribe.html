@@ -1,413 +1,163 @@
 {% extends "portal/base.html" %}
 {% load static %}
 
-{% block title %}Subscribe to a Plan - Karunodaya{% endblock %}
+{% block title %}Subscribe - Karunodaya{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <!-- Back Button -->
     <a href="{% url 'portal:dashboard' %}"
-        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white text-orange-600 hover:bg-orange-50 mb-6 transition-colors">
+        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white text-orange-600 hover:bg-orange-50 mb-6 transition-colors shadow-sm">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
     </a>
 
-    <h1 class="text-3xl font-bold text-gray-900 mb-2">Start a New Subscription</h1>
-    <p class="text-gray-600 mb-8">Choose a plan for your child</p>
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Subscribe to a Plan</h1>
+    <p class="text-gray-600 mb-8">Choose the perfect reading journey for your child</p>
 
     {% if error %}
-    <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
-        <div class="flex items-start">
-            <svg class="w-5 h-5 text-red-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clip-rule="evenodd" />
-            </svg>
-            <div>
-                <p class="font-medium">{{ error }}</p>
-            </div>
-        </div>
-    </div>
+    <div class="bg-red-50 p-4 rounded-lg mb-6 text-red-800">{{error}}</div>
     {% endif %}
 
     {% if active_subscription %}
-    <div class="bg-green-50 border-2 border-green-300 rounded-2xl p-6 mb-6">
-        <div class="flex items-start">
-            <div
-                class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white mr-4 flex-shrink-0">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clip-rule="evenodd" />
-                </svg>
-            </div>
-            <div class="flex-1">
-                <h3 class="text-lg font-bold text-green-900 mb-2">{{ child.name }} Already Has an Active Subscription!
-                </h3>
-                <p class="text-green-800 mb-4">
-                    Your child is currently subscribed to <strong>{{ active_subscription.plan.name }}</strong>.
-                    Each child can only have one active subscription at a time.
-                </p>
-                <div class="bg-white rounded-lg p-4 mb-4">
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <p class="text-gray-500 text-xs mb-1">Current Plan</p>
-                            <p class="font-bold text-gray-900">{{ active_subscription.plan.name }}</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 text-xs mb-1">Status</p>
-                            <p class="font-bold text-green-600">{{ active_subscription.get_status_display }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <a href="{% url 'portal:dashboard' %}"
-                        class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                        </svg>
-                        Go to Dashboard
-                    </a>
-                    <a href="{% url 'portal:my_books' %}"
-                        class="inline-flex items-center px-4 py-2 bg-white hover:bg-gray-50 text-green-700 border-2 border-green-600 rounded-lg font-medium text-sm transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        View Books
-                    </a>
-                </div>
-            </div>
-        </div>
+    <div class="bg-green-50 border-2 border-green-300 rounded-2xl p-6 mb-6 text-center">
+        <h3 class="text-xl font-bold text-green-900 mb-2">Active Subscription Found!</h3>
+        <p class="text-green-800 mb-4">{{child.name}} is already subscribed to
+            <strong>{{active_subscription.plan.name}}</strong>.</p>
+        <a href="{% url 'portal:dashboard' %}"
+            class="inline-block px-6 py-2 bg-green-600 text-white rounded-lg font-bold">Go to Dashboard</a>
     </div>
-
     {% else %}
-    <!-- Subscription Form -->
-    <form method="POST" id="subscriptionForm" class="max-w-4xl">
+    <form method="POST" id="subscriptionForm" class="max-w-4xl mx-auto">
         {% csrf_token %}
-
-        <!-- Child Selection -->
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Select Child</h2>
-
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">1. Select Child</h2>
             {% if child %}
-            <!-- Pre-selected child -->
-            <input type="hidden" name="child_id" value="{{ child.id }}">
-            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="font-medium text-gray-900">{{ child.name }}</p>
-                        <p class="text-sm text-gray-600">
-                            Age {{ child.age }} • Grade: {{ child.get_grade_display }} •
-                            Reading Level: {{ child.get_reading_difficulty_level_display }}
-                        </p>
-                    </div>
-                    <a href="{% url 'portal:subscribe' %}" class="text-sm text-orange-600 hover:text-orange-700">
-                        Change
-                    </a>
-                </div>
+            <input type="hidden" name="child_id" value="{{child.id}}">
+            <div class="p-4 bg-orange-50 rounded-2xl border border-orange-100">
+                <p class="font-bold text-gray-900">{{child.name}}</p>
+                <p class="text-sm text-gray-600">Age: {{child.age}} • Level: {{child.get_reading_difficulty_level_display}}</p>
             </div>
             {% else %}
-            <!-- Child selection dropdown -->
             <select name="child_id" required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent">
-                <option value="">-- Select a child --</option>
-                {% for child_option in children %}
-                <option value="{{ child_option.id }}">
-                    {{ child_option.name }} (Age {{ child_option.age }}, Grade {{ child_option.get_grade_display }})
-                </option>
-                {% endfor %}
+                class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-orange-500">
+                <option value="">-- Select Child --</option>
+                {% for c in children %}<option value="{{c.id}}">{{c.name}}</option>{% endfor %}
             </select>
             {% endif %}
         </div>
 
-        <!-- Plan Selection -->
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Choose Your Plan</h2>
-
+        <div class="mb-8">
+            <h2 class="text-xl font-bold mb-4">2. Choose Your Plan</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {% for plan in subscription_plans %}
-                <label class="relative cursor-pointer group">
-                    <input type="radio" name="plan_id" value="{{ plan.id }}" required class="peer sr-only">
+                <label class="cursor-pointer group relative">
+                    <input type="radio" name="plan_id" value="{{plan.id}}" required class="sr-only peer">
                     <div
-                        class="h-full border-2 border-gray-200 rounded-xl p-6 peer-checked:border-orange-600 peer-checked:bg-gradient-to-br peer-checked:from-orange-50 peer-checked:to-blue-50 peer-checked:shadow-lg hover:border-orange-400 hover:shadow-md transition-all duration-200">
-                        <!-- Selected Badge -->
-                        <div class="absolute top-4 right-4 opacity-0 peer-checked:opacity-100 transition-opacity">
-                            <div class="bg-orange-600 text-white rounded-full p-1">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </div>
+                        class="h-full bg-white rounded-[40px] p-6 border-4 border-transparent peer-checked:border-orange-500 peer-checked:bg-orange-50/30 transition-all duration-300 shadow-sm hover:shadow-md flex flex-col">
+                        <div class="aspect-square bg-[#FAF6EE] rounded-[30px] mb-4 overflow-hidden">
+                            {% if "Little Readers" in plan.name %}<img
+                                src="{% static 'images/plans/little_readers.png' %}" class="w-full h-full object-cover">
+                            {% elif "Young Explorers" in plan.name %}<img
+                                src="{% static 'images/plans/young_explorers.png' %}"
+                                class="w-full h-full object-cover">
+                            {% elif "Teen Scholars" in plan.name %}<img
+                                src="{% static 'images/plans/teen_scholars.png' %}" class="w-full h-full object-cover">
+                            {% endif %}
                         </div>
-
-                        <h3 class="font-bold text-xl text-gray-900 mb-3">{{ plan.name }}</h3>
-                        <div class="mb-6">
-                            <span class="text-4xl font-bold text-orange-600">₹{{ plan.price_per_month }}</span>
-                            <span class="text-gray-600 text-sm">/month</span>
+                        <h3 class="font-bold text-lg text-gray-900">{{plan.name}}</h3>
+                        <div class="flex items-baseline gap-1 my-2">
+                            <span
+                                class="text-2xl font-black text-gray-900">₹{{plan.price_per_month|floatformat:0}}</span>
+                            <span class="text-gray-400 text-xs">/mo</span>
                         </div>
-                        <ul class="text-sm text-gray-700 space-y-3">
-                            <li class="flex items-start">
-                                <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor"
+                        <ul class="text-xs text-gray-600 space-y-3 mt-4 flex-grow">
+                            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-orange-500" fill="currentColor"
                                     viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                         clip-rule="evenodd" />
-                                </svg>
-                                <span>{{ plan.books_per_month }} book{{ plan.books_per_month|pluralize }} per
-                                    month</span>
-                            </li>
-                            <li class="flex items-start">
-                                <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor"
+                                </svg>{{plan.books_per_month}} books per month</li>
+                            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-orange-500" fill="currentColor"
                                     viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                         clip-rule="evenodd" />
-                                </svg>
-                                <span>Ages {{ plan.age_group_min }}-{{ plan.age_group_max }}</span>
-                            </li>
-                            <li class="flex items-start">
-                                <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor"
+                                </svg>Curated Recommendations</li>
+                            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-orange-500" fill="currentColor"
                                     viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                         clip-rule="evenodd" />
-                                </svg>
-                                <span>Curated recommendations</span>
-                            </li>
-                            <li class="flex items-start">
-                                <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor"
-                                    viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                                <span>Free returns</span>
-                            </li>
+                                </svg>Free Doorstep Delivery</li>
                         </ul>
-                        {% if plan.description %}
-                        <p class="text-sm text-gray-600 mt-4 pt-4 border-t border-gray-200">{{ plan.description }}
-                        </p>
-                        {% endif %}
                     </div>
                 </label>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- Delivery Address Section -->
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-gray-900">Delivery Address</h2>
-                <button type="button" id="toggleAddressEdit" onclick="toggleAddressForm()"
-                    class="text-sm text-orange-600 hover:text-orange-700 font-medium">
-                    {% if address_complete %}Change{% else %}Cancel{% endif %}
-                </button>
-            </div>
-
-            <!-- Address Display (Default View) -->
-            <div id="addressDisplay" class="bg-gray-50 border border-gray-200 rounded-lg p-4" {% if not address_complete %}style="display: none;"{% endif %}>
-                <div class="space-y-2 text-sm">
-                    <p class="font-medium text-gray-900">{{ request.user.get_full_name|default:request.user.username }}
-                    </p>
-                    <p class="text-gray-700" id="displayPhone">{{ request.user.parent_profile.phone_number }}</p>
-                    <p class="text-gray-700" id="displayAddress">{{ request.user.parent_profile.address }}</p>
-                    <p class="text-gray-700" id="displayLocation">{{ request.user.parent_profile.city }}, {{ request.user.parent_profile.state }} - {{ request.user.parent_profile.pincode }}</p>
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">3. Delivery Details</h2>
+            <div class="space-y-4">
+                <input type="tel" name="delivery_phone" value="{{request.user.parent_profile.phone_number}}" required
+                    class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none"
+                    placeholder="Mobile Number">
+                <textarea name="delivery_address" required
+                    class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none" rows="2"
+                    placeholder="Complete Address">{{request.user.parent_profile.address}}</textarea>
+                <div class="grid grid-cols-3 gap-4">
+                    <input type="text" name="delivery_city" value="{{request.user.parent_profile.city}}" required
+                        class="p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none" placeholder="City">
+                    <input type="text" name="delivery_state" value="{{request.user.parent_profile.state}}" required
+                        class="p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none" placeholder="State">
+                    <input type="text" name="delivery_pincode" value="{{request.user.parent_profile.pincode}}" required
+                        class="p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none" placeholder="Pincode">
                 </div>
-            </div>
-
-            <!-- Address Form (Hidden by Default) -->
-            <div id="addressForm" class="space-y-4" {% if address_complete %}style="display: none;" {% endif %}>
-                <div>
-                    <label for="delivery_phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number
-                        *</label>
-                    <input type="tel" id="delivery_phone" name="delivery_phone"
-                        value="{{ request.user.parent_profile.phone_number }}" required maxlength="15"
-                        pattern="[0-9]{10}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent text-sm"
-                        placeholder="10-digit mobile number">
-                </div>
-
-                <div>
-                    <label for="delivery_address" class="block text-sm font-medium text-gray-700 mb-1">Street
-                        Address *</label>
-                    <textarea id="delivery_address" name="delivery_address" required rows="2"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent text-sm"
-                        placeholder="House/Flat No., Building Name, Street">{{ request.user.parent_profile.address }}</textarea>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label for="delivery_city" class="block text-sm font-medium text-gray-700 mb-1">City
-                            *</label>
-                        <input type="text" id="delivery_city" name="delivery_city"
-                            value="{{ request.user.parent_profile.city }}" required maxlength="100"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent text-sm"
-                            placeholder="City">
-                    </div>
-
-                    <div>
-                        <label for="delivery_state" class="block text-sm font-medium text-gray-700 mb-1">State
-                            *</label>
-                        <input type="text" id="delivery_state" name="delivery_state"
-                            value="{{ request.user.parent_profile.state }}" required maxlength="100"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent text-sm"
-                            placeholder="State">
-                    </div>
-                </div>
-
-                <div>
-                    <label for="delivery_pincode" class="block text-sm font-medium text-gray-700 mb-1">Pincode
-                        *</label>
-                    <input type="text" id="delivery_pincode" name="delivery_pincode"
-                        value="{{ request.user.parent_profile.pincode }}" required pattern="[0-9]{6}" maxlength="6"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent text-sm"
-                        placeholder="6-digit pincode">
-                </div>
-
-                <button type="button" onclick="saveAddressChanges()"
-                    class="text-sm bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium">
-                    Save Changes
-                </button>
             </div>
         </div>
 
-        <script>
-            function toggleAddressForm() {
-                const display = document.getElementById('addressDisplay');
-                const form = document.getElementById('addressForm');
-                const button = document.getElementById('toggleAddressEdit');
-
-                if (form.style.display === 'none') {
-                    display.style.display = 'none';
-                    form.style.display = 'block';
-                    button.textContent = 'Cancel';
-                } else {
-                    display.style.display = 'block';
-                    form.style.display = 'none';
-                    button.textContent = 'Change';
-                }
-            }
-
-            function saveAddressChanges() {
-                // Update display with new values
-                const phone = document.getElementById('delivery_phone').value;
-                const address = document.getElementById('delivery_address').value;
-                const city = document.getElementById('delivery_city').value;
-                const state = document.getElementById('delivery_state').value;
-                const pincode = document.getElementById('delivery_pincode').value;
-
-                document.getElementById('displayPhone').textContent = phone;
-                document.getElementById('displayAddress').textContent = address;
-                document.getElementById('displayLocation').textContent = city + ', ' + state + ' - ' + pincode;
-
-                // Toggle back to display mode
-                toggleAddressForm();
-            }
-        </script>
-
-        <!-- Payment Method Selection -->
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Payment Method</h2>
-            <div class="space-y-2">
-                <label
-                    class="flex items-center cursor-pointer p-3 border-2 border-gray-200 rounded-lg hover:border-orange-400 has-[:checked]:border-orange-600 has-[:checked]:bg-orange-50">
-                    <input type="radio" name="payment_method" value="ONLINE" class="mr-3">
-                    <div class="flex-1">
-                        <p class="font-medium text-sm">Online Payment</p>
-                        <p class="text-xs text-gray-600">Card/UPI/Net Banking</p>
-                    </div>
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">4. Payment Method</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <label class="cursor-pointer">
+                    <input type="radio" name="payment_method" value="COD" checked class="sr-only peer">
+                    <div
+                        class="p-5 border-2 border-gray-100 rounded-2xl peer-checked:border-orange-500 peer-checked:bg-orange-50 text-center font-bold text-gray-700 transition-all">
+                        Cash on Delivery</div>
                 </label>
-                <label
-                    class="flex items-center cursor-pointer p-3 border-2 border-gray-200 rounded-lg hover:border-orange-400 has-[:checked]:border-orange-600 has-[:checked]:bg-orange-50">
-                    <input type="radio" name="payment_method" value="COD" checked class="mr-3">
-                    <div class="flex-1">
-                        <p class="font-medium text-sm">Cash on Delivery</p>
-                        <p class="text-xs text-gray-600">Pay when you receive your books</p>
-                    </div>
+                <label class="cursor-pointer">
+                    <input type="radio" name="payment_method" value="ONLINE" class="sr-only peer">
+                    <div
+                        class="p-5 border-2 border-gray-100 rounded-2xl peer-checked:border-orange-500 peer-checked:bg-orange-50 text-center font-bold text-gray-700 transition-all">
+                        Online Payment</div>
                 </label>
             </div>
         </div>
 
-        <!-- Terms & Conditions -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h3 class="font-semibold text-blue-900 mb-2">Subscription Terms</h3>
-            <ul class="text-sm text-blue-800 space-y-1">
-                <li>• Books must be returned within 30 days</li>
-                <li>• 7-day grace period (no late fees)</li>
-                <li>• ₹50/day late fee after grace period (max ₹500)</li>
-                <li>• Books are curated based on child's age and reading level</li>
-                <li>• Monthly billing on subscription date</li>
-            </ul>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex gap-4">
-            <button type="submit"
-                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg">
-                Confirm Subscription Order
-            </button>
-            <a href="{% url 'portal:dashboard' %}"
-                class="flex-1 text-center border border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-lg hover:bg-gray-50">
-                Cancel
-            </a>
-        </div>
+        <button type="submit"
+            class="w-full bg-orange-500 text-white font-black py-5 rounded-[24px] text-xl shadow-xl hover:bg-orange-600 transition-all active:scale-[0.98]">Confirm
+            Subscription</button>
     </form>
     {% endif %}
 
-    <!-- Level Change Confirmation Modal -->
     {% if level_change_confirmation %}
-    <div id="levelChangeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">Reading Level Change</h3>
-                <p class="text-gray-600 mb-4">
-                    You're changing from <strong class="text-orange-600">{{ level_change_confirmation.current_plan
-                        }}</strong> to <strong class="text-orange-600">{{ level_change_confirmation.new_plan
-                        }}</strong>.
-                </p>
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                    <p class="text-sm text-yellow-800">
-                        {% if level_change_confirmation.change_type == 'higher' %}
-                        <strong>⬆️ Higher Reading Level:</strong> This plan includes more advanced books that may be
-                        challenging for {{ child.name }}.
-                        {% else %}
-                        <strong>⬇️ Lower Reading Level:</strong> This plan includes simpler books that may be easier for
-                        {{ child.name }}.
-                        {% endif %}
-                    </p>
-                </div>
-                <p class="text-sm text-gray-600">Are you sure you want to continue?</p>
-            </div>
-
-            <form method="POST" class="space-y-3">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-8 rounded-[40px] max-w-md w-full text-center shadow-2xl">
+            <h3 class="font-black text-2xl text-gray-900 mb-2">Change Plan?</h3>
+            <p class="text-gray-600 mb-6">Switching to <strong>{{level_change_confirmation.new_plan}}</strong>.</p>
+            <form method="POST" class="space-y-4">
                 {% csrf_token %}
-                <input type="hidden" name="child_id" value="{{ child.id }}">
-                <input type="hidden" name="plan_id" value="{{ level_change_confirmation.plan_id }}">
-                <input type="hidden" name="payment_method" value="{{ level_change_confirmation.payment_method }}">
+                <input type="hidden" name="child_id" value="{{child.id}}">
+                <input type="hidden" name="plan_id" value="{{level_change_confirmation.plan_id}}">
+                <input type="hidden" name="payment_method" value="{{level_change_confirmation.payment_method}}">
                 <input type="hidden" name="confirm_level_change" value="true">
-
-                <button type="submit"
-                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-6 rounded-lg">
-                    Yes, Continue
-                </button>
-                <a href="{% url 'portal:subscribe_child' child.id %}"
-                    class="w-full block text-center border border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-lg hover:bg-gray-50">
-                    No, Go Back
-                </a>
+                <button type="submit" class="w-full bg-orange-600 text-white font-bold py-4 rounded-2xl">Confirm
+                    Switch</button>
+                <a href="javascript:history.back()" class="block font-bold text-gray-400">Cancel</a>
             </form>
         </div>
     </div>
     {% endif %}
-
 </div>
 {% endblock %}
