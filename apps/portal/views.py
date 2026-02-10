@@ -1360,6 +1360,17 @@ class CartView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateView):
         context['cart_items'] = cart_items
         context['cart_total'] = total
         context['cart_count'] = sum(item['quantity'] for item in cart.values())
+        
+        # Check if address is complete
+        parent_profile = self.request.user.parent_profile
+        address_complete = all([
+            parent_profile.phone_number,
+            parent_profile.address,
+            parent_profile.city,
+            parent_profile.state,
+            parent_profile.pincode
+        ])
+        context['address_complete'] = address_complete
 
         return context
 
@@ -1384,8 +1395,14 @@ def checkout(request):
         delivery_state = request.POST.get('delivery_state', '').strip()
         delivery_pincode = request.POST.get('delivery_pincode', '').strip()
         
+        # Debug logging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Checkout Debug - Phone: [{delivery_phone}], Address: [{delivery_address}], City: [{delivery_city}], State: [{delivery_state}], Pincode: [{delivery_pincode}]")
+        
         # Validate delivery address
         if not all([delivery_phone, delivery_address, delivery_city, delivery_state, delivery_pincode]):
+            logger.error(f"Validation failed - Missing fields")
             messages.error(request, 'Please provide complete delivery address.')
             return redirect('portal:cart')
 
