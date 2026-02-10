@@ -177,7 +177,8 @@
             <div class="absolute inset-0 flex items-center justify-center p-3">
                 <div
                     class="w-full h-full rounded-full overflow-hidden border-4 border-white shadow-lg bg-orange-100 flex items-center justify-center">
-                    <span class="text-4xl font-bold text-orange-600 uppercase">{{ user.get_full_name|default:user.username|slice:":1" }}</span>
+                    <span class="text-4xl font-bold text-orange-600 uppercase">{{
+                        user.get_full_name|default:user.username|slice:":1" }}</span>
                 </div>
             </div>
             <span class="avatar-percentage">{{ profile_completion|default:"0" }}%</span>
@@ -243,7 +244,8 @@
 
             <div class="flex-1">
                 <h4 class="font-bold text-gray-900 mb-0.5">{{ child.name }}</h4>
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Grade {{ child.get_grade_display|default:"Unknown" }}</p>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Grade {{
+                    child.get_grade_display|default:"Unknown" }}</p>
             </div>
 
             <div class="flex items-center gap-3">
@@ -308,7 +310,8 @@
                 </div>
                 <div class="flex-1">
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Full Name</p>
-                    <div id="account-view-name" class="font-bold text-gray-900"> {{ user.get_full_name|default:user.username }} </div>
+                    <div id="account-view-name" class="font-bold text-gray-900"> {{
+                        user.get_full_name|default:user.username }} </div>
                     <div id="account-edit-name" class="hidden grid grid-cols-2 gap-2 mt-1">
                         <input type="text" name="first_name" value="{{ user.first_name }}"
                             class="w-full px-3 py-2 bg-gray-50 border-none rounded-xl font-bold text-sm outline-none focus:ring-1 focus:ring-orange-200">
