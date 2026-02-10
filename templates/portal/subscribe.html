@@ -209,15 +209,13 @@
             </div>
 
             <!-- Address Display (Default View) -->
-            <div id="addressDisplay" class="bg-gray-50 border border-gray-200 rounded-lg p-4" {% if not address_complete
-                %}style="display: none;" {% endif %}>
+            <div id="addressDisplay" class="bg-gray-50 border border-gray-200 rounded-lg p-4" {% if not address_complete %}style="display: none;"{% endif %}>
                 <div class="space-y-2 text-sm">
                     <p class="font-medium text-gray-900">{{ request.user.get_full_name|default:request.user.username }}
                     </p>
                     <p class="text-gray-700" id="displayPhone">{{ request.user.parent_profile.phone_number }}</p>
                     <p class="text-gray-700" id="displayAddress">{{ request.user.parent_profile.address }}</p>
-                    <p class="text-gray-700" id="displayLocation">{{ request.user.parent_profile.city }}, {{
-                        request.user.parent_profile.state }} - {{ request.user.parent_profile.pincode }}</p>
+                    <p class="text-gray-700" id="displayLocation">{{ request.user.parent_profile.city }}, {{ request.user.parent_profile.state }} - {{ request.user.parent_profile.pincode }}</p>
                 </div>
             </div>
 

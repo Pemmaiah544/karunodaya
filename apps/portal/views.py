@@ -1061,24 +1061,8 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
 
         context['children'] = Child.objects.filter(parent__user=self.request.user)
         
-        # Filter plans to only show those matching child's reading level
-        all_plans = SubscriptionPlan.objects.filter(is_active=True)
-        
-        if child_id and child:
-            # Map reading levels to plan names
-            level_to_plan = {
-                'BEGINNER': 'Little Readers',
-                'INTERMEDIATE': 'Young Explorers',
-                'ADVANCED': 'Advanced Readers'
-            }
-            
-            matching_plan_name = level_to_plan.get(child.reading_difficulty_level)
-            if matching_plan_name:
-                context['subscription_plans'] = all_plans.filter(name=matching_plan_name)
-            else:
-                context['subscription_plans'] = all_plans
-        else:
-            context['subscription_plans'] = all_plans
+        # Show all active plans
+        context['subscription_plans'] = SubscriptionPlan.objects.filter(is_active=True)
             
         # Check if address is complete
         context['address_complete'] = is_address_complete(self.request.user.parent_profile)
@@ -1117,22 +1101,6 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
                 'active_subscription': existing_subscription
             })
         
-        # Validate that the plan matches the child's reading level
-        level_to_plan = {
-            'BEGINNER': 'Little Readers',
-            'INTERMEDIATE': 'Young Explorers',
-            'ADVANCED': 'Advanced Readers'
-        }
-        
-        expected_plan_name = level_to_plan.get(child.reading_difficulty_level)
-        
-        if expected_plan_name and plan.name != expected_plan_name:
-            return render(request, self.template_name, {
-                'error': f'This plan is not suitable for {child.name}\'s reading level ({child.get_reading_difficulty_level_display()}). Please purchase individual books from the marketplace instead.',
-                'child': child,
-                'children': Child.objects.filter(parent__user=request.user),
-                'subscription_plans': SubscriptionPlan.objects.filter(is_active=True)
-            })
 
         # Create subscription order with payment method
         # Get delivery address from form (not from profile)
@@ -1181,8 +1149,8 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
             status='ACTIVE'
         )
 
-        # Redirect to payment initiation (handles both COD and Online)
-        return redirect('payments:initiate_payment', order_id=order.id)
+        # Redirect to order detail page (same as book purchase flow)
+        return redirect('portal:order_detail', order_id=order.id)
 
 
 
