@@ -52,6 +52,7 @@ urlpatterns = [
     path('notifications/', views.NotificationsView.as_view(), name='notifications'),
     path('fluency-check/<int:child_id>/', views.FluencyCheckView.as_view(), name='fluency_check'),
     path('fluency-check/<int:child_id>/save/', views.fluency_check_save, name='fluency_check_save'),
+    path('dismiss-language-banner/<int:child_id>/', views.dismiss_language_banner, name='dismiss_language_banner'),
     path('curated-box/<int:child_id>/', views.CuratedBoxView.as_view(), name='curated_box'),
 
     # Marketplace
@@ -66,8 +67,9 @@ urlpatterns = [
     # Profile
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('profile/update-name/', views.update_profile_name, name='update_profile_name'),
+    path('profile/child/<int:child_id>/edit/', views.edit_child, name='edit_child'),
+    path('profile/child/<int:child_id>/update/', views.update_child, name='update_child'),
     path('profile/child/add/', views.AddChildView.as_view(), name='add_child'),
-    path('profile/child/<int:child_id>/edit/', views.EditChildView.as_view(), name='edit_child'),
     path('profile/child/<int:child_id>/toggle/', views.toggle_child_status, name='toggle_child'),
 
     # Subscriptions

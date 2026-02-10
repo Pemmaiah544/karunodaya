@@ -100,6 +100,7 @@ class Child(models.Model):
     reading_strengths = models.TextField(blank=True, null=True, help_text="Strengths identified in reading")
     reading_gaps = models.TextField(blank=True, null=True, help_text="Areas for improvement identified in reading")
     is_active = models.BooleanField(default=True, help_text="Whether this child's profile is currently active")
+    has_tried_other_languages = models.BooleanField(default=False, help_text="Whether the child has tried or dismissed the multilingual banner")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

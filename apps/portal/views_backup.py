@@ -840,11 +840,8 @@ def edit_child(request, child_id):
             'child': child,
             'grades': Child.GRADE_CHOICES,
         })
-    except Exception as e:
-        messages.error(request, f"An error occurred: {str(e)}")
-        return redirect('portal:profile')
-
-@login_required
+    
+    @login_required
 def update_child(request, child_id):
     """Update child details via AJAX or form submission."""
     if request.method == 'POST':
@@ -889,34 +886,33 @@ def update_child(request, child_id):
 def toggle_child_status(request, child_id):
     """Set a child as the active profile and deactivate others."""
     if request.method == 'POST':
-        try:
-            child = get_object_or_404(Child, id=child_id, parent__user=request.user)
+        child = get_object_or_404(Child, id=child_id, parent__user=request.user)
+        
+        # Deactivate all other children
+        Child.objects.filter(parent=child.parent).exclude(id=child.id).update(is_active=False)
+        
+        # Activate this child
+        child.is_active = True
+        child.save()
+        
+        message = f"{child.name} is now the active profile."
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1':
+            return JsonResponse({'status': 'success', 'message': message})
             
-            # Deactivate all other children
-            Child.objects.filter(parent=child.parent).exclude(id=child.id).update(is_active=False)
-            
-            # Activate this child
-            child.is_active = True
-            child.save()
-            
-            message = f"{child.name} is now the active profile."
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1':
-                return JsonResponse({'status': 'success', 'message': message})
-                
-            messages.success(request, message)
+        messages.success(request, message)
+        return redirect('portal:profile')
+    except Child.DoesNotExist:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1':
+            return JsonResponse({'status': 'error', 'message': 'Child not found'}, status=404)
+        else:
+            messages.error(request, 'Child not found')
             return redirect('portal:profile')
-        except Child.DoesNotExist:
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1':
-                return JsonResponse({'status': 'error', 'message': 'Child not found'}, status=404)
-            else:
-                messages.error(request, 'Child not found')
-                return redirect('portal:profile')
-        except Exception as e:
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1':
-                return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-            else:
-                messages.error(request, f'Error updating child: {str(e)}')
-                return redirect('portal:profile')
+    except Exception as e:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1':
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        else:
+            messages.error(request, f'Error updating child: {str(e)}')
+            return redirect('portal:profile')
     
     return HttpResponse('Method not allowed', status=405)
 
