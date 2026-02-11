@@ -112,12 +112,13 @@
         class="mb-6 relative overflow-hidden rounded-[24px] bg-gradient-to-r from-orange-500 to-orange-600 p-8 text-white shadow-xl shadow-orange-100 animate-in fade-in slide-in-from-top duration-700">
         <div class="relative z-10 flex items-center justify-between">
             <div class="flex-1">
-                <div class="flex items-center gap-2 mb-3">
+                <div class="flex items-center gap-2 mb-2">
                     <span
-                        class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">NEW
+                        class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-white border border-white/10">NEW
                         JOURNEY</span>
                 </div>
-                <h2 class="text-2xl font-black mb-2 leading-tight">Every Great Reader Starts with a First Step</h2>
+                <h2 class="text-3xl font-black mb-1 leading-tight text-white">Welcome to Karunodaya!</h2>
+                <p class="text-lg font-bold mb-4 text-white/90">Every Great Reader Starts with a First Step</p>
                 <p class="text-sm text-white/90 mb-6 max-w-xs leading-relaxed">Add your child's profile to start their
                     personalized reading journey and get curated book boxes.</p>
                 <div class="flex gap-4">
@@ -245,7 +246,7 @@
                         </div>
                         <div>
                             <h3 class="font-bold text-gray-900">{{ child.name }}</h3>
-                            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{{ child.get_grade_display|default:"Not Set" }}</p>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{{ child.get_grade_display|default:"NOT SET" }}</p>
                         </div>
                     </div>
                     {% if child.reading_test_completed %}
@@ -367,11 +368,13 @@
         {% if active_subscriptions %}
         <!-- Subscription Info Card Only -->
         <div class="grid grid-cols-1 gap-4">
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-shadow">
+            <div
+                class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-shadow">
                 <!-- Header -->
                 <div class="flex justify-between items-start mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 font-bold text-lg">
+                        <div
+                            class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 font-bold text-lg">
                             {{ active_subscriptions.first.child.name|slice:":1" }}
                         </div>
                         <div>
@@ -379,19 +382,22 @@
                             <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{{ active_subscriptions.first.plan.name }}</p>
                         </div>
                     </div>
-                    <span class="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border border-green-100">ACTIVE</span>
+                    <span
+                        class="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border border-green-100">ACTIVE</span>
                 </div>
 
                 <!-- Books Count -->
                 <div class="bg-orange-50 rounded-xl p-4 mb-4 border border-orange-100">
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="text-[10px] text-orange-600 font-bold uppercase tracking-widest mb-1">Total Books</p>
+                            <p class="text-[10px] text-orange-600 font-bold uppercase tracking-widest mb-1">Total Books
+                            </p>
                             <span class="text-3xl font-black text-gray-900">{{ total_books_count }}</span>
                         </div>
                         <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                             <svg class="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                                <path
+                                    d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                             </svg>
                         </div>
                     </div>
@@ -411,7 +417,8 @@
 
                 <!-- Action Button -->
                 <div class="mt-4">
-                    <a href="{% url 'portal:orders' %}?tab=subscriptions" class="w-full bg-orange-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-orange-700 transition-colors shadow-sm flex items-center justify-center gap-2">
+                    <a href="{% url 'portal:orders' %}?tab=subscriptions"
+                        class="w-full bg-orange-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-orange-700 transition-colors shadow-sm flex items-center justify-center gap-2">
                         Subscription Details
                     </a>
                 </div>
