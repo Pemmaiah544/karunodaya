@@ -214,23 +214,49 @@
     }
 
     .word-span {
-        transition: all 0.3s ease;
-        padding: 0 2px;
-        border-radius: 4px;
         display: inline-block;
+        padding: 6px 12px;
+        margin: 6px 4px;
+        border-radius: 12px;
+        color: #94a3b8;
+        font-size: 32px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border: 3px solid transparent;
+        line-height: normal;
+        white-space: nowrap;
+        vertical-align: middle;
     }
 
     .word-read {
-        color: #10b981;
-        /* Green */
-        font-weight: 800;
-        transform: scale(1.1);
+        color: #ea580c;
+        background-color: #fff7ed;
+        border-color: #ffedd5;
     }
 
     .word-current {
-        background-color: #ffa50030;
-        border-bottom: 2px solid #ffa500;
-        color: #ffa500;
+        background-color: #f97316 !important;
+        color: white !important;
+        font-weight: 800;
+        box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
+        transform: scale(1.1);
+        z-index: 20;
+        position: relative;
+        border-color: #ea580c !important;
+    }
+
+    @keyframes active-pulse {
+        0% {
+            transform: scale(1.1);
+        }
+
+        50% {
+            transform: scale(1.22);
+        }
+
+        100% {
+            transform: scale(1.1);
+        }
     }
 
     .retry-nudge {
@@ -694,10 +720,23 @@
     let startTime;
     let timerInterval;
     let recognition;
+    let isReading = false;
 
     const textDisplay = document.getElementById('reading-text-display');
-    const words = passageText.trim().split(/\s+/).filter(w => w.length > 0);
-    textDisplay.innerHTML = words.map((w, i) => `<span id="word-${i}" class="word-span">${w}</span>`).join(' ');
+    const rawText = passageText.trim().replace(/\r?\n|\r/g, ' ');
+    const words = rawText.split(' ').filter(w => w.length > 0);
+
+    // Clear and inject words with guaranteed full-word spans
+    textDisplay.innerHTML = '';
+    words.forEach((w, i) => {
+        const span = document.createElement('span');
+        span.id = `word-${i}`;
+        span.className = 'word-span';
+        span.textContent = w;
+        textDisplay.appendChild(span);
+        // Add a visible space that isn't highlighted
+        textDisplay.appendChild(document.createTextNode(' '));
+    });
 
     let currentWordIndex = 0;
     let lastMatchTime = Date.now();
@@ -720,25 +759,29 @@
             hideRetry();
 
             for (let i = event.resultIndex; i < event.results.length; ++i) {
-                // transcription updated internally by SpeechRecognition
+                const transcript = event.results[i][0].transcript.toLowerCase();
+                const spokenWords = transcript.split(/\s+/).filter(w => w.length > 0);
 
-                // Enhanced matching logic
-                const spokenWords = event.results[i][0].transcript.toLowerCase().split(/\s+/).filter(w => w.length > 0);
                 spokenWords.forEach(sWord => {
                     const cleanSWord = sWord.replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
                     if (cleanSWord.length < 1) return;
 
-                    // Look ahead logic - increased range to 12 words for better resilience
-                    const searchRange = 12;
+                    // Look ahead logic - skip ahead up to 10 words if needed
+                    const searchRange = 10;
                     for (let j = 0; j < searchRange; j++) {
                         let targetIdx = currentWordIndex + j;
                         if (targetIdx >= words.length) break;
 
-                        let targetWord = words[targetIdx].toLowerCase().replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
+                        let targetOriginal = words[targetIdx];
+                        let targetWord = targetOriginal.toLowerCase().replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
 
-                        // We check if the spoken word matches exactly OR is part of the target 
-                        // (handles long words like "bioluminescence")
-                        if (targetWord === cleanSWord || targetWord.includes(cleanSWord) || (cleanSWord.length > 3 && targetWord.startsWith(cleanSWord.substring(0, 3)))) {
+                        // Robust matching: Exact match OR prefix match (for partial word detection)
+                        // If spoken word is at least 3 chars AND matches start of target
+                        const isMatch = targetWord === cleanSWord ||
+                            (cleanSWord.length >= 3 && targetWord.startsWith(cleanSWord)) ||
+                            (targetWord.length >= 5 && cleanSWord.length >= 4 && levenshteinDistance(targetWord, cleanSWord) <= 2);
+
+                        if (isMatch) {
                             highlightRead(targetIdx);
                             currentWordIndex = targetIdx + 1;
                             lastMatchTime = Date.now();
@@ -749,7 +792,39 @@
             }
         };
 
-        recognition.onerror = () => {
+        // Fuzzy matching logic for better results with child speech
+        function levenshteinDistance(a, b) {
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+
+        recognition.onend = () => {
+            if (isReading) {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.log("Recognition restart failed", e);
+                }
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            if (event.error === 'not-allowed') {
+                isReading = false;
+                alert("Microphone access was denied. Please enable it to continue.");
+            }
             showRetry();
         };
     }
@@ -757,13 +832,23 @@
     function highlightRead(index) {
         for (let i = 0; i <= index; i++) {
             const el = document.getElementById(`word-${i}`);
-            if (el && !el.classList.contains('word-read')) {
+            if (el) {
                 el.classList.add('word-read');
                 el.classList.remove('word-current');
             }
         }
+
         const next = document.getElementById(`word-${index + 1}`);
-        if (next) next.classList.add('word-current');
+        if (next) {
+            next.classList.add('word-current');
+            // Smoothly scroll the text display to keep the current word visible
+            next.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+        } else if (index === words.length - 1) {
+            // Reached the end
+            setTimeout(() => {
+                finishBtn.click();
+            }, 1000);
+        }
     }
 
     function showRetry() {
@@ -860,22 +945,34 @@
 
         startTime = Date.now();
         lastMatchTime = Date.now();
-        if (recognition) recognition.start();
+        isReading = true;
+        if (recognition) {
+            try {
+                recognition.start();
+            } catch (e) {
+                console.log("Recognition already started or failed:", e);
+            }
+        }
 
         timerInterval = setInterval(() => {
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
             secondsSpan.textContent = elapsed;
 
-            // Show retry if no words matched for 5 seconds
-            if (Date.now() - lastMatchTime > 5000) {
+            // Show retry if no words matched for 8 seconds (give more time)
+            if (Date.now() - lastMatchTime > 8000) {
                 showRetry();
             }
         }, 1000);
     }
 
     finishBtn.addEventListener('click', () => {
+        isReading = false;
         clearInterval(timerInterval);
-        if (recognition) recognition.stop();
+        if (recognition) {
+            try {
+                recognition.stop();
+            } catch (e) { }
+        }
 
         const durationSec = (Date.now() - startTime) / 1000;
         showAnalyzing(durationSec);
