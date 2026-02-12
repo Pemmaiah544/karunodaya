@@ -1,64 +1,167 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Karunodaya</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#ffa50010', 100: '#ffa50020', 200: '#ffa50030', 300: '#ffa50040', 400: '#ffa50060',
+                            500: '#ffa50094', 600: '#ffa50094', 700: '#ffa500b0', 800: '#ffa500d0', 900: '#ffa500',
+                        },
+                        brand: { dark: '#333333' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .errorlist {
+            @apply text-red-500 text-xs mt-1 list-none p-0;
+        }
+    </style>
 </head>
-<body class="bg-gray-50">
-    <div class="min-h-screen flex items-center justify-center px-4">
-        <div class="max-w-md w-full space-y-8">
-            <div class="text-center">
-                <h2 class="text-4xl font-bold text-blue-600">📚 Karunodaya</h2>
-                <p class="mt-2 text-lg font-medium text-gray-900">Create Your Account</p>
-                <p class="text-sm text-gray-600">Join our book subscription platform</p>
-            </div>
 
-            <div class="bg-white p-8 rounded-lg shadow-md">
-                {% if error %}
-                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-                    {{ error }}
+<body class="bg-gray-50">
+    <div class="min-h-screen flex flex-col items-center justify-center px-4 py-8">
+        <div class="max-w-md w-full space-y-6">
+
+
+            <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+                <div class="flex justify-center">
+                    <img src="{% static 'images/foundation-logo.png' %}" alt="Karunodaya Logo"
+                        class="h-16 sm:h-20 w-auto mb-8 mr-8">
+                </div>
+
+                <div class="text-center mb-8">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-600 tracking-tight">Create Your Account</h2>
+                </div>
+                {% if form.non_field_errors %}
+                <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded" role="alert">
+                    <p class="font-semibold text-sm">Please correct the following errors:</p>
+                    <ul class="mt-2 text-sm list-disc list-inside">
+                        {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
                 </div>
                 {% endif %}
 
-                <form method="post" class="space-y-4">
+                <form method="post" class="space-y-5" id="register-form">
                     {% csrf_token %}
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                        <input type="text" name="username" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Mobile Number <span
+                                class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <span
+                                class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 font-medium pointer-events-none select-none">+91</span>
+                            {{ form.mobile_number }}
+                        </div>
+                        {% if form.mobile_number.errors %}
+                        <div id="mobile-error" class="text-red-600 text-xs mt-1.5 font-medium flex items-start gap-1">
+                            <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            <span>{{ form.mobile_number.errors.0 }}</span>
+                        </div>
+                        {% endif %}
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" name="email" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Email <span
+                                class="text-gray-400 text-xs font-normal">(Optional)</span></label>
+                        {{ form.email }}
+                        <p class="text-[10px] text-gray-500 mt-1">If provided, must be a valid email (e.g.,
+                            user@example.com)</p>
+                        {% if form.email.errors %}
+                        <div id="email-error" class="text-red-600 text-xs mt-1.5 font-medium flex items-start gap-1">
+                            <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            <span>{{ form.email.errors.0 }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Password <span
+                                class="text-red-500">*</span></label>
+                        <div class="relative">
+                            {{ form.password }}
+                            <button type="button" onclick="togglePassword('id_password', 'eye-icon-password')"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
+                                <svg id="eye-icon-password" class="w-5 h-5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p id="password-note"
+                            class="text-[10px] {% if form.password.errors %}text-red-600 font-bold{% else %}text-gray-500{% endif %} mt-1">
+                            Min 8 chars, max 12 chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char.
+                        </p>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                        <input type="password" name="password" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                        <input type="password" name="password2" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Confirm Password <span
+                                class="text-red-500">*</span></label>
+                        <div class="relative">
+                            {{ form.password2 }}
+                            <button type="button" onclick="togglePassword('id_password2', 'eye-icon-password2')"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
+                                <svg id="eye-icon-password2" class="w-5 h-5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="password-match-error"
+                            class="hidden text-red-600 text-xs mt-1.5 font-medium flex items-start gap-1">
+                            <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            <span>Passwords do not match</span>
+                        </div>
+                        {% if form.password2.errors %}
+                        <script>
+                            document.getElementById('id_password2').classList.add('border-red-500', 'ring-1', 'ring-red-200');
+                        </script>
+                        {% endif %}
                     </div>
 
                     <button type="submit"
-                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+                        class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
                         Create Account
                     </button>
                 </form>
 
-                <div class="mt-6 text-center">
+                <div class="mt-8 text-center border-t pt-6">
                     <p class="text-sm text-gray-600">
                         Already have an account?
-                        <a href="{% url 'portal:login' %}" class="text-blue-600 hover:text-blue-700 font-medium">
+                        <a href="{% url 'portal:login' %}"
+                            class="text-orange-600 hover:text-orange-700 font-bold transition-colors">
                             Sign In
                         </a>
                     </p>
@@ -66,5 +169,197 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const form = document.getElementById('register-form');
+        const mobileInput = form.querySelector('input[name="mobile_number"]');
+        const emailInput = form.querySelector('input[name="email"]');
+
+        const passwordInput = document.getElementById('id_password');
+        const password2Input = document.getElementById('id_password2');
+        const passwordNote = document.getElementById('password-note');
+
+        // Add error classes to password field if Django says there's an error
+        {% if form.password.errors %}
+        if (passwordInput) {
+            passwordInput.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+        }
+        {% endif %}
+
+        if (mobileInput) {
+            mobileInput.addEventListener('input', function (e) {
+                // Remove error message and border when user starts typing
+                const errorMsg = document.getElementById('mobile-error');
+                if (errorMsg) {
+                    errorMsg.classList.add('hidden');
+                }
+                const existsMsg = document.getElementById('mobile-exists-error');
+                if (existsMsg) {
+                    existsMsg.classList.add('hidden');
+                }
+                this.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+
+                // Ensure only numbers are entered
+                this.value = this.value.replace(/[^0-9]/g, '');
+
+                // Ensure it starts with 6-9
+                if (this.value.length > 0 && !/[6-9]/.test(this.value[0])) {
+                    this.value = '';
+                    const errorDiv = this.parentElement.parentElement.querySelector('.inline-error');
+                    if (!errorDiv) {
+                        const error = document.createElement('div');
+                        error.className = 'inline-error text-red-600 text-xs mt-1 font-medium';
+                        error.textContent = 'Mobile number must start with 6, 7, 8, or 9';
+                        this.parentElement.parentElement.appendChild(error);
+                        setTimeout(() => error.remove(), 3000);
+                    }
+                }
+            });
+        }
+
+        if (passwordInput) {
+            passwordInput.addEventListener('input', function () {
+                this.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+                if (passwordNote) {
+                    passwordNote.classList.remove('text-red-600', 'font-bold');
+                    passwordNote.classList.add('text-gray-500');
+                }
+                const matchError = document.getElementById('password-match-error');
+                if (matchError) matchError.classList.add('hidden');
+            });
+        }
+
+        if (password2Input) {
+            password2Input.addEventListener('input', function () {
+                this.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+                const matchError = document.getElementById('password-match-error');
+                if (matchError) matchError.classList.add('hidden');
+            });
+        }
+
+        if (emailInput) {
+            emailInput.addEventListener('input', function () {
+                const errorMsg = document.getElementById('email-error');
+                if (errorMsg) {
+                    errorMsg.classList.add('hidden');
+                }
+                this.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+            });
+        }
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault(); // Pause submission to validate
+
+            const pass = passwordInput.value;
+            const pass2 = password2Input.value;
+            const mobile = mobileInput.value;
+            let hasError = false;
+
+            // Password Complexity Regex
+            const hasUpper = /[A-Z]/.test(pass);
+            const hasLower = /[a-z]/.test(pass);
+            const hasDigit = /\d/.test(pass);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(pass);
+            const lengthValid = pass.length >= 8 && pass.length <= 12;
+
+            // Reset error states
+            passwordInput.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+            password2Input.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+            mobileInput.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+
+            if (passwordNote) {
+                passwordNote.classList.remove('text-red-600', 'font-bold');
+                passwordNote.classList.add('text-gray-500');
+            }
+            const matchError = document.getElementById('password-match-error');
+            if (matchError) matchError.classList.add('hidden');
+
+            const mobileError = document.getElementById('mobile-error');
+            if (mobileError) mobileError.classList.add('hidden');
+
+            // Validate Complexity
+            if (!hasUpper || !hasLower || !hasDigit || !hasSpecial || !lengthValid) {
+                hasError = true;
+                passwordInput.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+                if (passwordNote) {
+                    passwordNote.classList.add('text-red-600', 'font-bold');
+                    passwordNote.classList.remove('text-gray-500');
+                }
+            }
+
+            // Validate Match
+            if (pass !== pass2) {
+                hasError = true;
+                password2Input.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+                if (matchError) matchError.classList.remove('hidden');
+            }
+
+            // Check if mobile exists (Server Check)
+            if (mobile.length === 10) {
+                try {
+                    const response = await fetch(`{% url "portal:check_mobile_exists" %}?mobile=${mobile}`);
+                    const data = await response.json();
+                    if (data.exists) {
+                        hasError = true;
+                        mobileInput.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+
+                        // Show/Create mobile error
+                        let existsMsg = document.getElementById('mobile-exists-error');
+                        if (!existsMsg) {
+                            existsMsg = document.createElement('div');
+                            existsMsg.id = 'mobile-exists-error';
+                            existsMsg.className = 'text-red-600 text-xs mt-1.5 font-medium flex items-start gap-1';
+                            existsMsg.innerHTML = `
+                                <svg class="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                <span>This mobile number is already registered</span>
+                            `;
+                            mobileInput.parentElement.parentElement.appendChild(existsMsg);
+                        } else {
+                            existsMsg.classList.remove('hidden');
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error checking mobile:", err);
+                }
+            }
+
+            const inputs = form.querySelectorAll('input[required]');
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    hasError = true;
+                    input.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+                }
+            });
+
+            if (!hasError) {
+                form.submit();
+            }
+        });
+    </script>
+
+    <script>
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                // Show open eye when password is visible
+                icon.innerHTML = `
+ <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+ <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+ `;
+            } else {
+                input.type = 'password';
+                // Show closed eye when password is hidden
+                icon.innerHTML = `
+ <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+ `;
+            }
+        }
+    </script>
 </body>
+
 </html>

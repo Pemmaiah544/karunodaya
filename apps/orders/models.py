@@ -52,10 +52,17 @@ class Order(models.Model):
 
     STATUS_CHOICES = [
         ('PENDING', 'Pending'),
+        ('CONFIRMED', 'Confirmed'),  # For COD orders - confirmed but not yet paid
         ('PAID', 'Paid'),
         ('DISPATCHED', 'Dispatched'),
+        ('OUT_FOR_DELIVERY', 'Out for Delivery'),
         ('DELIVERED', 'Delivered'),
         ('CANCELLED', 'Cancelled'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('ONLINE', 'Online Payment'),
+        ('COD', 'Cash on Delivery'),
     ]
 
     parent = models.ForeignKey(
@@ -69,11 +76,33 @@ class Order(models.Model):
         choices=STATUS_CHOICES,
         default='PENDING'
     )
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        default='ONLINE',
+        help_text='Payment method: Online or Cash on Delivery'
+    )
     total_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         validators=[MinValueValidator(0)]
     )
+    
+    # Delivery Address (snapshot at time of order)
+    delivery_name = models.CharField(max_length=200, blank=True, default='')
+    delivery_phone = models.CharField(max_length=15, blank=True, default='')
+    delivery_address = models.TextField(blank=True, default='')
+    delivery_city = models.CharField(max_length=100, blank=True, default='')
+    delivery_state = models.CharField(max_length=100, blank=True, default='')
+    delivery_pincode = models.CharField(max_length=10, blank=True, default='')
+    
+    # Tracking Information
+    tracking_number = models.CharField(max_length=100, blank=True, default='')
+    courier_partner = models.CharField(max_length=100, blank=True, default='')
+    estimated_delivery_date = models.DateField(null=True, blank=True)
+    dispatched_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -175,6 +204,14 @@ class SubscriptionCycle(models.Model):
         return False
 
     @property
+    def days_overdue(self):
+        """Calculate days overdue."""
+        from datetime import date
+        if self.status == 'ACTIVE' and date.today() > self.expected_return_date:
+            return (date.today() - self.expected_return_date).days
+        return 0
+
+    @property
     def books_count(self):
         """Number of books in this cycle."""
         return self.physical_copies.count()
@@ -221,4 +258,6 @@ class OrderItem(models.Model):
     @property
     def subtotal(self):
         """Calculate subtotal for this item."""
+        if self.quantity is None or self.price_per_unit is None:
+            return 0
         return self.quantity * self.price_per_unit

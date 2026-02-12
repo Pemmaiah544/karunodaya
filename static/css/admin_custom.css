@@ -1,0 +1,220 @@
+/* Custom Admin Logo and Branding Styling */
+.unfold-brand {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 0.5rem 1rem !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    margin-bottom: 0.15rem !important;
+}
+
+.unfold-brand img {
+    height: 2rem !important;
+    width: auto !important;
+    max-width: 100%;
+}
+
+.unfold-brand span,
+.unfold-brand a:not(:has(img)) {
+    display: none !important;
+}
+
+#sidebar {
+    border-right: 1px solid #e5e7eb !important;
+    background-color: white !important;
+    overflow-y: auto !important;
+}
+
+#sidebar nav section {
+    margin-bottom: 0.15rem !important;
+}
+
+#sidebar nav h3 {
+    margin-top: 0.1rem !important;
+    margin-bottom: 0.05rem !important;
+    font-size: 0.55rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    padding-left: 1rem !important;
+    padding-top: 0.1rem !important;
+    padding-bottom: 0.1rem !important;
+    color: #9ca3af !important;
+    line-height: 1 !important;
+}
+
+#sidebar nav ul {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+#sidebar nav ul li {
+    margin: 0 !important;
+}
+
+#sidebar nav ul li a {
+    padding-top: 0.15rem !important;
+    padding-bottom: 0.15rem !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.5rem !important;
+    font-size: 0.7rem !important;
+    margin: 0.02rem 0.5rem !important;
+    border-radius: 0.25rem !important;
+    line-height: 1.1 !important;
+}
+
+#sidebar nav ul li a svg {
+    width: 0.9rem !important;
+    height: 0.9rem !important;
+    margin-right: 0.4rem !important;
+}
+
+#content {
+    background-color: #f9fafb !important;
+}
+
+@media (max-width: 768px) {
+    .unfold-brand img {
+        height: 1.5rem !important;
+    }
+}
+
+/* --- PREMIUM ORANGE THEME FOR ALL PAGES (LIST & EDIT) --- */
+
+/* Unified Container Styling (Tables & Forms) */
+.results,
+fieldset,
+.module,
+.unfold-table-container,
+div[class*="unfold-card"] {
+    border-radius: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    background: white !important;
+    overflow: hidden !important;
+    margin-bottom: 24px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Orange Gradient Headers for EVERYTHING */
+#result_list thead,
+fieldset h2,
+.module h2,
+legend,
+.unfold-table-container th,
+div[class*="unfold-card"] h2,
+.unfold-bg-primary-600 {
+    background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%) !important;
+    color: white !important;
+}
+
+/* Specific Header text styling */
+#result_list th,
+fieldset h2,
+.module h2,
+legend,
+.unfold-table-container th,
+div[class*="unfold-card"] h2 {
+    padding: 12px 20px !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Global table styling for ALL tables - SEPARATE HEADER AND ROWS */
+div#content-main #result_list td,
+#result_list td {
+    padding: 12px 16px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    vertical-align: middle !important;
+    line-height: 1.5 !important;
+    color: #4b5563 !important; /* Tailwind gray-600 for all cells */
+}
+
+/* Header styling - ONLY for actual headers */
+#result_list thead th,
+#result_list thead th a {
+    color: white !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* First column links - OVERRIDE both header and row styles */
+div#content-main #result_list tbody tr td:first-child a,
+#result_list tbody tr td:first-child a {
+    color: #4b5563 !important; /* Tailwind gray-600 */
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    display: block !important;
+}
+
+div#content-main #result_list tbody tr td:first-child a:hover,
+#result_list tbody tr td:first-child a:hover {
+    color: #ea580c !important;
+    text-decoration: underline !important;
+}
+
+#result_list tbody tr:nth-child(even) {
+    background: #f8fafc !important;
+}
+
+#result_list tbody tr:hover {
+    background: #fff7ed !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Header styling - ONLY for actual headers */
+#result_list thead th,
+#result_list thead th a {
+    color: white !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Form input focus theme */
+input:focus,
+select:focus,
+textarea:focus,
+.unfold-input:focus {
+    border-color: #fb923c !important;
+    box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.2) !important;
+    outline: none !important;
+}
+
+/* Submit row styling (Action bar at the bottom) */
+.submit-row,
+.unfold-action-bar,
+div[class*="unfold-form-actions"] {
+    background: #f8fafc !important;
+    padding: 16px 24px !important;
+    border-radius: 12px !important;
+    margin-top: 24px !important;
+    border: 1px solid #e2e8f0 !important;
+    display: flex !important;
+    gap: 12px !important;
+    justify-content: flex-end !important;
+}
+
+/* Buttons styling */
+input[type="submit"],
+.button,
+.unfold-button-primary {
+    background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 4px rgba(234, 88, 12, 0.2) !important;
+}
+
+input[type="submit"]:hover,
+.button:hover,
+.unfold-button-primary:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(234, 88, 12, 0.3) !important;
+}

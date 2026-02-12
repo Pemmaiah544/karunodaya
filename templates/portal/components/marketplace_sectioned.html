@@ -1,0 +1,28 @@
+<div class="space-y-10">
+    {% for group in difficulty_groups %}
+    <div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <h2 class="text-xl font-black text-gray-900">{{ group.name }}</h2>
+                {% if group.age %}
+                <span
+                    class="px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-[11px] font-bold tracking-wide border border-orange-100 uppercase">
+                    {{ group.age }}
+                </span>
+                {% endif %}
+            </div>
+            <button onclick="filterByPill('{{ group.value }}')"
+                class="text-sm font-bold text-orange-600 hover:text-orange-700">View All</button>
+        </div>
+
+        <!-- Horizontal Scrollable Container -->
+        <div class="flex gap-4 overflow-x-auto no-scrollbar -mx-4 px-4 pb-4">
+            {% for book in group.books %}
+            <div class="flex-shrink-0 w-[160px]">
+                {% include "portal/components/book_card.html" with book=book %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>

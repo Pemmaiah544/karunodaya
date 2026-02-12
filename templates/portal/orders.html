@@ -5,22 +5,22 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-4">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">My Orders & Subscriptions</h1>
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-1">My Orders</h1>
+        <p class="text-sm text-gray-500">View your subscriptions and purchases</p>
+    </div>
 
     <!-- Tab Navigation -->
     <div class="flex border-b mb-6">
-        <button class="tab-btn active px-4 py-2 font-medium border-b-2 border-primary-600 text-primary-600"
-                hx-get="{% url 'portal:orders' %}?tab=subscriptions"
-                hx-target="#orders-content"
-                hx-swap="innerHTML">
+        <a href="{% url 'portal:orders' %}?tab=subscriptions"
+            class="px-6 py-3 font-medium border-b-2 {% if tab != 'purchases' %}border-orange-600 text-orange-600{% else %}border-transparent text-gray-600 hover:text-gray-900{% endif %}">
             Subscriptions
-        </button>
-        <button class="tab-btn px-4 py-2 font-medium border-b-2 border-transparent text-gray-600 hover:text-gray-900"
-                hx-get="{% url 'portal:orders' %}?tab=purchases"
-                hx-target="#orders-content"
-                hx-swap="innerHTML">
+        </a>
+        <a href="{% url 'portal:orders' %}?tab=purchases"
+            class="px-6 py-3 font-medium border-b-2 {% if tab == 'purchases' %}border-orange-600 text-orange-600{% else %}border-transparent text-gray-600 hover:text-gray-900{% endif %}">
             Purchases
-        </button>
+        </a>
     </div>
 
     <!-- Orders Content -->
@@ -30,35 +30,52 @@
         {% if orders %}
         <div class="space-y-4">
             {% for order in orders %}
-            <div class="bg-white rounded-lg shadow p-4">
-                <div class="flex justify-between items-start mb-3">
+            <div class="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow duration-200">
+                <div class="flex justify-between items-start mb-4">
                     <div>
-                        <p class="font-semibold text-gray-900">Order #{{ order.id }}</p>
+                        <p class="font-semibold text-gray-900 text-lg">Order #{{ order.id }}</p>
                         <p class="text-sm text-gray-600">{{ order.created_at|date:"d M Y, h:i A" }}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Payment:
+                            {% if order.payment_method == 'COD' %}
+                            <span class="text-orange-600 font-medium">Cash on Delivery</span>
+                            {% else %}
+                            <span class="text-green-600 font-medium">Online Payment</span>
+                            {% endif %}
+                        </p>
                     </div>
                     <span class="px-3 py-1 text-xs font-semibold rounded-full
                         {% if order.status == 'PAID' %}bg-green-100 text-green-800
+                        {% elif order.status == 'CONFIRMED' %}bg-blue-100 text-blue-800
                         {% elif order.status == 'PENDING' %}bg-yellow-100 text-yellow-800
-                        {% elif order.status == 'DELIVERED' %}bg-blue-100 text-blue-800
+                        {% elif order.status == 'DISPATCHED' %}bg-orange-100 text-orange-800
+                        {% elif order.status == 'DELIVERED' %}bg-green-100 text-green-800
                         {% elif order.status == 'CANCELLED' %}bg-red-100 text-red-800
                         {% else %}bg-gray-100 text-gray-800{% endif %}">
                         {{ order.get_status_display }}
                     </span>
                 </div>
-                <p class="text-lg font-bold text-primary-600 mb-3">₹{{ order.total_amount }}</p>
-                <a href="{% url 'portal:order_detail' order.id %}"
-                   class="text-primary-600 hover:text-primary-700 text-sm font-medium">
-                    View Details →
-                </a>
+
+                <div class="flex items-center justify-between">
+                    <p class="text-xl font-bold text-orange-600">₹{{ order.total_amount }}</p>
+                    <a href="{% url 'portal:order_detail' order.id %}"
+                        class="text-orange-600 hover:text-orange-700 text-sm font-medium">
+                        View Details →
+                    </a>
+                </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
-        <div class="bg-gray-50 rounded-lg p-8 text-center">
-            <span class="text-6xl mb-4 block">🛒</span>
-            <p class="text-gray-600 mb-4">No purchase orders yet.</p>
+        <div class="bg-white rounded-lg shadow p-12 text-center">
+            <svg class="w-20 h-20 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <p class="text-gray-600 mb-4 text-lg font-medium">No purchase orders yet</p>
+            <p class="text-gray-500 text-sm mb-6">Browse our marketplace to buy books</p>
             <a href="{% url 'portal:marketplace' %}"
-               class="inline-block bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-6 rounded-lg">
+                class="inline-block bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
                 Browse Marketplace
             </a>
         </div>
@@ -69,54 +86,62 @@
         {% if subscription_cycles %}
         <div class="space-y-4">
             {% for cycle in subscription_cycles %}
-            <div class="bg-white rounded-lg shadow p-4">
-                <div class="flex justify-between items-start mb-3">
+            <div
+                class="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow duration-200 border-l-4 {% if cycle.is_overdue %}border-red-500{% else %}border-green-500{% endif %}">
+                <div class="flex justify-between items-start mb-4">
                     <div>
-                        <p class="font-semibold text-gray-900">{{ cycle.child.name }} - {{ cycle.plan.name }}</p>
-                        <p class="text-sm text-gray-600">{{ cycle.start_date|date:"d M Y" }} - {{ cycle.end_date|date:"d M Y" }}</p>
+                        <p class="font-semibold text-gray-900 text-lg">{{ cycle.child.name }} - {{ cycle.plan.name }}
+                        </p>
+                        <p class="text-sm text-gray-600">{{ cycle.issue_date|date:"d M Y" }} to {{ cycle.expected_return_date|date:"d M Y" }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Order #{{ cycle.order.id }}</p>
                     </div>
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full
-                        {% if cycle.status == 'ACTIVE' %}bg-green-100 text-green-800
-                        {% elif cycle.status == 'OVERDUE' %}bg-red-100 text-red-800
-                        {% elif cycle.status == 'RETURNED' %}bg-blue-100 text-blue-800
-                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    <span
+                        class="px-3 py-1 text-xs font-semibold rounded-full {% if cycle.status == 'ACTIVE' %}bg-green-100 text-green-800{% elif cycle.status == 'OVERDUE' %}bg-red-100 text-red-800{% elif cycle.status == 'RETURNED' %}bg-blue-100 text-blue-800{% else %}bg-gray-100 text-gray-800{% endif %}">
                         {{ cycle.get_status_display }}
                     </span>
                 </div>
 
                 <!-- Books Count -->
                 <div class="flex items-center text-sm text-gray-600 mb-3">
-                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                     </svg>
                     {{ cycle.books_count }} book{{ cycle.books_count|pluralize }}
                 </div>
 
                 <!-- Late Fee if Overdue -->
                 {% if cycle.is_overdue %}
-                <div class="bg-red-50 border border-red-200 rounded p-3 mb-3">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
                     <p class="text-sm text-red-800">
-                        <strong>Overdue:</strong> Expected return {{ cycle.expected_return_date|date:"d M Y" }}
+                        <strong>⚠️ Overdue:</strong> Expected return {{ cycle.expected_return_date|date:"d M Y" }}
                         {% if cycle.late_fee > 0 %}
-                        <br>Late fee: ₹{{ cycle.late_fee }}
+                        <br><strong>Late fee:</strong> ₹{{ cycle.late_fee }}
                         {% endif %}
                     </p>
                 </div>
                 {% endif %}
 
-                <a href="{% url 'portal:order_detail' cycle.order.id %}"
-                   class="text-primary-600 hover:text-primary-700 text-sm font-medium">
-                    View Details →
-                </a>
+                <div class="flex items-center justify-between">
+                    <p class="text-lg font-bold text-orange-600">₹{{ cycle.order.total_amount }}</p>
+                    <a href="{% url 'portal:order_detail' cycle.order.id %}"
+                        class="text-orange-600 hover:text-orange-700 text-sm font-medium">
+                        View Details →
+                    </a>
+                </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
-        <div class="bg-gray-50 rounded-lg p-8 text-center">
-            <span class="text-6xl mb-4 block">📦</span>
-            <p class="text-gray-600 mb-4">No active subscriptions yet.</p>
-            <a href="{% url 'portal:dashboard' %}"
-               class="inline-block bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-6 rounded-lg">
+        <div class="bg-white rounded-lg shadow p-12 text-center">
+            <svg class="w-20 h-20 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <p class="text-gray-600 mb-4 text-lg font-medium">No active subscriptions yet</p>
+            <p class="text-gray-500 text-sm mb-6">Subscribe to get curated books for your children</p>
+            <a href="{% url 'portal:subscribe' %}"
+                class="inline-block bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
                 Start Subscription
             </a>
         </div>
@@ -124,18 +149,4 @@
         {% endif %}
     </div>
 </div>
-
-<script>
-// Simple tab switching without HTMX for demo
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.tab-btn').forEach(b => {
-            b.classList.remove('active', 'border-primary-600', 'text-primary-600');
-            b.classList.add('border-transparent', 'text-gray-600');
-        });
-        this.classList.add('active', 'border-primary-600', 'text-primary-600');
-        this.classList.remove('border-transparent', 'text-gray-600');
-    });
-});
-</script>
 {% endblock %}

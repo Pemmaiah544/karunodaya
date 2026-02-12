@@ -3,21 +3,91 @@
 
 {% block title %}Onboarding - Karunodaya{% endblock %}
 
+{% block extra_head %}
+<style>
+    .capitalize-first {
+        text-transform: capitalize;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+<script>
+    // Save form data to local storage
+    function saveFormData() {
+        const form = document.querySelector('form');
+        if (!form) return;
+        const formData = new FormData(form);
+        const data = {};
+        formData.forEach((value, key) => {
+            data[key] = value;
+        });
+        localStorage.setItem('onboarding_step1_data', JSON.stringify(data));
+    }
+
+    // Load form data from local storage
+    function loadFormData() {
+        const savedData = localStorage.getItem('onboarding_step1_data');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+
+            // Restore form fields
+            Object.keys(data).forEach(key => {
+                const inputs = document.querySelectorAll(`[name="${key}"]`);
+                inputs.forEach(input => {
+                    if (input.type === 'radio' || input.type === 'checkbox') {
+                        if (input.value === data[key]) {
+                            input.checked = true;
+                        }
+                    } else {
+                        input.value = data[key];
+                    }
+                });
+            });
+        }
+    }
+
+    // Clear onboarding data
+    function clearOnboardingData() {
+        localStorage.removeItem('onboarding_step1_data');
+        localStorage.removeItem('onboarding_step2_data');
+        localStorage.removeItem('onboarding_step3_data');
+        localStorage.removeItem('onboarding_plan_type');
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', () => {
+        loadFormData();
+
+        // Auto-save form data on any input change
+        const form = document.querySelector('form');
+        if (form) {
+            form.querySelectorAll('input, textarea, select').forEach(input => {
+                input.addEventListener('input', saveFormData);
+                input.addEventListener('change', saveFormData);
+            });
+        }
+    });
+</script>
+
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-2xl mx-auto">
-        <h1 class="text-3xl font-bold text-gray-900 mb-8">Welcome to Karunodaya!</h1>
+        <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">Welcome to Karunodaya!</h1>
 
         <!-- Progress Steps -->
-        <div class="mb-8">
+        <div id="progress-bar" class="mb-8">
             <div class="flex items-center justify-between">
-                <div class="flex-1 border-t-2 border-primary-600"></div>
-                <span class="px-4 py-2 bg-primary-600 text-white rounded-full text-sm font-medium">1</span>
+                <div class="flex-1 border-t-2 border-gray-300"></div>
+                <span class="px-4 py-2 bg-primary-600 text-white rounded-full text-sm font-medium">
+                    1
+                </span>
                 <div class="flex-1 border-t-2 border-gray-300"></div>
                 <span class="px-4 py-2 bg-gray-300 text-gray-600 rounded-full text-sm font-medium">2</span>
                 <div class="flex-1 border-t-2 border-gray-300"></div>
-                <span class="px-4 py-2 bg-gray-300 text-gray-600 rounded-full text-sm font-medium">3</span>
-                <div class="flex-1 border-t-2 border-gray-300"></div>
+            </div>
+            <div class="flex justify-between mt-2 text-sm text-gray-600 px-2">
+                <span class="font-medium text-primary-600">Parent Info</span>
+                <span>Child Info</span>
             </div>
         </div>
 
@@ -26,47 +96,90 @@
             <!-- Step 1: Parent Info -->
             <h2 class="text-2xl font-semibold mb-6">Tell us about yourself</h2>
 
-            <form hx-post="{% url 'portal:onboarding_step2' %}"
-                  hx-target="#onboarding-content"
-                  hx-swap="innerHTML"
-                  class="space-y-4">
+            <form hx-post="{% url 'portal:onboarding_step2' %}" hx-target="#onboarding-content" hx-swap="innerHTML"
+                class="space-y-4">
                 {% csrf_token %}
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                    <input type="tel" name="phone_number" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name <span
+                                class="text-red-500">*</span></label>
+                        <input type="text" name="first_name" required pattern="^(?=.*[A-Za-z])[A-Za-z\s]{2,15}$"
+                            title="First name must contain at least one letter (2-15 characters, letters and spaces only)"
+                            maxlength="15" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '');"
+                            class="capitalize-first w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name <span
+                                class="text-gray-400 text-xs">(Optional)</span></label>
+                        <input type="text" name="last_name" pattern="^(?=.*[A-Za-z])[A-Za-z\s]{2,15}$"
+                            title="Last name must contain at least one letter (2-15 characters, letters and spaces only)"
+                            maxlength="15" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '');"
+                            class="capitalize-first w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                    </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                    <textarea name="address" rows="3" required
-                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <input type="tel" name="phone_number" value="{{ request.user.username }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 outline-none" readonly>
+                    <p class="text-xs text-gray-500 mt-1">Mobile number used for signup</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Address <span
+                            class="text-gray-400 text-xs">(Optional)</span></label>
+                    <textarea name="address" rows="3" maxlength="200"
+                        oninput="this.setCustomValidity(this.value.trim() !== '' && !/[a-zA-Z]/.test(this.value) ? 'Address must contain at least one letter.' : ''); this.reportValidity();"
+                        class="capitalize-first w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Maximum 200 characters</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
-                        <input type="text" name="city" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">City <span
+                                class="text-gray-400 text-xs">(Optional)</span></label>
+                        <input type="text" name="city" pattern="^(?=.*[A-Za-z])[A-Za-z\s]{2,50}$"
+                            title="City name must contain at least one letter (2-50 characters, letters and spaces only)"
+                            maxlength="50" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '');"
+                            class="capitalize-first w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
-                        <input type="text" name="state" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">State <span
+                                class="text-gray-400 text-xs">(Optional)</span></label>
+                        <input type="text" name="state" pattern="^(?=.*[A-Za-z])[A-Za-z\s]{2,50}$"
+                            title="State name must contain at least one letter (2-50 characters, letters and spaces only)"
+                            maxlength="50" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '');"
+                            class="capitalize-first w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
-                    <input type="text" name="pincode" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pincode <span
+                            class="text-gray-400 text-xs">(Optional)</span></label>
+                    <input type="text" name="pincode" pattern="^[1-9][0-9]{5}$"
+                        title="Pincode must be exactly 6 digits and cannot start with 0" maxlength="6"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                    <p class="text-xs text-gray-500 mt-1">Enter 6-digit Indian pincode</p>
                 </div>
 
-                <button type="submit"
-                        class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg">
-                    Next Step →
-                </button>
+                <div class="flex justify-between mt-6">
+                    <button type="button" disabled
+                        class="px-4 py-2 text-sm border border-gray-300 text-gray-400 rounded-lg cursor-not-allowed flex items-center">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Back
+                    </button>
+                    <button type="submit"
+                        class="px-4 py-2 text-sm bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg flex items-center">
+                        Next
+                        <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
             </form>
         </div>
     </div>

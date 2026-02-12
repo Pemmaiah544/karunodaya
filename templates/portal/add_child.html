@@ -6,11 +6,11 @@
 {% block content %}
 <div class="container mx-auto px-4 py-4">
     <!-- Back Button -->
-    <a href="{% url 'portal:profile' %}" class="inline-flex items-center text-primary-600 hover:text-primary-700 mb-4">
-        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    <a href="{% url 'portal:profile' %}"
+        class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white text-orange-600 hover:bg-orange-50 mb-6 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
-        Back to Profile
     </a>
 
     <div class="bg-white rounded-lg shadow p-6">
@@ -27,27 +27,27 @@
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Child's Name *</label>
-                <input type="text" name="name" required
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                <input type="text" name="name" required pattern="^(?=.*[A-Za-z])[A-Za-z\s]{2,15}$"
+                    title="Child's name must contain at least one letter (2-15 characters, letters and spaces only)"
+                    maxlength="15" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '');"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Age *</label>
-                    <input type="number" name="age" min="3" max="14" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
-                    <input type="date" name="date_of_birth" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-                </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
+                <input type="date" name="date_of_birth" id="date_of_birth" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                <p class="text-xs text-gray-500 mt-1" id="age_display"></p>
             </div>
+
+            <!-- Hidden age field for form submission -->
+            <input type="hidden" name="age" id="age_hidden">
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Grade *</label>
                 <select name="grade" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
                     <option value="">Select Grade</option>
                     <option value="PRE_K">Pre-K</option>
                     <option value="KINDERGARTEN">Kindergarten</option>
@@ -64,30 +64,72 @@
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Reading Level *</label>
-                <select name="reading_level" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
-                    <option value="">Select Reading Level</option>
+                <select name="reading_level" id="reading_level" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 outline-none" disabled>
+                    <option value="">Select date of birth first</option>
                     <option value="BEGINNER">Beginner (Ages 3-6)</option>
                     <option value="INTERMEDIATE">Intermediate (Ages 7-10)</option>
                     <option value="ADVANCED">Advanced (Ages 11-14)</option>
                 </select>
+                <p class="text-xs text-gray-500 mt-1">Automatically selected based on age</p>
             </div>
+
+            <script>
+                // Calculate age and auto-select reading level
+                document.getElementById('date_of_birth').addEventListener('change', function () {
+                    const dob = new Date(this.value);
+                    const today = new Date();
+                    let age = today.getFullYear() - dob.getFullYear();
+                    const monthDiff = today.getMonth() - dob.getMonth();
+
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                        age--;
+                    }
+
+                    // Update hidden age field
+                    document.getElementById('age_hidden').value = age;
+
+                    // Display age
+                    if (age >= 3 && age <= 14) {
+                        document.getElementById('age_display').textContent = `Age: ${age} years`;
+                        document.getElementById('age_display').classList.remove('text-red-500');
+                        document.getElementById('age_display').classList.add('text-gray-500');
+
+                        // Auto-select reading level
+                        const readingLevelSelect = document.getElementById('reading_level');
+                        readingLevelSelect.disabled = false;
+
+                        if (age >= 3 && age <= 6) {
+                            readingLevelSelect.value = 'BEGINNER';
+                        } else if (age >= 7 && age <= 10) {
+                            readingLevelSelect.value = 'INTERMEDIATE';
+                        } else if (age >= 11 && age <= 14) {
+                            readingLevelSelect.value = 'ADVANCED';
+                        }
+                    } else {
+                        document.getElementById('age_display').textContent = `Age must be between 3 and 14 years`;
+                        document.getElementById('age_display').classList.remove('text-gray-500');
+                        document.getElementById('age_display').classList.add('text-red-500');
+                        document.getElementById('reading_level').disabled = true;
+                        document.getElementById('reading_level').value = '';
+                    }
+                });
+            </script>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Interests (optional)</label>
-                <textarea name="interests" rows="3"
-                          placeholder="e.g., Animals, Science, Adventures, Fantasy..."
-                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"></textarea>
+                <textarea name="interests" rows="3" placeholder="e.g., Animals, Science, Adventures, Fantasy..."
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"></textarea>
                 <p class="text-xs text-gray-500 mt-1">Help us curate better books by sharing your child's interests</p>
             </div>
 
             <div class="flex gap-3 pt-4">
                 <a href="{% url 'portal:profile' %}"
-                   class="flex-1 text-center border border-gray-300 text-gray-700 font-medium py-3 px-4 rounded-lg hover:bg-gray-50">
+                    class="flex-1 text-center border border-gray-300 text-gray-700 font-medium py-3 px-4 rounded-lg hover:bg-gray-50">
                     Cancel
                 </a>
                 <button type="submit"
-                        class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg">
+                    class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg">
                     Add Child
                 </button>
             </div>

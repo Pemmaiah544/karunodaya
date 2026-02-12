@@ -1,0 +1,105 @@
+<div id="snackbar-container"
+    class="fixed top-4 right-4 md:top-6 md:right-6 z-[9999] flex flex-col items-end pointer-events-none max-w-[calc(100vw-2rem)] md:max-w-md">
+    <!-- Only one snackbar will be shown at a time -->
+</div>
+
+<template id="snackbar-template">
+    <div
+        class="snackbar bg-red-600 text-white px-4 py-3 md:px-6 md:py-4 rounded-lg md:rounded-xl shadow-2xl flex items-start gap-3 md:gap-4 transform transition-all duration-300 translate-x-full opacity-0 pointer-events-auto w-full md:min-w-[320px] border border-red-500/30">
+        <div class="flex-shrink-0 mt-0.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <div class="flex-grow min-w-0">
+            <p class="message text-xs md:text-sm font-semibold leading-snug break-words"></p>
+        </div>
+        <button
+            class="close-btn flex-shrink-0 text-white/80 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10 -mr-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 20 20"
+                fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clip-rule="evenodd" />
+            </svg>
+        </button>
+    </div>
+</template>
+
+<script>
+    let currentSnackbar = null;
+    let snackbarTimeout = null;
+
+    function showSnackbar(message, type = 'error') {
+        const container = document.getElementById('snackbar-container');
+        const template = document.getElementById('snackbar-template');
+
+        // Remove existing snackbar immediately to ensure singleton behavior
+        if (currentSnackbar) {
+            clearTimeout(snackbarTimeout);
+            removeSnackbar(currentSnackbar, true);
+        }
+
+        const snackbar = template.content.cloneNode(true).querySelector('.snackbar');
+        const messageEl = snackbar.querySelector('.message');
+
+        messageEl.textContent = message;
+
+        // Update styling based on type
+        if (type === 'success') {
+            snackbar.classList.remove('bg-red-600', 'border-red-500/30');
+            snackbar.classList.add('bg-green-600', 'border-green-500/30');
+            const icon = snackbar.querySelector('svg');
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />';
+        }
+
+        container.appendChild(snackbar);
+        currentSnackbar = snackbar;
+
+        // Animate in
+        requestAnimationFrame(() => {
+            snackbar.classList.remove('translate-x-full', 'opacity-0');
+            snackbar.classList.add('translate-x-0', 'opacity-100');
+        });
+
+        // Auto remove after 5 seconds
+        snackbarTimeout = setTimeout(() => {
+            removeSnackbar(snackbar);
+        }, 5000);
+
+        // Manual remove on close button click
+        snackbar.querySelector('.close-btn').onclick = () => {
+            clearTimeout(snackbarTimeout);
+            removeSnackbar(snackbar);
+        };
+    }
+
+    function removeSnackbar(snackbar, immediate = false) {
+        if (!snackbar) return;
+
+        if (immediate) {
+            snackbar.remove();
+            if (currentSnackbar === snackbar) currentSnackbar = null;
+            return;
+        }
+
+        snackbar.classList.add('translate-x-full', 'opacity-0');
+        snackbar.classList.remove('translate-x-0', 'opacity-100');
+
+        setTimeout(() => {
+            if (snackbar.parentNode === document.getElementById('snackbar-container')) {
+                snackbar.remove();
+            }
+            if (currentSnackbar === snackbar) currentSnackbar = null;
+        }, 300);
+    }
+</script>
+
+<style>
+    .snackbar {
+        backdrop-filter: blur(12px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+</style>

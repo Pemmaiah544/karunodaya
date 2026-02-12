@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 from decouple import config, Csv
+from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +28,17 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-k24g%xcakvhqbyzv3q*vj
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+# Allow all hosts in development for tunnel access
+ALLOWED_HOSTS = ['*']
+
+# Trust all origins in development for tunnel/mobile access
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.github.dev',
+    'https://*.ngrok-free.app',
+    'https://*.trycloudflare.com',
+    'https://*.app.github.dev',
+    'http://*.127.0.0.1',
+]
 
 
 # Application definition
@@ -44,6 +56,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',  # For site domain configuration
 
     # Third-party apps
     'django_htmx',
@@ -56,6 +69,7 @@ INSTALLED_APPS = [
     'apps.orders',
     'apps.payments',
     'apps.portal',
+    'apps.core',  # Enhanced table system
 ]
 
 MIDDLEWARE = [
@@ -87,6 +101,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
                 'django.template.context_processors.static',
+                'apps.portal.context_processors.reading_notifications',
             ],
         },
     },
@@ -169,12 +184,29 @@ RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='')
 RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET', default='')
 
 
-# Debug Toolbar Configuration (for development)
-INTERNAL_IPS = [
-    '127.0.0.1',
-    'localhost',
-]
+# Email Configuration
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.smtp.EmailBackend'
+)
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Karunodaya <noreply@karunodaya.com>')
+ADMIN_EMAIL = config('ADMIN_EMAIL', default='admin@karunodaya.com')
+EMAIL_TIMEOUT = 10
 
+# Site Configuration
+SITE_ID = 1
+
+
+# Debug Toolbar Configuration (for development)
+INTERNAL_IPS = []
+
+
+from django.templatetags.static import static
 
 # Django Unfold Admin Configuration
 UNFOLD = {
@@ -182,12 +214,12 @@ UNFOLD = {
     "SITE_HEADER": "Karunodaya Book Platform",
     "SITE_URL": "/",
     "SITE_ICON": {
-        "light": lambda request: "images/logo.svg",
-        "dark": lambda request: "images/logo.svg",
+        "light": lambda request: static("images/foundation-logo.png"),
+        "dark": lambda request: static("images/foundation-logo.png"),
     },
     "SITE_LOGO": {
-        "light": lambda request: "images/logo.svg",
-        "dark": lambda request: "images/logo.svg",
+        "light": lambda request: static("images/foundation-logo.png"),
+        "dark": lambda request: static("images/foundation-logo.png"),
     },
     "SITE_SYMBOL": "book",
     "SHOW_HISTORY": True,
@@ -196,17 +228,141 @@ UNFOLD = {
     "DASHBOARD_CALLBACK": "karunodaya_project.settings.dashboard_callback",
     "COLORS": {
         "primary": {
-            "50": "250 245 255",
-            "100": "243 232 255",
-            "200": "233 213 255",
-            "300": "216 180 254",
-            "400": "192 132 252",
-            "500": "168 85 247",
-            "600": "147 51 234",
-            "700": "126 34 206",
-            "800": "107 33 168",
-            "900": "88 28 135",
+            "50": "255 247 237",
+            "100": "255 237 213",
+            "200": "254 215 170",
+            "300": "253 186 116",
+            "400": "251 146 60",
+            "500": "249 115 22",  # Standard Orange 500
+            "600": "234 88 12",
+            "700": "194 65 12",
+            "800": "154 52 18",
+            "900": "124 45 18",
         },
+    },
+    "STYLES": [
+        lambda request: static("css/admin_custom.css"),
+    ],
+    "SIDEBAR": {
+        "show_search": False,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "items": [
+                    {
+                        "title": _("Home"),
+                        "icon": "home",
+                        "link": reverse_lazy("admin:index"),
+                        "permission": lambda request: request.user.is_staff,
+                    },
+                ],
+            },
+            {
+                "title": _("Authentication"),
+                "items": [
+                    {
+                        "title": _("Users"),
+                        "icon": "person",
+                        "link": reverse_lazy("admin:auth_user_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Catalog"),
+                "items": [
+                    {
+                        "title": _("Books"),
+                        "icon": "book",
+                        "link": reverse_lazy("admin:catalog_book_changelist"),
+                    },
+                    {
+                        "title": _("Publishers"),
+                        "icon": "business",
+                        "link": reverse_lazy("admin:catalog_publisher_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Inventory"),
+                "items": [
+                    {
+                        "title": _("Inventory Logs"),
+                        "icon": "history",
+                        "link": reverse_lazy("admin:inventory_inventorylog_changelist"),
+                    },
+                    {
+                        "title": _("Physical Copies"),
+                        "icon": "content_copy",
+                        "link": reverse_lazy("admin:inventory_physicalcopy_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Orders"),
+                "items": [
+                    {
+                        "title": _("Orders"),
+                        "icon": "shopping_cart",
+                        "link": reverse_lazy("admin:orders_order_changelist"),
+                    },
+                    {
+                        "title": _("Subscription Cycles"),
+                        "icon": "sync",
+                        "link": reverse_lazy("admin:orders_subscriptioncycle_changelist"),
+                    },
+                    {
+                        "title": _("Subscription Plans"),
+                        "icon": "card_membership",
+                        "link": reverse_lazy("admin:orders_subscriptionplan_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Payments"),
+                "items": [
+                    {
+                        "title": _("Transactions"),
+                        "icon": "payments",
+                        "link": reverse_lazy("admin:payments_transaction_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Portal"),
+                "items": [
+                    {
+                        "title": _("Complaints"),
+                        "icon": "report_problem",
+                        "link": reverse_lazy("admin:portal_complaint_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Profiles"),
+                "items": [
+                    {
+                        "title": _("Children"),
+                        "icon": "child_care",
+                        "link": reverse_lazy("admin:profiles_child_changelist"),
+                    },
+                    {
+                        "title": _("Parent Profiles"),
+                        "icon": "account_box",
+                        "link": reverse_lazy("admin:profiles_parentprofile_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Configuration"),
+                "items": [
+                    {
+                        "title": _("Sites"),
+                        "icon": "public",
+                        "link": reverse_lazy("admin:sites_site_changelist"),
+                    },
+                ],
+            },
+        ],
     },
 }
 

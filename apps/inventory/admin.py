@@ -1,5 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
+from apps.core.admin_mixins import AdminPaginationMixin
 from .models import PhysicalCopy, InventoryLog
 
 
@@ -15,13 +16,27 @@ class InventoryLogInline(TabularInline):
 
 
 @admin.register(PhysicalCopy)
-class PhysicalCopyAdmin(ModelAdmin):
-    list_display = ('barcode', 'book', 'status', 'purchased_date', 'updated_at')
+class PhysicalCopyAdmin(AdminPaginationMixin, ModelAdmin):
+    list_display = ('barcode_link', 'book', 'status', 'purchased_date', 'updated_at')
     list_filter = ('status', 'purchased_date')
     search_fields = ('barcode', 'book__title')
+    list_per_page = 5
+
     readonly_fields = ('created_at', 'updated_at')
     inlines = [InventoryLogInline]
     actions = ['mark_as_damaged', 'mark_as_lost', 'mark_as_available']
+
+    def barcode_link(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        url = reverse('admin:inventory_physicalcopy_change', args=[obj.pk])
+        return format_html(
+            '<a href="{}" style="color: #4b5563 !important; font-weight: 600; font-size: 14px;">{}</a>',
+            url,
+            obj.barcode
+        )
+    barcode_link.short_description = 'Barcode'
+    barcode_link.admin_order_field = 'barcode'
 
     fieldsets = (
         ('Book Information', {
@@ -90,11 +105,32 @@ class PhysicalCopyAdmin(ModelAdmin):
 
 
 @admin.register(InventoryLog)
-class InventoryLogAdmin(ModelAdmin):
-    list_display = ('physical_copy', 'action', 'performed_by', 'timestamp')
-    list_filter = ('action', 'timestamp')
-    search_fields = ('physical_copy__barcode', 'notes')
+class InventoryLogAdmin(AdminPaginationMixin, ModelAdmin):
+    list_display = ('physical_copy_display', 'barcode', 'action', 'performed_by', 'timestamp', 'notes')
+    list_filter = ('action', 'timestamp', 'performed_by')
+    search_fields = (
+        'physical_copy__barcode', 
+        'physical_copy__book__title',
+        'performed_by__first_name', 
+        'performed_by__last_name', 
+        'notes'
+    )
+    list_per_page = 5
+
     readonly_fields = ('timestamp',)
+    
+    def physical_copy_display(self, obj):
+        """Display only the book title without barcode"""
+        return obj.physical_copy.book.title if obj.physical_copy else '-'
+    physical_copy_display.short_description = 'Physical Copy'
+    physical_copy_display.admin_order_field = 'physical_copy__book__title'
+    
+    def barcode(self, obj):
+        """Display barcode from the related physical copy"""
+        return obj.physical_copy.barcode if obj.physical_copy else '-'
+    barcode.short_description = 'Barcode'
+    
+
 
     def has_delete_permission(self, request, obj=None):
         # Inventory logs should not be deleted (audit trail)

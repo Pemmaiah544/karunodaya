@@ -1,0 +1,18 @@
+<div class="grid grid-cols-3 md:grid-cols-5 gap-3 w-full">
+    {% for book in books %}
+    <div class="flex justify-center">
+        <div class="w-full max-w-[160px]">
+            {% include "portal/components/book_card.html" with book=book %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full text-center py-12">
+        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <p class="text-gray-500 text-lg font-medium">No books found</p>
+        <p class="text-gray-400 text-sm mt-1">Try adjusting your search terms</p>
+    </div>
+    {% endfor %}
+</div>

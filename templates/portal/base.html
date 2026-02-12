@@ -1,12 +1,11 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}Karunodaya{% endblock %}</title>
-
-    <!-- Tailwind CSS CDN (for development) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -14,34 +13,22 @@
                 extend: {
                     colors: {
                         primary: {
-                            50: '#faf5ff',
-                            100: '#f3e8ff',
-                            200: '#e9d5ff',
-                            300: '#d8b4fe',
-                            400: '#c084fc',
-                            500: '#a855f7',
-                            600: '#9333ea',
-                            700: '#7e22ce',
-                            800: '#6b21a8',
-                            900: '#581c87',
-                        }
+                            50: '#ffa50010', 100: '#ffa50020', 200: '#ffa50030', 300: '#ffa50040', 400: '#ffa50060',
+                            500: '#ffa50094', 600: '#ffa50094', 700: '#ffa500b0', 800: '#ffa500d0', 900: '#ffa500',
+                        },
+                        brand: { dark: '#333333' }
                     }
                 }
             }
         }
     </script>
-
-    <!-- HTMX -->
     <script src="{% static 'js/htmx.min.js' %}" defer></script>
-
     <style>
-        /* Mobile-first optimizations */
         body {
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Fixed header and bottom nav */
         .mobile-header {
             position: fixed;
             top: 0;
@@ -49,7 +36,7 @@
             right: 0;
             z-index: 50;
             background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .mobile-bottom-nav {
@@ -59,101 +46,276 @@
             right: 0;
             z-index: 50;
             background: white;
-            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
-            border-top: 1px solid #e5e7eb;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            border-top: 1px solid #f3f4f6;
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         .mobile-content {
-            padding-top: 4rem;
-            padding-bottom: 5rem;
+            padding-top: 4.5rem;
+            padding-bottom: 5.5rem;
             min-height: 100vh;
         }
-    </style>
 
+        @keyframes bell-jiggle {
+
+            0%,
+            50%,
+            100% {
+                transform: rotate(0);
+            }
+
+            1%,
+            5%,
+            9%,
+            13%,
+            17%,
+            21%,
+            25%,
+            29%,
+            33%,
+            37%,
+            41%,
+            45% {
+                transform: rotate(-15deg);
+            }
+
+            3%,
+            7%,
+            11%,
+            15%,
+            19%,
+            23%,
+            27%,
+            31%,
+            35%,
+            39%,
+            43%,
+            47% {
+                transform: rotate(15deg);
+            }
+        }
+
+        .animate-jiggle {
+            animation: bell-jiggle 120s linear infinite;
+            transform-origin: top center;
+            display: inline-block;
+        }
+    </style>
     {% block extra_head %}{% endblock %}
 </head>
+
 <body class="bg-gray-50">
-    <!-- Fixed Header -->
+    {% if messages %}
+    <div class="fixed top-4 right-4 z-50 space-y-2">
+        {% for message in messages %}
+        <div class="bg-white border-l-4 {% if message.tags == 'error' %}border-red-500 text-red-700{% elif message.tags == 'success' %}border-green-500 text-green-700{% else %}border-blue-500 text-blue-700{% endif %} p-4 rounded shadow-lg flex items-start max-w-sm animate-fade-in-down" role="alert">
+            <div class="flex-1">
+                <p class="font-bold text-sm capitalize">{{ message.tags }}</p>
+                <p class="text-sm">{{ message }}</p>
+            </div>
+            <button onclick="this.parentElement.remove()" class="ml-4 text-gray-400 hover:text-gray-900">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <header class="mobile-header">
         {% block header %}
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="text-xl font-bold text-purple-600">
-                <a href="{% url 'portal:dashboard' %}">📚 Karunodaya</a>
+            <div class="flex items-center">
+                {% if "onboarding" in request.resolver_match.url_name %}
+                <div class="flex items-center">
+                    <img src="{% static 'images/foundation-logo.png' %}" alt="Karunodaya Foundation" class="h-10">
+                </div>
+                {% else %}
+                <a href="{% url 'portal:dashboard' %}" class="flex items-center">
+                    <img src="{% static 'images/foundation-logo.png' %}" alt="Karunodaya Foundation" class="h-10">
+                </a>
+                {% endif %}
             </div>
             <div class="flex items-center space-x-4">
-                {% if user.is_authenticated %}
-                    <span class="text-sm text-gray-600">Hi, {{ user.first_name|default:user.username }}</span>
-                    <form method="post" action="{% url 'portal:logout' %}" class="inline">
-                        {% csrf_token %}
-                        <button type="submit" class="text-sm text-red-600 hover:text-red-700 font-medium">
-                            Logout
-                        </button>
-                    </form>
+                {% block header_right %}
+                {% if user.is_authenticated and "onboarding" not in request.resolver_match.url_name %}
+                <!-- Notification Bell -->
+                <a href="{% url 'portal:notifications' %}"
+                    class="p-2 text-gray-400 hover:text-orange-600 focus:outline-none transition-colors relative {% if header_notification_count > 0 %}animate-jiggle{% endif %}">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {% if header_notification_count > 0 %}
+                    <span
+                        class="absolute top-1 right-1 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold border-2 border-white animate-pulse">
+                        {{ header_notification_count }}
+                    </span>
+                    {% endif %}
+                </a>
+
+                {% if "profile" in request.resolver_match.url_name or "child" in request.resolver_match.url_name %}
+                <!-- Settings Dropdown -->
+                <div class="relative">
+                    <button id="settings-btn"
+                        class="p-2 text-gray-400 hover:text-orange-600 focus:outline-none transition-colors">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.533 1.533 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <div id="settings-dropdown"
+                        class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-50">
+                        <a href="{% url 'portal:support' %}"
+                            class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors">
+                            <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z">
+                                </path>
+                            </svg>
+                            Support/Help
+                        </a>
+                        <form method="post" action="{% url 'portal:logout' %}" class="w-full">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                <svg class="w-5 h-5 mr-3 text-red-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                                    </path>
+                                </svg>
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </div>
                 {% else %}
-                    <a href="{% url 'portal:login' %}" class="text-sm text-primary-600">Login</a>
+                <!-- Cart Icon -->
+                <a href="{% url 'portal:cart' %}" class="relative p-2 text-gray-400">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    {% with cart_count=request.session.cart|length %}
+                    {% if cart_count > 0 %}
+                    <span
+                        class="absolute top-0 right-0 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold border-2 border-white">
+                        {{ cart_count }}
+                    </span>
+                    {% endif %}
+                    {% endwith %}
+                </a>
                 {% endif %}
+                {% elif not user.is_authenticated %}
+                <a href="{% url 'portal:login' %}" class="text-sm text-primary-600 font-medium">Login</a>
+                {% endif %}
+                {% endblock %}
             </div>
         </div>
         {% endblock %}
     </header>
 
-    <!-- Main Content -->
-    <main class="mobile-content">
+    <main class="mobile-content text-brand-dark">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Fixed Bottom Navigation -->
-    {% if user.is_authenticated %}
+    {% block bottom_nav %}
+    {% if user.is_authenticated and "onboarding" not in request.resolver_match.url_name %}
     <nav class="mobile-bottom-nav">
-        {% block bottom_nav %}
-        <div class="flex justify-around items-center py-2">
-            <a href="{% url 'portal:dashboard' %}" class="flex flex-col items-center px-4 py-2 text-gray-600 hover:text-purple-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+        <div class="flex justify-around items-center py-3">
+            <a href="{% url 'portal:dashboard' %}"
+                class="flex flex-col items-center flex-1 {% if request.resolver_match.url_name == 'dashboard' %}text-orange-600{% else %}text-gray-400{% endif %}">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                        d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                 </svg>
-                <span class="text-xs mt-1">Home</span>
+                <span class="text-[10px] font-bold mt-1">Home</span>
             </a>
-
-            <a href="{% url 'portal:marketplace' %}" class="flex flex-col items-center px-4 py-2 text-gray-600 hover:text-purple-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            <a href="{% url 'portal:marketplace' %}"
+                class="flex flex-col items-center flex-1 {% if request.resolver_match.url_name == 'marketplace' or request.resolver_match.url_name == 'book_detail' %}text-orange-600{% else %}text-gray-400{% endif %}">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                        d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                 </svg>
-                <span class="text-xs mt-1">Books</span>
+                <span class="text-[10px] font-bold mt-1">Books</span>
             </a>
-
-            <a href="{% url 'portal:orders' %}" class="flex flex-col items-center px-4 py-2 text-gray-600 hover:text-purple-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+            <a href="{% url 'portal:orders' %}"
+                class="flex flex-col items-center flex-1 {% if request.resolver_match.url_name == 'orders' or request.resolver_match.url_name == 'order_detail' %}text-orange-600{% else %}text-gray-400{% endif %}">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                    <path fill-rule="evenodd"
+                        d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                        clip-rule="evenodd" />
                 </svg>
-                <span class="text-xs mt-1">Orders</span>
+                <span class="text-[10px] font-bold mt-1">Orders</span>
             </a>
-
-            <a href="{% url 'portal:profile' %}" class="flex flex-col items-center px-4 py-2 text-gray-600 hover:text-purple-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            <a href="{% url 'portal:profile' %}"
+                class="flex flex-col items-center flex-1 {% if 'profile' in request.resolver_match.url_name or 'child' in request.resolver_match.url_name %}text-orange-600{% else %}text-gray-400{% endif %}">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                        clip-rule="evenodd" />
                 </svg>
-                <span class="text-xs mt-1">Profile</span>
+                <span class="text-[10px] font-bold mt-1">Profile</span>
             </a>
         </div>
-        {% endblock %}
     </nav>
     {% endif %}
+    {% endblock %}
 
-    <!-- HTMX Loading Indicator -->
-    <div id="htmx-indicator" class="htmx-indicator fixed top-0 left-0 right-0 h-1 bg-purple-600 transition-opacity opacity-0"
-         style="transition: opacity 0.3s;">
-    </div>
+    <div id="htmx-indicator"
+        class="htmx-indicator fixed top-0 left-0 right-0 h-1 bg-orange-600 transition-opacity opacity-0"
+        style="transition: opacity 0.3s;"></div>
 
     <script>
-        // Show loading indicator on HTMX requests
-        document.body.addEventListener('htmx:beforeRequest', function() {
-            document.getElementById('htmx-indicator').style.opacity = '1';
-        });
-        document.body.addEventListener('htmx:afterRequest', function() {
-            document.getElementById('htmx-indicator').style.opacity = '0';
+        document.body.addEventListener('htmx:beforeRequest', () => document.getElementById('htmx-indicator').style.opacity = '1');
+        document.body.addEventListener('htmx:afterRequest', () => document.getElementById('htmx-indicator').style.opacity = '0');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('settings-btn');
+            const dropdown = document.getElementById('settings-dropdown');
+            
+            console.log('Settings button found:', !!btn);
+            console.log('Settings dropdown found:', !!dropdown);
+            
+            if (btn && dropdown) {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    console.log('Settings button clicked');
+                    dropdown.classList.toggle('hidden');
+                });
+                
+                document.addEventListener('click', (e) => {
+                    if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+                        dropdown.classList.add('hidden');
+                    }
+                });
+            } else {
+                console.log('Settings elements not found - checking if profile page...');
+                // Fallback: try to find settings elements with a different approach
+                setTimeout(() => {
+                    const fallbackBtn = document.getElementById('settings-btn');
+                    const fallbackDropdown = document.getElementById('settings-dropdown');
+                    console.log('Fallback - Settings button found:', !!fallbackBtn);
+                    console.log('Fallback - Settings dropdown found:', !!fallbackDropdown);
+                    
+                    if (fallbackBtn && fallbackDropdown) {
+                        fallbackBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            console.log('Fallback: Settings button clicked');
+                            fallbackDropdown.classList.toggle('hidden');
+                        });
+                    }
+                }, 100);
+            }
         });
     </script>
-
     {% block extra_scripts %}{% endblock %}
 </body>
+
 </html>

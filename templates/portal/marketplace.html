@@ -1,46 +1,299 @@
 {% extends "portal/base.html" %}
 {% load static %}
 
-{% block title %}Marketplace - Karunodaya{% endblock %}
+{% block title %}Books - Karunodaya{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-4">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">Book Marketplace</h1>
-
-    <!-- Search Bar with HTMX Live Search -->
-    <div class="mb-6">
-        <input type="text"
-               placeholder="Search books by title, author..."
-               hx-get="{% url 'portal:marketplace_search' %}"
-               hx-trigger="keyup changed delay:500ms"
-               hx-target="#book-results"
-               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+    <!-- Header -->
+    <div class="mb-4 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-black text-gray-900 leading-tight">Browse Books</h1>
+            <p class="text-sm text-gray-500">Discover and purchase books for your children</p>
+        </div>
     </div>
 
-    <!-- Book Grid -->
-    <div id="book-results" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {% for book in books %}
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            {% if book.cover_image %}
-            <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="w-full h-48 object-cover">
-            {% else %}
-            <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-                <span class="text-4xl">📚</span>
+    <!-- ONBOARDING FLOW BANNERS -->
+    {% if not has_children %}
+    <div
+        class="mb-6 relative overflow-hidden rounded-[24px] bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white shadow-xl shadow-blue-100">
+        <div class="relative z-10">
+            <h2 class="text-lg font-extrabold mb-1">Unlock Personalized Recommendations!</h2>
+            <p class="text-xs text-white/90 mb-4">Add your child's profile to see books that match their reading level
+                perfectly.</p>
+            <a href="{% url 'portal:profile' %}"
+                class="inline-block bg-white text-blue-600 px-6 py-2 rounded-full font-bold text-xs shadow-lg">
+                Add My Child
+            </a>
+        </div>
+        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+    </div>
+    {% elif pending_test_child %}
+    <div
+        class="mb-6 relative overflow-hidden rounded-[24px] bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white shadow-xl shadow-orange-100">
+        <div class="relative z-10">
+            <h2 class="text-lg font-extrabold mb-1">Check {{ pending_test_child.name }}'s Level! 📚</h2>
+            <p class="text-xs text-white/90 mb-4">Take a 60-second reading test to get curated book picks.</p>
+            <a href="{% url 'portal:fluency_check' pending_test_child.id %}"
+                class="inline-block bg-white text-orange-600 px-6 py-2 rounded-full font-bold text-xs shadow-lg">
+                Start Reading Test
+            </a>
+        </div>
+        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+    </div>
+    {% endif %}
+
+    <!-- Hidden Filter State -->
+    <div id="filter-state" class="hidden">
+        <input type="hidden" name="difficulty" id="difficulty-input">
+        <input type="hidden" name="grade" id="grade-input">
+        <input type="hidden" name="sort" id="sort-input" value="title">
+    </div>
+
+    <!-- Search Bar with Microphone Style -->
+    <div class="mb-6">
+        <div class="relative group">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <svg class="w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
             </div>
-            {% endif %}
-            <div class="p-4">
-                <h3 class="font-semibold text-sm mb-1">{{ book.title|truncatechars:30 }}</h3>
-                <p class="text-xs text-gray-600 mb-2">{{ book.author }}</p>
-                <p class="text-lg font-bold text-primary-600">₹{{ book.mrp }}</p>
-                <a href="{% url 'portal:book_detail' book.id %}"
-                   class="block mt-2 text-center bg-primary-600 hover:bg-primary-700 text-white text-sm py-2 rounded">
-                    View Details
-                </a>
+            <input type="text" name="q" id="search-input" placeholder="Search by title, author, or level..."
+                hx-get="{% url 'portal:marketplace_search' %}" hx-trigger="keyup changed delay:300ms, search"
+                hx-target="#book-results" hx-include="#search-input, #difficulty-input, #grade-input, #sort-input"
+                class="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-orange-100 focus:border-orange-500 outline-none text-base shadow-sm transition-all">
+        </div>
+    </div>
+
+    <!-- Category Pills -->
+    <div id="category-pills" class="mb-8 overflow-x-auto no-scrollbar -mx-4 px-4 flex gap-3 pb-2">
+        <button id="all-books-pill" onclick="clearFilters()"
+            class="whitespace-nowrap px-6 py-2.5 rounded-full pill-orange text-sm font-bold transition-all active:scale-95">
+            All Books
+        </button>
+        <button id="new-arrivals-pill" onclick="setFilter('sort', '-created_at', this); applyAndClose();"
+            class="whitespace-nowrap px-6 py-2.5 rounded-full pill-white text-sm font-bold transition-all active:scale-95 hover:bg-gray-50">
+            New Arrivals
+        </button>
+        <button id="popular-pill" onclick="setFilter('sort', '-stock_count', this); applyAndClose();"
+            class="whitespace-nowrap px-6 py-2.5 rounded-full pill-white text-sm font-bold transition-all active:scale-95 hover:bg-gray-50">
+            Popular
+        </button>
+    </div>
+
+    <!-- Book Grid / Sectioned View -->
+    <div id="book-results">
+        {% if difficulty_groups %}
+        {% include "portal/components/marketplace_sectioned.html" %}
+        {% else %}
+        {% include "portal/components/book_results_grid.html" %}
+        {% endif %}
+    </div>
+
+    <!-- Floating Filter Button -->
+    <div class="fixed bottom-24 right-6 z-40">
+        <button onclick="toggleFilterDropdown()"
+            class="w-14 h-14 bg-orange-600 text-white rounded-2xl shadow-xl shadow-orange-200 flex items-center justify-center transform hover:scale-110 active:scale-90 transition-all duration-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h10M4 18h16" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Filter Dropdown - Updated for Premium Look -->
+    <div id="filter-dropdown" class="hidden fixed inset-0 z-50 flex items-end justify-center px-4 pb-24">
+        <div class="fixed inset-0 bg-black/20 backdrop-blur-sm" onclick="toggleFilterDropdown()"></div>
+        <div
+            class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 transform transition-all animate-slide-up">
+            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+            <h3 class="text-xl font-black text-gray-900 mb-6">Filter Books</h3>
+
+            <div class="space-y-6">
+                <!-- Difficulty Filter -->
+                <div>
+                    <label class="block text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Difficulty
+                        Level</label>
+                    <div class="flex flex-wrap gap-2">
+                        {% for value, label in difficulty_levels %}
+                        <button onclick="setFilter('difficulty', '{{ value }}', this)"
+                            class="px-4 py-2 rounded-xl border border-gray-100 text-sm font-bold hover:bg-orange-50 hover:text-orange-600 transition-all">
+                            {{ label }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Grade Filter -->
+                <div>
+                    <label class="block text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Grade
+                        Level</label>
+                    <div class="flex flex-wrap gap-2">
+                        {% for value, label in grades %}
+                        <button onclick="setFilter('grade', '{{ value }}', this)"
+                            class="px-4 py-2 rounded-xl border border-gray-100 text-sm font-bold hover:bg-orange-50 hover:text-orange-600 transition-all">
+                            {{ label }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Sorting -->
+                <div>
+                    <label class="block text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Sort By</label>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="setFilter('sort', 'title', this)"
+                            class="px-4 py-2 rounded-xl border border-gray-100 text-sm font-bold">A-Z</button>
+                        <button onclick="setFilter('sort', 'mrp', this)"
+                            class="px-4 py-2 rounded-xl border border-gray-100 text-sm font-bold">Price ↑</button>
+                        <button onclick="setFilter('sort', '-mrp', this)"
+                            class="px-4 py-2 rounded-xl border border-gray-100 text-sm font-bold">Price ↓</button>
+                    </div>
+                </div>
+
+                <div class="pt-4 flex gap-3">
+                    <button onclick="clearFilters()"
+                        class="flex-1 py-4 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors">Clear
+                        All</button>
+                    <button onclick="applyAndClose()"
+                        class="flex-1 py-4 bg-orange-600 text-white rounded-2xl text-sm font-black shadow-lg shadow-orange-100 transition-all active:scale-95">Apply
+                        Filters</button>
+                </div>
             </div>
         </div>
-        {% empty %}
-        <p class="col-span-full text-center text-gray-500 py-8">No books found.</p>
-        {% endfor %}
     </div>
 </div>
+
+<style>
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    @keyframes slide-up {
+        from {
+            transform: translateY(100%);
+        }
+
+        to {
+            transform: translateY(0);
+        }
+    }
+
+    .animate-slide-up {
+        animation: slide-up 0.3s ease-out forwards;
+    }
+
+    /* Guaranteed pill styles to prevent conflicts */
+    .pill-orange {
+        background-color: #ea580c !important;
+        /* orange-600 */
+        color: white !important;
+        box-shadow: 0 10px 15px -3px rgba(255, 138, 76, 0.3) !important;
+    }
+
+    .pill-white {
+        background-color: white !important;
+        color: #4b5563 !important;
+        /* gray-600 */
+        border: 1px solid #f3f4f6 !important;
+        /* gray-100 */
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    }
+</style>
+
+<script>
+    let currentFilters = {
+        q: '',
+        difficulty: '',
+        grade: '',
+        sort: 'title'
+    };
+
+    function toggleFilterDropdown() {
+        const dropdown = document.getElementById('filter-dropdown');
+        dropdown.classList.toggle('hidden');
+        if (!dropdown.classList.contains('hidden')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }
+
+    function applyStyles(btn, isActive, isPill) {
+        if (!btn) return;
+
+        // Remove ALL possible conflicting Tailwind classes and custom ones
+        const classesToRemove = [
+            'bg-orange-600', 'text-white', 'shadow-lg', 'shadow-orange-200', 'border-orange-600',
+            'bg-white', 'text-gray-600', 'border', 'border-gray-100', 'shadow-sm', 'hover:bg-gray-50',
+            'pill-orange', 'pill-white'
+        ];
+        btn.classList.remove(...classesToRemove);
+
+        if (isActive) {
+            btn.classList.add('pill-orange');
+        } else {
+            btn.classList.add('pill-white');
+            // Re-add hover effect ONLY for inactive pills
+            if (isPill) {
+                btn.classList.add('hover:bg-gray-50');
+            }
+        }
+    }
+
+    function updateButtonStyles(container, activeEl) {
+        if (!container) return;
+        const isPillContainer = container.id === 'category-pills';
+        container.querySelectorAll('button').forEach(btn => {
+            applyStyles(btn, btn === activeEl, isPillContainer);
+        });
+    }
+
+    function setFilter(key, value, el) {
+        currentFilters[key] = value;
+        const hiddenInput = document.getElementById(key + '-input');
+        if (hiddenInput) hiddenInput.value = value;
+        if (el) updateButtonStyles(el.parentElement, el);
+    }
+
+    function applyAndClose() {
+        document.getElementById('difficulty-input').value = currentFilters.difficulty || '';
+        document.getElementById('grade-input').value = currentFilters.grade || '';
+        document.getElementById('sort-input').value = currentFilters.sort || 'title';
+        htmx.trigger('#search-input', 'search');
+        const dropdown = document.getElementById('filter-dropdown');
+        if (dropdown && !dropdown.classList.contains('hidden')) toggleFilterDropdown();
+    }
+
+    function clearFilters() {
+        currentFilters = { q: '', difficulty: '', grade: '', sort: 'title' };
+        document.getElementById('search-input').value = '';
+        updateButtonStyles(document.getElementById('category-pills'), document.getElementById('all-books-pill'));
+        document.querySelectorAll('#filter-dropdown .flex.flex-wrap').forEach(container => {
+            updateButtonStyles(container, null);
+        });
+        applyAndClose();
+    }
+
+    // Live search - update state
+    document.getElementById('search-input').addEventListener('input', function (e) {
+        currentFilters.q = this.value;
+    });
+
+    // Pills shortcut
+    function filterByPill(difficultyValue) {
+        // Clear other filters when using a pill for specific category?
+        // Or just set difficulty. User asked for it to work like a standard app.
+        // Usually clicking a category pill clears other active filters of the same type or all filters.
+        clearFilters();
+        setFilter('difficulty', difficultyValue);
+        applyAndClose();
+    }
+</script>
 {% endblock %}

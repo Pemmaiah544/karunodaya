@@ -30,21 +30,6 @@ GRADE_ORDER = {
 def get_curated_books(child_id, limit=20, exclude_currently_issued=True):
     """
     Get curated book recommendations for a child.
-
-    Logic:
-    1. Match difficulty_rating with child's reading_difficulty_level
-    2. Match book's grade range with child's current grade
-    3. Only include subscription-eligible books
-    4. Exclude books currently issued to the child (optional)
-    5. Prefer books with available physical copies
-
-    Args:
-        child_id: ID of the child
-        limit: Maximum number of books to return (default: 20)
-        exclude_currently_issued: Exclude books child currently has (default: True)
-
-    Returns:
-        QuerySet of Book objects ordered by relevance
     """
     try:
         child = Child.objects.get(id=child_id)
@@ -57,41 +42,40 @@ def get_curated_books(child_id, limit=20, exclude_currently_issued=True):
         is_active=True
     )
 
-    # Filter by difficulty rating matching child's reading level
-    books = books.filter(difficulty_rating=child.reading_difficulty_level)
+    # 1. Start with high-quality matching
+    # Filter by difficulty rating matching child's reading level (if set)
+    if child.reading_difficulty_level:
+        difficulty_books = books.filter(difficulty_rating=child.reading_difficulty_level)
+        if difficulty_books.exists():
+            books = difficulty_books
 
-    # Filter by grade range - check if child's grade falls within book's grade range
+    # 2. Filter by grade range (if set)
     child_grade_value = GRADE_ORDER.get(child.grade)
-
     if child_grade_value is not None:
-        # Get all books and filter in Python (since we can't do grade range comparison in DB easily)
         matching_books = []
+        # Optimization: filter only from current candidates
         for book in books:
             book_min_value = GRADE_ORDER.get(book.recommended_grade_min, 0)
             book_max_value = GRADE_ORDER.get(book.recommended_grade_max, 9)
 
-            # Check if child's grade falls within the book's grade range
             if book_min_value <= child_grade_value <= book_max_value:
                 matching_books.append(book.id)
+        
+        # Only apply if it doesn't empty our candidates completely
+        if matching_books:
+            books = books.filter(id__in=matching_books)
 
-        books = books.filter(id__in=matching_books) if matching_books else Book.objects.none()
-
-    # Exclude books currently issued to this child
+    # 3. Exclude books currently issued to this child
     if exclude_currently_issued:
-        active_cycles = SubscriptionCycle.objects.filter(
+        currently_issued_book_ids = list(SubscriptionCycle.objects.filter(
             child=child,
             status__in=['ACTIVE', 'OVERDUE']
-        )
-
-        currently_issued_book_ids = []
-        for cycle in active_cycles:
-            currently_issued_book_ids.extend(
-                cycle.physical_copies.values_list('book_id', flat=True)
-            )
-
+        ).values_list('physical_copies__book_id', flat=True))
+        
         if currently_issued_book_ids:
             books = books.exclude(id__in=currently_issued_book_ids)
 
+    # 4. Handle availability & Ordering
     # Annotate with available copy count
     books = books.annotate(
         available_copies_count=Count(
@@ -100,11 +84,12 @@ def get_curated_books(child_id, limit=20, exclude_currently_issued=True):
         )
     )
 
-    # Only include books with at least one available copy
-    books = books.filter(available_copies_count__gt=0)
-
-    # Order by: books with more available copies first, then by title
-    books = books.order_by('-available_copies_count', 'title')
+    # Note: We don't strictly filter available_copies_count > 0 here 
+    # so we can always return something for display.
+    # But we prioritize available books in the ordering.
+    
+    # Order by: availability first, then newest/title
+    books = books.order_by('-available_copies_count', '-created_at', 'title')
 
     return books[:limit]
 

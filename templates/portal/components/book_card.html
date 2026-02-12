@@ -1,0 +1,38 @@
+<a href="{% url 'portal:book_detail' book.id %}" class="block h-full w-full">
+    <div
+        class="bg-white rounded-2xl p-3 shadow-sm border border-gray-50 flex flex-col h-full group active:scale-95 transition-all duration-200">
+        <!-- Book Image -->
+        <div
+            class="relative mb-3 aspect-[3/4] rounded-xl overflow-hidden shadow-md group-hover:shadow-xl transition-shadow w-full">
+            {% if book.cover_image %}
+            <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="w-full h-full object-cover">
+            {% else %}
+            <div class="w-full h-full bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
+                <svg class="w-10 h-10 text-orange-200" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                        d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                </svg>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Book Info -->
+        <div class="flex-1 min-h-0 space-y-1">
+            <h3 class="font-bold text-[13px] text-gray-900 line-clamp-2 leading-tight h-8">{{ book.title }}</h3>
+            <p class="text-[11px] text-gray-400 font-medium truncate italic">by {{ book.author }}</p>
+        </div>
+
+        <!-- Price and Stock -->
+        <div class="mt-3 flex items-center justify-between">
+            <p class="text-[14px] font-black text-orange-600">₹{{ book.mrp|floatformat:0 }}</p>
+            {% if book.stock_count > 0 %}
+            <span class="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded-md font-bold whitespace-nowrap">
+                {{ book.stock_count }} left
+            </span>
+            {% else %}
+            <span class="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded-md font-bold whitespace-nowrap">Out of
+                stock</span>
+            {% endif %}
+        </div>
+    </div>
+</a>

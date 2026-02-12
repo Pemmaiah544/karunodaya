@@ -4,48 +4,717 @@
 {% block title %}Dashboard - Karunodaya{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-4">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">Welcome, {{ user.first_name|default:user.username }}!</h1>
+<script>
+    // Clear onboarding data after successful completion
+    function clearOnboardingData() {
+        localStorage.removeItem('onboarding_step1_data');
+        localStorage.removeItem('onboarding_step2_data');
+        localStorage.removeItem('onboarding_step3_data');
+        localStorage.removeItem('onboarding_plan_type');
+    }
 
-    <!-- Children Section -->
-    <div class="mb-6">
-        <h2 class="text-xl font-semibold mb-4">Your Children</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {% for child in children %}
-            <div class="bg-white rounded-lg shadow p-4">
-                <h3 class="font-semibold text-lg">{{ child.name }}</h3>
-                <p class="text-sm text-gray-600">{{ child.age }} years • {{ child.get_grade_display }}</p>
-                <a href="{% url 'portal:curated_box' child.id %}"
-                   class="inline-block mt-2 text-purple-600 hover:text-purple-700 text-sm font-medium">
-                    View Curated Books →
-                </a>
-            </div>
-            {% empty %}
-            <p class="text-gray-500">No children added yet.</p>
-            {% endfor %}
+    function checkFluencyNudge() {
+        if (!sessionStorage.getItem('fluency_nudge_dismissed')) {
+            const widget = document.getElementById('reading-buddy-widget');
+            const banner = document.getElementById('fluency-adventure-banner');
+            if (widget) widget.classList.remove('hidden');
+            if (banner) banner.classList.remove('hidden');
+        }
+    }
+
+    function dismissFluencyNudge() {
+        sessionStorage.setItem('fluency_nudge_dismissed', 'true');
+        const widget = document.getElementById('reading-buddy-widget');
+        const banner = document.getElementById('fluency-adventure-banner');
+        if (widget) widget.classList.add('hidden');
+        if (banner) banner.classList.add('hidden');
+    }
+
+    function dismissBuddyOnly() {
+        const widget = document.getElementById('reading-buddy-widget');
+        if (widget) widget.classList.add('hidden');
+    }
+
+    function dismissLanguageBanner(childId) {
+        const banner = document.getElementById('language-exploration-banner-' + childId);
+        if (banner) {
+            banner.style.display = 'none';
+        }
+
+        // Call API to dismiss permanently
+        fetch(`/dismiss-language-banner/${childId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                console.log('Banner dismissed permanently');
+            }
+        }).catch(err => console.error('Error dismissing banner:', err));
+    }
+
+    // Initialize when dashboard loads
+    document.addEventListener('DOMContentLoaded', () => {
+        clearOnboardingData();
+        checkFluencyNudge();
+    });
+</script>
+
+<style>
+    @keyframes bounce-slow {
+
+        0%,
+        100% {
+            transform: translateY(0) rotate(0);
+        }
+
+        50% {
+            transform: translateY(-10px) rotate(5deg);
+        }
+    }
+
+    .buddy-float {
+        animation: bounce-slow 5s infinite ease-in-out;
+        animation-delay: 2s;
+    }
+
+    .gradient-adventure {
+        background: linear-gradient(135deg, #ff9d00 0%, #ff5e00 100%);
+    }
+</style>
+
+<div class="container mx-auto px-4 py-4">
+    <!-- Welcome Section -->
+    <div class="mb-6 flex justify-between items-start">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-1">Good day, {{ user.first_name|default:user.username }}!
+            </h1>
+            <p class="text-sm text-gray-500">Let's start your child's reading adventure.</p>
         </div>
+        <a href="{% url 'portal:plans' %}"
+            class="bg-orange-100 text-orange-600 hover:bg-orange-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors duration-200 flex items-center gap-2 border border-orange-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                </path>
+            </svg>
+            Plans
+        </a>
     </div>
 
-    <!-- Active Subscriptions -->
-    {% if active_subscriptions %}
-    <div class="mb-6">
-        <h2 class="text-xl font-semibold mb-4">Active Subscriptions</h2>
-        {% for cycle in active_subscriptions %}
-        <div class="bg-white rounded-lg shadow p-4 mb-2">
-            <div class="flex justify-between items-center">
-                <div>
-                    <p class="font-medium">{{ cycle.child.name }} - {{ cycle.plan.name }}</p>
-                    <p class="text-sm text-gray-600">{{ cycle.books_count }} books</p>
+    <!-- ONBOARDING FLOW BANNERS -->
+
+    <!-- State 1: No Child Profile -->
+    {% if not has_children %}
+    <div id="add-child-banner"
+        class="mb-6 relative overflow-hidden rounded-[24px] bg-gradient-to-r from-orange-500 to-orange-600 p-8 text-white shadow-xl shadow-orange-100 animate-in fade-in slide-in-from-top duration-700">
+        <div class="relative z-10 flex items-center justify-between">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                    <span
+                        class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-white border border-white/10">NEW
+                        JOURNEY</span>
                 </div>
-                <span class="px-3 py-1 text-xs font-semibold rounded-full
-                    {% if cycle.status == 'ACTIVE' %}bg-green-100 text-green-800
-                    {% else %}bg-red-100 text-red-800{% endif %}">
-                    {{ cycle.get_status_display }}
-                </span>
+                <h2 class="text-3xl font-black mb-1 leading-tight text-white">Welcome to Karunodaya!</h2>
+                <p class="text-lg font-bold mb-4 text-white/90">Every Great Reader Starts with a First Step</p>
+                <p class="text-sm text-white/90 mb-6 max-w-xs leading-relaxed">Add your child's profile to start their
+                    personalized reading journey and get curated book boxes.</p>
+                <div class="flex gap-4">
+                    <a href="{% url 'portal:profile' %}"
+                        class="bg-white text-orange-600 px-8 py-3 rounded-full font-bold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all">
+                        Add Child
+                    </a>
+                </div>
+            </div>
+            <div class="hidden sm:block w-40 h-40 opacity-90 bounce-slow">
+                <img src="{% static 'images/onboarding_hero.svg' %}" alt="Onboarding"
+                    class="w-full h-full object-contain">
             </div>
         </div>
-        {% endfor %}
+        <!-- Decorative shapes -->
+        <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+        <div class="absolute -left-10 -top-10 w-48 h-48 bg-orange-400/20 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- State 2: Child exists but no test completed -->
+    {% elif pending_test_child %}
+    <div id="fluency-adventure-banner"
+        class="hidden mb-6 relative overflow-hidden rounded-[24px] gradient-adventure p-8 text-white shadow-xl shadow-orange-100 animate-in fade-in slide-in-from-top duration-700">
+        <div class="relative z-10 flex items-center justify-between">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-3">
+                    <span
+                        class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">Level
+                        Check</span>
+                </div>
+                <h2 class="text-2xl font-black mb-2 leading-tight">Unlock {{ pending_test_child.name }}'s Level! 🏆</h2>
+                <p class="text-sm text-white/90 mb-6 max-w-xs leading-relaxed">Take a quick 60-second reading test so we
+                    can fill your box with books they'll love.</p>
+                <div class="flex gap-4">
+                    <a href="{% url 'portal:fluency_check' pending_test_child.id %}"
+                        class="bg-white text-orange-600 px-8 py-3 rounded-full font-bold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all">
+                        Start Reading Test
+                    </a>
+                    <button onclick="dismissFluencyNudge()"
+                        class="text-white/80 text-xs font-bold hover:text-white transition-colors">
+                        Maybe Later
+                    </button>
+                </div>
+            </div>
+            <div class="hidden sm:block w-40 h-40 buddy-float opacity-90">
+                <img src="{% static 'images/reading_buddy.png' %}" alt="Buddy" class="w-full h-full object-contain">
+            </div>
+        </div>
+        <!-- Decorative shapes -->
+        <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+        <div class="absolute -left-10 -top-10 w-48 h-48 bg-orange-400/20 rounded-full blur-3xl"></div>
     </div>
     {% endif %}
+
+    <!-- Language Exploration Banner -->
+    {% if children %}
+    {% for child in children %}
+    {% if child.is_active and child.reading_test_completed and not child.has_tried_other_languages %}
+    <div id="language-exploration-banner-{{ child.id }}"
+        class="mb-4 relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 p-4 text-white shadow-lg animate-in fade-in slide-in-from-top duration-700">
+        <div class="relative z-10 flex items-center justify-between">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                    <span
+                        class="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest">🌍
+                        New Adventure</span>
+                </div>
+                <h3 class="text-lg font-black mb-1 leading-tight">Boost {{ child.name }}'s Skills! 🚀</h3>
+                <p class="text-xs text-white/90 mb-3 max-w-sm leading-relaxed">
+                    Try reading in Hindi or Kannada to improve language skills! Bilingual children show 30% better
+                    cognitive development.
+                </p>
+                <div class="flex gap-2">
+                    <a href="{% url 'portal:fluency_check' child.id %}?lang=HI"
+                        class="bg-white text-purple-600 px-3 py-1.5 rounded-full font-bold text-xs shadow-md hover:scale-105 active:scale-95 transition-all">
+                        🇮🇳 Try Hindi
+                    </a>
+                    <a href="{% url 'portal:fluency_check' child.id %}?lang=KN"
+                        class="bg-white/20 backdrop-blur-md text-white px-3 py-1.5 rounded-full font-bold text-xs border border-white/30 hover:bg-white/30 transition-all">
+                        🏯 Try Kannada
+                    </a>
+                </div>
+            </div>
+            <div class="hidden sm:block w-20 h-20 opacity-80">
+                <div class="w-full h-full bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <span class="text-2xl">📚</span>
+                </div>
+            </div>
+        </div>
+        <!-- Decorative elements -->
+        <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+        <div class="absolute -left-6 -top-6 w-24 h-24 bg-indigo-400/20 rounded-full blur-2xl"></div>
+
+        <!-- Dismiss button -->
+        <button onclick="dismissLanguageBanner({{ child.id }})"
+            class="absolute top-3 right-3 w-5 h-5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-full flex items-center justify-center text-[9px] transition-colors z-50">
+            ✕
+        </button>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    <!-- Learning Progress Section -->
+    <div class="mb-8">
+        <div class="flex items-center gap-2 mb-4 px-1">
+            <h2 class="text-xl font-bold text-gray-900">Learning Progress</h2>
+            <span
+                class="bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">LIVE
+                TRACKING</span>
+        </div>
+
+        {% if children %}
+        <div class="grid grid-cols-1 gap-4">
+            {% for child in children %}
+            {% if child.is_active %}
+            <div
+                class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-shadow">
+                <!-- Header -->
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">
+                            {{ child.name|slice:":1" }}
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">{{ child.name }}</h3>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{{ child.get_grade_display|default:"NOT SET" }}</p>
+                        </div>
+                    </div>
+                    {% if child.reading_test_completed %}
+                    <span
+                        class="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border border-green-100">
+                        {% if child.reading_difficulty_level == 'BEGINNER' %}BEGINNER LEVEL
+                        {% elif child.reading_difficulty_level == 'INTERMEDIATE' %}INTERMEDIATE LEVEL
+                        {% elif child.reading_difficulty_level == 'ADVANCED' %}ADVANCED LEVEL
+                        {% else %}Evaluated{% endif %}
+                    </span>
+                    {% else %}
+                    <span
+                        class="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border border-orange-100">
+                        Pending Test
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if child.reading_test_completed %}
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Reading Speed</p>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-xl font-black text-gray-900">{{ child.reading_wpm }}</span>
+                            <span class="text-[10px] font-bold text-gray-500">WPM</span>
+                        </div>
+                        <div class="mt-2 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-indigo-500 rounded-full"
+                                style="width: {% if child.reading_wpm > 120 %}100{% else %}{{ child.reading_wpm }}{% endif %}%">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Accuracy</p>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-xl font-black text-gray-900">{{ child.reading_accuracy|default:0 }}</span>
+                            <span class="text-[10px] font-bold text-gray-500">%</span>
+                        </div>
+                        <div class="mt-2 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-green-500 rounded-full"
+                                style="width: {{ child.reading_accuracy|default:0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Summary -->
+                <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>Keep reading to unlock the next level!</span>
+                </div>
+                {% else %}
+                <div class="py-4 text-center">
+                    <p class="text-xs text-gray-500 mb-4">Take a reading check to see {{ child.name }}'s progress
+                        metrics.</p>
+                    <a href="{% url 'portal:fluency_check' child.id %}"
+                        class="inline-flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-full text-[11px] font-bold shadow-indigo-100 shadow-lg active:scale-95 transition-all">
+                        Start Fluency Check
+                    </a>
+                </div>
+                {% endif %}
+
+                <!-- Decorative elements -->
+                <div
+                    class="absolute -right-6 -bottom-6 w-24 h-24 bg-indigo-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- No children state - show placeholder card as in image -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden">
+            <div class="text-center py-8">
+                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Track your child's growth here.</h3>
+                <p class="text-sm text-gray-500 mb-4">Onboard your child’s profile.</p>
+                <div class="flex items-center justify-center gap-2 text-xs text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>- Personalize their experience</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+
+    <!-- My Plans Section -->
+    <div class="mb-8">
+        <div class="flex justify-between items-center mb-4 px-1">
+            <div class="flex items-center gap-2">
+                <h2 class="text-xl font-bold text-gray-900">My Plans</h2>
+                {% if active_subscriptions %}
+                <a href="{% url 'portal:orders' %}?tab=subscriptions"
+                    class="bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border border-orange-200 hover:bg-orange-200 transition-colors">
+                    {{ active_subscriptions.first.plan.name }}
+                </a>
+                {% endif %}
+            </div>
+            {% if active_subscriptions %}
+            <a href="{% url 'portal:orders' %}?tab=subscriptions"
+                class="text-orange-500 hover:text-orange-600 font-medium text-sm">
+                Manage
+            </a>
+            {% endif %}
+        </div>
+
+        {% if active_subscriptions %}
+        <!-- Subscription Info Card Only -->
+        <div class="grid grid-cols-1 gap-4">
+            <div
+                class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-shadow">
+                <!-- Header -->
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 font-bold text-lg">
+                            {{ active_subscriptions.first.child.name|slice:":1" }}
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">{{ active_subscriptions.first.child.name }}</h3>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{{ active_subscriptions.first.plan.name }}</p>
+                        </div>
+                    </div>
+                    <span
+                        class="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border border-green-100">ACTIVE</span>
+                </div>
+
+                <!-- Books Count -->
+                <div class="bg-orange-50 rounded-xl p-4 mb-4 border border-orange-100">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] text-orange-600 font-bold uppercase tracking-widest mb-1">Total Books
+                            </p>
+                            <span class="text-3xl font-black text-gray-900">{{ total_books_count }}</span>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dates -->
+                <div class="space-y-2 px-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500 italic">Start Date</span>
+                        <span class="font-bold text-gray-900">{{ active_subscriptions.first.issue_date|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-500 italic">End Date</span>
+                        <span class="font-bold text-gray-900">{{ active_subscriptions.first.expected_return_date|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="mt-4">
+                    <a href="{% url 'portal:orders' %}?tab=subscriptions"
+                        class="w-full bg-orange-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-orange-700 transition-colors shadow-sm flex items-center justify-center gap-2">
+                        Subscription Details
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- No Active Subscription State -->
+        <div
+            class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 text-center border border-orange-100 relative overflow-hidden">
+            <!-- Decorative elements -->
+            <div class="absolute -right-6 -top-6 w-20 h-20 bg-orange-100 rounded-full opacity-40"></div>
+            <div class="absolute -left-6 -bottom-6 w-24 h-24 bg-amber-100 rounded-full opacity-30"></div>
+
+            <div class="relative z-10">
+                <div class="w-14 h-14 mx-auto mb-3 bg-orange-100 rounded-full flex items-center justify-center">
+                    <svg class="w-7 h-7 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">📖 Unlock Your Child's Reading Journey</h3>
+                <p class="text-sm text-gray-600 mb-4 max-w-sm mx-auto">Subscribe to get curated books that grow with
+                    your child's reading level and interests!</p>
+
+                <a href="{% url 'portal:plans' %}"
+                    class="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Subscribe Now
+                </a>
+
+                <p class="text-xs text-gray-500 mt-3">✨ Cancel anytime • Free delivery</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Explore Books -->
+    <div class="mt-8 mb-6">
+        <div class="flex justify-between items-center mb-4 px-1">
+            <h2 class="text-xl font-bold text-gray-900">Explore Books</h2>
+            <a href="{% url 'portal:marketplace' %}" class="text-orange-500 hover:text-orange-600 font-medium text-sm">
+                See All
+            </a>
+        </div>
+
+        {% if recent_books %}
+        <!-- Recent Books Display -->
+        <div class="flex overflow-x-auto pb-4 gap-4 hide-scrollbar -mx-4 px-4 scroll-smooth">
+            {% for book in recent_books %}
+            <a href="{% url 'portal:book_detail' book.id %}" class="flex-none w-40 group">
+                <div
+                    class="bg-gray-100 rounded-2xl p-3 mb-2 aspect-[3/4] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shadow-sm border border-gray-50 relative overflow-hidden">
+                    {% if book.cover_image %}
+                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }}"
+                        class="w-full h-full object-contain rounded-sm shadow-md">
+                    {% else %}
+                    <div class="w-full h-full flex items-center justify-center bg-gray-200 rounded-sm">
+                        <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                        </svg>
+                    </div>
+                    {% endif %}
+
+                    <!-- New Badge -->
+                    <div
+                        class="absolute top-2 right-2 bg-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                        NEW
+                    </div>
+                </div>
+                <h3 class="font-bold text-sm text-gray-900 truncate px-1">{{ book.title }}</h3>
+                <p class="text-xs text-gray-500 truncate px-1">{{ book.author }}</p>
+                <div class="flex items-center gap-2 px-1">
+                    <!-- <span class="text-xs text-orange-600 font-medium">{{ book.get_grade_display|default:"All Ages" }}</span> -->
+                    {% if book.is_new %}
+                    <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Just
+                        Added</span>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- No Recent Books State -->
+        <div class="bg-gray-100 rounded-3xl p-8 text-center border border-dashed border-gray-300 mx-1">
+            <div class="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center">
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0m0 0l-8 9m-11-1v-4a1 1 0 00-1-1H5a1 1 0 00-1 1v4a1 1 0 001 1h2m0 0l8 9" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">📚 Discover Amazing Stories</h3>
+            <p class="text-sm text-gray-600 mb-6 max-w-sm mx-auto">New books are added regularly! Check back soon
+                for
+                fresh adventures.</p>
+
+            <a href="{% url 'portal:marketplace' %}"
+                class="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-full text-sm font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0m0 0l-8 9m-11-1v-4a1 1 0 00-1-1H5a1 1 0 00-1 1v4a1 1 0 001 1h2m0 0l8 9" />
+                </svg>
+                Explore All Books
+            </a>
+
+            <p class="text-xs text-gray-500 mt-4">📖 Age-appropriate • Curated collections</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Creative Floating Reading Buddy Widget -->
+    {% if pending_test_child %}
+    <div id="reading-buddy-widget"
+        class="hidden fixed bottom-24 right-6 z-[60] animate-in slide-in-from-right fade-in duration-700">
+        <div class="relative">
+            <!-- Speech Bubble -->
+            <div id="speech-bubble"
+                class="absolute bottom-full right-0 mb-4 w-48 bg-white rounded-2xl shadow-2xl p-4 border border-orange-100 animate-bounce duration-[2000ms]">
+                <p class="text-xs font-bold text-gray-800 leading-relaxed text-center">
+                    Customize <span class="text-orange-600">{{ pending_test_child.name }}'s</span> reading journey!
+                    📚✨
+                </p>
+                <!-- Tail -->
+                <div
+                    class="absolute top-full right-8 -mt-1 w-4 h-4 bg-white border-r border-b border-orange-100 rotate-45">
+                </div>
+            </div>
+
+            <!-- Buddy Icon -->
+            <a href="{% url 'portal:fluency_check' pending_test_child.id %}" class="block group relative">
+                <div
+                    class="buddy-float w-14 h-14 bg-white rounded-full shadow-2xl border-4 border-orange-400 p-2 transform transition-transform group-hover:scale-110">
+                    <img src="{% static 'images/reading_buddy.png' %}" alt="Reading Buddy"
+                        class="w-full h-full object-contain">
+                </div>
+                <div
+                    class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-white">
+                    1</div>
+            </a>
+
+            <!-- Close button for widget -->
+            <button onclick="dismissBuddyOnly()"
+                class="absolute -top-2 -left-2 w-5 h-5 bg-gray-900/10 hover:bg-gray-900/20 backdrop-blur-sm text-gray-800 rounded-full flex items-center justify-center text-[9px] transition-colors">
+                ✕
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+
+    <style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .animate-in {
+            animation-duration: 0.3s;
+            animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            animation-fill-mode: forwards;
+        }
+
+        .fade-in {
+            animation-name: fadeIn;
+        }
+
+        .zoom-in {
+            animation-name: zoomIn;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.95);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+    </style>
+
+    <!-- Edit Child Modal -->
+    <div id="edit-child-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 relative">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Edit Child Details</h3>
+                <button onclick="closeEditChildModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <form method="post" action="#" id="edit-child-form">
+                {% csrf_token %}
+                <input type="hidden" name="child_id" id="edit-child-id">
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Child Name</label>
+                        <input type="text" name="name" id="edit-child-name" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+                        <select name="grade" id="edit-child-grade" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                            <option value="">Select Grade</option>
+                            <option value="NURSERY" {% if child.grade == 'NURSERY' %}selected{% endif %}>Nursery
+                            </option>
+                            <option value="LKG" {% if child.grade == 'LKG' %}selected{% endif %}>LKG</option>
+                            <option value="UKG" {% if child.grade == 'UKG' %}selected{% endif %}>UKG</option>
+                            <option value="GRADE1" {% if child.grade == 'GRADE1' %}selected{% endif %}>Grade 1
+                            </option>
+                            <option value="GRADE2" {% if child.grade == 'GRADE2' %}selected{% endif %}>Grade 2
+                            </option>
+                            <option value="GRADE3" {% if child.grade == 'GRADE3' %}selected{% endif %}>Grade 3
+                            </option>
+                            <option value="GRADE4" {% if child.grade == 'GRADE4' %}selected{% endif %}>Grade 4
+                            </option>
+                            <option value="GRADE5" {% if child.grade == 'GRADE5' %}selected{% endif %}>Grade 5
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Reading Speed (WPM)</label>
+                        <input type="number" name="reading_wpm" id="edit-child-wpm" min="0" max="500"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Accuracy (%)</label>
+                        <input type="number" name="reading_accuracy" id="edit-child-accuracy" min="0" max="100"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="submit"
+                        class="flex-1 bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                        Save Changes
+                    </button>
+                    <button type="button" onclick="closeEditChildModal()"
+                        class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
+
+<script>
+    function openEditChildModal(childId, childName, childGrade, childWPM, childAccuracy) {
+        document.getElementById('edit-child-id').value = childId;
+        document.getElementById('edit-child-name').value = childName;
+        document.getElementById('edit-child-grade').value = childGrade;
+        document.getElementById('edit-child-wpm').value = childWPM;
+        document.getElementById('edit-child-accuracy').value = childAccuracy;
+
+        // Set the form action to update the specific child
+        document.getElementById('edit-child-form').action = `/profile/child/${childId}/update/`;
+
+        document.getElementById('edit-child-modal').classList.remove('hidden');
+    }
+
+    function closeEditChildModal() {
+        document.getElementById('edit-child-modal').classList.add('hidden');
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('edit-child-modal').addEventListener('click', function (e) {
+        if (e.target === this) {
+            closeEditChildModal();
+        }
+    });
+</script>

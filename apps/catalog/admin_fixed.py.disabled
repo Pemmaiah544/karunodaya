@@ -1,0 +1,7 @@
+# Import the enhanced admin configuration
+from .admin_enhanced import BookAdmin, PublisherAdmin
+
+# Register the enhanced admin classes
+from django.contrib import admin
+admin.site.register(Publisher, PublisherAdmin)
+admin.site.register(Book, BookAdmin)

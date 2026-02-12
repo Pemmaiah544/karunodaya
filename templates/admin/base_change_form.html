@@ -1,0 +1,26 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls admin_modify %}
+
+{% block nav-global %}
+{% spaceless %}
+<li class="border-b flex-grow text-center md:border-b-0 md:border-r last:border-0 dark:border-gray-800"
+    style="display: flex; align-items: center; justify-content: center; background: #fff;">
+    <a href="javascript:history.back()"
+        style="display: inline-flex; align-items: center; background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%); color: white !important; padding: 4px 12px; border-radius: 4px; font-weight: 700; font-size: 11px; text-decoration: none; margin: 6px 10px; height: 26px; text-transform: uppercase; letter-spacing: 0.3px; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(234, 88, 12, 0.2);"
+        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(234, 88, 12, 0.3)';"
+        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(234, 88, 12, 0.2)';">
+        <svg style="width: 12px; height: 12px; margin-right: 5px; stroke-width: 3;" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Back to List
+    </a>
+</li>
+
+{% if change and not is_popup %}
+{% block object-tools-items %}
+{% change_form_object_tools %}
+{% endblock %}
+{% endif %}
+{% endspaceless %}
+{% endblock %}

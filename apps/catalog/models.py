@@ -111,6 +111,14 @@ class Book(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
+    def save(self, *args, **kwargs):
+        """Override save to ensure marketplace visibility for new books."""
+        # For new books, ensure they have sensible defaults
+        if not self.pk:  # Only for new books
+            if self.stock_count == 0:
+                self.stock_count = 10
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = "Book"
         verbose_name_plural = "Books"

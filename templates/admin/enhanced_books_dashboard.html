@@ -1,0 +1,143 @@
+{% extends 'admin/base_site.html' %}
+{% load table_tags %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="page-header">
+        <h1>📚 {{ config.name }}</h1>
+        <p>{{ config.description }}</p>
+    </div>
+
+    <!-- Enhanced Table Component -->
+    {% enhanced_table 
+        config=config 
+        data=data 
+        pagination=pagination 
+        search_query=search_query 
+        current_filters=current_filters 
+        user=request.user 
+    %}
+</div>
+
+<style>
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.page-header {
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.page-header h1 {
+    color: #2d3748;
+    margin-bottom: 8px;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.page-header p {
+    color: #718096;
+    margin: 0;
+    font-size: 16px;
+}
+
+/* Additional dashboard-specific styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+}
+
+.stat-card h3 {
+    color: #4a5568;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.stat-card .value {
+    color: #2d3748;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.stat-card .change {
+    color: #48bb78;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.stat-card .change.negative {
+    color: #f56565;
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 16px;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+// Add any dashboard-specific JavaScript here
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh functionality (optional)
+    let autoRefreshInterval;
+    
+    function startAutoRefresh() {
+        autoRefreshInterval = setInterval(() => {
+            // Only refresh if user is not actively interacting
+            if (!document.activeElement || document.activeElement.tagName !== 'INPUT') {
+                window.location.reload();
+            }
+        }, 60000); // Refresh every 60 seconds
+    }
+    
+    function stopAutoRefresh() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+        }
+    }
+    
+    // Start auto-refresh
+    startAutoRefresh();
+    
+    // Stop auto-refresh when user interacts
+    document.addEventListener('click', stopAutoRefresh);
+    document.addEventListener('keypress', stopAutoRefresh);
+    
+    // Restart auto-refresh after 5 minutes of inactivity
+    let inactivityTimer;
+    function resetInactivityTimer() {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(startAutoRefresh, 300000); // 5 minutes
+    }
+    
+    document.addEventListener('click', resetInactivityTimer);
+    document.addEventListener('keypress', resetInactivityTimer);
+});
+</script>
+{% endblock %}

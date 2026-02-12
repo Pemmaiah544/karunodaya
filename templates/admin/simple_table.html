@@ -1,0 +1,18 @@
+{% extends 'admin/base_site.html' %}
+{% load table_tags %}
+
+{% block content %}
+<div class="container">
+    <h1>Simple Table Example</h1>
+    
+    {% data_table data=data columns=columns %}
+</div>
+
+<style>
+.container {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 20px;
+}
+</style>
+{% endblock %}

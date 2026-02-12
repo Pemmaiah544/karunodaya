@@ -1,0 +1,71 @@
+from django.contrib import admin
+from django.utils.html import format_html
+from unfold.admin import ModelAdmin
+from .models import Publisher, Book
+from .forms import BookAdminForm
+
+
+@admin.register(Publisher)
+class PublisherAdmin(ModelAdmin):
+    list_display = ('name', 'email', 'phone', 'created_at')
+    search_fields = ('name', 'email', 'phone')
+    readonly_fields = ('created_at', 'updated_at')
+    list_per_page = 15
+    
+    # Enhanced change list template
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+
+@admin.register(Book)
+class BookAdmin(ModelAdmin):
+    form = BookAdminForm
+    list_display = (
+        'title', 'author', 'cover_image_thumbnail', 'publisher', 'difficulty_rating',
+        'is_subscription_eligible', 'is_purchase_eligible',
+        'stock_count', 'is_active'
+    )
+    list_filter = (
+        'difficulty_rating', 'is_subscription_eligible',
+        'is_purchase_eligible', 'is_active', 'publisher'
+    )
+    search_fields = ('title', 'author', 'isbn')
+    list_editable = ('stock_count', 'is_active', 'is_purchase_eligible')
+    list_per_page = 20  # Increased for better viewing
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('title', 'author', 'publisher', 'isbn', 'mrp', 'cover_image')
+        }),
+        ('Description', {
+            'fields': ('description',)
+        }),
+        ('Curation Settings', {
+            'fields': ('difficulty_rating', 'recommended_grade_min', 'recommended_grade_max')
+        }),
+        ('Eligibility', {
+            'fields': ('is_subscription_eligible', 'is_purchase_eligible', 'stock_count')
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+    )
+
+    # Enhanced change list template
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    def cover_image_thumbnail(self, obj):
+        """Display cover image thumbnail in admin list view."""
+        if obj.cover_image:
+            return format_html(
+                '<img src="{}" width="40" height="60" style="object-fit: cover; border-radius: 4px;" />',
+                obj.cover_image.url
+            )
+        return "No Image"
+    cover_image_thumbnail.short_description = 'Cover'
+
+    def save_model(self, request, obj, form, change):
+        """Override save to ensure marketplace visibility for new books."""
+        if not change:  # Only for new books
+            if obj.stock_count == 0:
+                obj.stock_count = 10
+        super().save_model(request, obj, form, change)

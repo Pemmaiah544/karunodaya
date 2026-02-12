@@ -1,0 +1,540 @@
+from django.contrib import admin
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
+from unfold.admin import ModelAdmin
+from .models import Publisher, Book
+from .forms import BookAdminForm
+
+
+@admin.register(Publisher)
+class PublisherAdmin(ModelAdmin):
+    list_display = ('name', 'email', 'phone', 'created_at')
+    search_fields = ('name', 'email', 'phone')
+    readonly_fields = ('created_at', 'updated_at')
+    
+    # Enhanced change list template
+    change_list_template = 'admin/catalog/enhanced_publisher_change_list.html'
+    
+    def changelist_view(self, request, extra_context=None):
+        """Override changelist view to provide enhanced context"""
+        extra_context = extra_context or {}
+        
+        # Get table configuration
+        from apps.core.models import TableConfiguration
+        model_name = f"{self.model._meta.app_label}.{self.model._meta.model_name}"
+        
+        try:
+            config = TableConfiguration.objects.get(
+                model_name=model_name,
+                is_active=True
+            )
+        except TableConfiguration.DoesNotExist:
+            config = self.create_default_config()
+        
+        # Get filtered queryset
+        queryset = self.get_queryset(request)
+        
+        # Apply search
+        search_query = request.GET.get('search', '')
+        if search_query and config.enable_search:
+            searchable_columns = config.columns.filter(searchable=True)
+            from django.db.models import Q
+            search_q = Q()
+            
+            for column in searchable_columns:
+                field_name = column.field_name
+                search_q |= Q(**{f"{field_name}__icontains": search_query})
+            
+            queryset = queryset.filter(search_q)
+        
+        # Apply filters
+        current_filters = {}
+        for filter_obj in config.filters.all():
+            filter_value = request.GET.get(filter_obj.field_name, '')
+            if filter_value:
+                current_filters[filter_obj.field_name] = filter_value
+                if filter_obj.filter_type == 'boolean':
+                    queryset = queryset.filter(**{filter_obj.field_name: filter_value.lower() == 'true'})
+                else:
+                    queryset = queryset.filter(**{filter_obj.field_name: filter_value})
+        
+        # Apply sorting
+        sort_field = request.GET.get('sort', 'name')
+        if sort_field.startswith('-'):
+            queryset = queryset.order_by(sort_field[1:])
+        else:
+            queryset = queryset.order_by(sort_field)
+        
+        # Pagination
+        from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+        paginator = Paginator(queryset, config.items_per_page)
+        page = request.GET.get('page', 1)
+        
+        try:
+            page_obj = paginator.page(page)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+        
+        # Create pagination object
+        pagination = TablePagination(paginator, int(page), page_obj)
+        
+        # Add enhanced context
+        extra_context.update({
+            'config': config,
+            'data': page_obj,
+            'pagination': pagination,
+            'search_query': search_query,
+            'current_filters': current_filters,
+            'user': request.user,
+        })
+        
+        return super().changelist_view(request, extra_context)
+    
+    def create_default_config(self):
+        """Create default configuration for this model"""
+        from apps.core.models import TableConfiguration, TableColumn
+        
+        model_name = f"{self.model._meta.app_label}.{self.model._meta.model_name}"
+        slug = f"{self.model._meta.model_name}-management"
+        
+        # Check if config already exists
+        try:
+            config = TableConfiguration.objects.get(slug=slug)
+            print(f"DEBUG PublisherAdmin: Config already exists: {config.name}")
+            return config
+        except TableConfiguration.DoesNotExist:
+            pass
+        
+        # Create new config
+        try:
+            config = TableConfiguration.objects.create(
+                name=f"{self.model._meta.verbose_name_plural} Management",
+                slug=slug,
+                description=f"Enhanced table for {self.model._meta.verbose_name_plural}",
+                model_name=model_name,
+                items_per_page=15,
+                enable_search=True,
+                enable_sorting=True,
+                enable_pagination=True,
+                mobile_card_view=True,
+                header_style='gradient',
+                row_striping=True,
+                hover_effects=True,
+                compact_mode=False,
+            )
+            print(f"DEBUG PublisherAdmin: Created new config: {config.name}")
+        except Exception as e:
+            print(f"DEBUG PublisherAdmin: Error creating config: {e}")
+            # Try to get existing config by name
+            try:
+                config = TableConfiguration.objects.get(model_name=model_name, is_active=True)
+                print(f"DEBUG PublisherAdmin: Using existing config by model_name: {config.name}")
+            except TableConfiguration.DoesNotExist:
+                print("DEBUG PublisherAdmin: No config found, returning None")
+                return None
+        
+        # Add columns based on list_display
+        try:
+            for i, field_name in enumerate(self.list_display):
+                if not callable(getattr(self, field_name, None)):
+                    TableColumn.objects.get_or_create(
+                        table_config=config,
+                        field_name=field_name,
+                        defaults={
+                            'display_name': field_name.replace('_', ' ').title(),
+                            'column_type': 'text',
+                            'order': i + 1,
+                            'sortable': True,
+                            'searchable': True,
+                        }
+                    )
+            print(f"DEBUG PublisherAdmin: Added columns to config")
+        except Exception as e:
+            print(f"DEBUG PublisherAdmin: Error adding columns: {e}")
+        
+        return config
+
+
+@admin.register(Book)
+class BookAdmin(ModelAdmin):
+    form = BookAdminForm
+    list_display = (
+        'title', 'author', 'cover_image_thumbnail', 'publisher', 'difficulty_rating',
+        'is_subscription_eligible', 'is_purchase_eligible',
+        'stock_count', 'is_active', 'marketplace_status'
+    )
+    list_filter = (
+        'difficulty_rating', 'is_subscription_eligible',
+        'is_purchase_eligible', 'is_active', 'publisher'
+    )
+    search_fields = ('title', 'author', 'isbn')
+    list_editable = ('stock_count', 'is_active', 'is_purchase_eligible')
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('title', 'author', 'publisher', 'isbn', 'mrp', 'cover_image')
+        }),
+        ('Description', {
+            'fields': ('description',)
+        }),
+        ('Curation Settings', {
+            'fields': ('difficulty_rating', 'recommended_grade_min', 'recommended_grade_max')
+        }),
+        ('Eligibility', {
+            'fields': ('is_subscription_eligible', 'is_purchase_eligible', 'stock_count')
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+    )
+
+    # Enhanced change list template
+    change_list_template = 'admin/catalog/enhanced_book_change_list.html'
+    
+    def changelist_view(self, request, extra_context=None):
+        """Override changelist view to provide enhanced context"""
+        extra_context = extra_context or {}
+        
+        # Get table configuration
+        from apps.core.models import TableConfiguration
+        model_name = f"{self.model._meta.app_label}.{self.model._meta.model_name}"
+        
+        print(f"DEBUG BookAdmin: Looking for config for model: {model_name}")
+        
+        try:
+            config = TableConfiguration.objects.get(
+                model_name=model_name,
+                is_active=True
+            )
+            print(f"DEBUG BookAdmin: Found config: {config.name}")
+        except TableConfiguration.DoesNotExist:
+            print("DEBUG BookAdmin: No config found, creating default")
+            config = self.create_default_config()
+        except Exception as e:
+            print(f"DEBUG BookAdmin: Error getting config: {e}")
+            config = None
+        
+        # Get filtered queryset
+        queryset = self.get_queryset(request)
+        
+        # Apply search
+        search_query = request.GET.get('search', '')
+        if config and search_query and config.enable_search:
+            try:
+                searchable_columns = config.columns.filter(searchable=True)
+                from django.db.models import Q
+                search_q = Q()
+                
+                for column in searchable_columns:
+                    field_name = column.field_name
+                    search_q |= Q(**{f"{field_name}__icontains": search_query})
+                
+                queryset = queryset.filter(search_q)
+            except Exception as e:
+                print(f"DEBUG BookAdmin: Search error: {e}")
+        
+        # Apply filters
+        current_filters = {}
+        if config:
+            try:
+                for filter_obj in config.filters.all():
+                    filter_value = request.GET.get(filter_obj.field_name, '')
+                    if filter_value:
+                        current_filters[filter_obj.field_name] = filter_value
+                        if filter_obj.filter_type == 'boolean':
+                            queryset = queryset.filter(**{filter_obj.field_name: filter_value.lower() == 'true'})
+                        else:
+                            queryset = queryset.filter(**{filter_obj.field_name: filter_value})
+            except Exception as e:
+                print(f"DEBUG BookAdmin: Filter error: {e}")
+        
+        # Apply sorting
+        sort_field = request.GET.get('sort', 'title')
+        if sort_field.startswith('-'):
+            queryset = queryset.order_by(sort_field[1:])
+        else:
+            queryset = queryset.order_by(sort_field)
+        
+        # Pagination
+        if config:
+            items_per_page = config.items_per_page
+        else:
+            items_per_page = 15  # Default
+            
+        from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+        paginator = Paginator(queryset, items_per_page)
+        page = request.GET.get('page', 1)
+        
+        try:
+            page_obj = paginator.page(page)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+        
+        # Create pagination object
+        pagination = TablePagination(paginator, int(page), page_obj)
+        
+        # Add enhanced context
+        extra_context.update({
+            'config': config,
+            'data': page_obj,
+            'pagination': pagination,
+            'search_query': search_query,
+            'current_filters': current_filters,
+            'user': request.user,
+        })
+        
+        print(f"DEBUG BookAdmin: Context prepared with config: {config is not None}")
+        return super().changelist_view(request, extra_context)
+    
+    def create_default_config(self):
+        """Create default configuration for this model"""
+        from apps.core.models import TableConfiguration, TableColumn
+        
+        model_name = f"{self.model._meta.app_label}.{self.model._meta.model_name}"
+        slug = f"{self.model._meta.model_name}-management"
+        
+        # Check if config already exists
+        try:
+            config = TableConfiguration.objects.get(slug=slug)
+            print(f"DEBUG BookAdmin: Config already exists: {config.name}")
+            return config
+        except TableConfiguration.DoesNotExist:
+            pass
+        
+        # Create new config
+        try:
+            config = TableConfiguration.objects.create(
+                name=f"{self.model._meta.verbose_name_plural} Management",
+                slug=slug,
+                description=f"Enhanced table for {self.model._meta.verbose_name_plural}",
+                model_name=model_name,
+                items_per_page=15,
+                enable_search=True,
+                enable_sorting=True,
+                enable_pagination=True,
+                mobile_card_view=True,
+                header_style='gradient',
+                row_striping=True,
+                hover_effects=True,
+                compact_mode=False,
+            )
+            print(f"DEBUG BookAdmin: Created new config: {config.name}")
+        except Exception as e:
+            print(f"DEBUG BookAdmin: Error creating config: {e}")
+            # Try to get existing config by name
+            try:
+                config = TableConfiguration.objects.get(model_name=model_name, is_active=True)
+                print(f"DEBUG BookAdmin: Using existing config by model_name: {config.name}")
+            except TableConfiguration.DoesNotExist:
+                print("DEBUG BookAdmin: No config found, returning None")
+                return None
+        
+        # Add columns based on list_display
+        try:
+            for i, field_name in enumerate(self.list_display):
+                if not callable(getattr(self, field_name, None)):
+                    TableColumn.objects.get_or_create(
+                        table_config=config,
+                        field_name=field_name,
+                        defaults={
+                            'display_name': field_name.replace('_', ' ').title(),
+                            'column_type': 'text',
+                            'order': i + 1,
+                            'sortable': True,
+                            'searchable': True,
+                        }
+                    )
+            print(f"DEBUG BookAdmin: Added columns to config")
+        except Exception as e:
+            print(f"DEBUG BookAdmin: Error adding columns: {e}")
+        
+        return config
+
+    def marketplace_status(self, obj):
+        """Display marketplace eligibility status with color coding."""
+        if obj.is_purchase_eligible and obj.is_active and obj.stock_count > 0:
+            return '✅ Visible'
+        else:
+            reasons = []
+            if not obj.is_purchase_eligible:
+                reasons.append('Not purchase eligible')
+            if not obj.is_active:
+                reasons.append('Inactive')
+            if obj.stock_count <= 0:
+                reasons.append('No stock')
+            return f'❌ Hidden: {", ".join(reasons)}'
+    marketplace_status.short_description = 'Marketplace'
+
+    def cover_image_thumbnail(self, obj):
+        """Display cover image thumbnail in admin list view."""
+        if obj.cover_image:
+            return format_html(
+                '<img src="{}" width="50" height="70" style="object-fit: cover; border-radius: 4px;" />',
+                obj.cover_image.url
+            )
+        return "No Image"
+    cover_image_thumbnail.short_description = 'Cover'
+
+    def save_model(self, request, obj, form, change):
+        """Override save to ensure marketplace visibility for new books."""
+        if not change:  # Only for new books
+            if obj.stock_count == 0:
+                obj.stock_count = 10
+        super().save_model(request, obj, form, change)
+
+
+class EnhancedChangeList:
+    """Enhanced changelist that uses our table component"""
+    
+    def __init__(self, original_cl):
+        self.original_cl = original_cl
+        self.model_admin = original_cl.model_admin
+        self.request = original_cl.request
+        
+        # Copy all attributes from original changelist
+        for attr in dir(original_cl):
+            if not attr.startswith('_'):
+                setattr(self, attr, getattr(original_cl, attr))
+    
+    def get_table_config(self):
+        """Get table configuration for this model"""
+        from apps.core.models import TableConfiguration
+        
+        model_name = f"{self.model_admin.model._meta.app_label}.{self.model_admin.model._meta.model_name}"
+        
+        try:
+            config = TableConfiguration.objects.get(
+                model_name=model_name,
+                is_active=True
+            )
+            return config
+        except TableConfiguration.DoesNotExist:
+            # Create default config if not exists
+            return self.create_default_config()
+    
+    def create_default_config(self):
+        """Create default configuration for this model"""
+        from apps.core.models import TableConfiguration, TableColumn
+        
+        config = TableConfiguration.objects.create(
+            name=f"{self.model_admin.model._meta.verbose_name_plural} Management",
+            slug=f"{self.model_admin.model._meta.model_name}-management",
+            description=f"Enhanced table for {self.model_admin.model._meta.verbose_name_plural}",
+            model_name=f"{self.model_admin.model._meta.app_label}.{self.model_admin.model._meta.model_name}",
+            items_per_page=15,
+            enable_search=True,
+            enable_sorting=True,
+            enable_pagination=True,
+            mobile_card_view=True,
+            header_style='gradient',
+            row_striping=True,
+            hover_effects=True,
+            compact_mode=False,
+        )
+        
+        # Add columns based on list_display
+        for i, field_name in enumerate(self.model_admin.list_display):
+            if not callable(getattr(self.model_admin, field_name, None)):
+                TableColumn.objects.create(
+                    table_config=config,
+                    field_name=field_name,
+                    display_name=field_name.replace('_', ' ').title(),
+                    column_type='text',
+                    order=i + 1,
+                    sortable=True,
+                    searchable=True,
+                )
+        
+        return config
+    
+    def get_enhanced_context(self):
+        """Get context for enhanced template"""
+        config = self.get_table_config()
+        
+        # Get filtered queryset
+        queryset = self.get_queryset(self.request)
+        
+        # Apply search
+        search_query = self.request.GET.get('search', '')
+        if search_query and config.enable_search:
+            searchable_columns = config.columns.filter(searchable=True)
+            from django.db.models import Q
+            search_q = Q()
+            
+            for column in searchable_columns:
+                field_name = column.field_name
+                search_q |= Q(**{f"{field_name}__icontains": search_query})
+            
+            queryset = queryset.filter(search_q)
+        
+        # Apply filters
+        current_filters = {}
+        for filter_obj in config.filters.all():
+            filter_value = self.request.GET.get(filter_obj.field_name, '')
+            if filter_value:
+                current_filters[filter_obj.field_name] = filter_value
+                if filter_obj.filter_type == 'boolean':
+                    queryset = queryset.filter(**{filter_obj.field_name: filter_value.lower() == 'true'})
+                else:
+                    queryset = queryset.filter(**{filter_obj.field_name: filter_value})
+        
+        # Apply sorting
+        sort_field = self.request.GET.get('sort', 'title')
+        if sort_field.startswith('-'):
+            queryset = queryset.order_by(sort_field[1:])
+        else:
+            queryset = queryset.order_by(sort_field)
+        
+        # Pagination
+        from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+        paginator = Paginator(queryset, config.items_per_page)
+        page = self.request.GET.get('page', 1)
+        
+        try:
+            page_obj = paginator.page(page)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+        
+        # Create pagination object
+        pagination = TablePagination(paginator, int(page), page_obj)
+        
+        return {
+            'config': config,
+            'data': page_obj,
+            'pagination': pagination,
+            'search_query': search_query,
+            'current_filters': current_filters,
+            'user': self.request.user,
+            'cl': self.original_cl,  # Keep original changelist for compatibility
+        }
+
+
+class TablePagination:
+    """Helper class for pagination data"""
+    def __init__(self, paginator, current_page, current_page_obj):
+        self.total_pages = paginator.num_pages
+        self.current_page = current_page
+        self.total_items = paginator.count
+        self.has_previous = current_page_obj.has_previous()
+        self.has_next = current_page_obj.has_next()
+        self.previous_page = current_page_obj.previous_page_number() if self.has_previous else None
+        self.next_page = current_page_obj.next_page_number() if self.has_next else None
+        self.start_index = current_page_obj.start_index()
+        self.end_index = current_page_obj.end_index()
+        
+        # Create page range with smart pagination
+        if self.total_pages <= 10:
+            self.page_range = range(1, self.total_pages + 1)
+        else:
+            if current_page <= 5:
+                self.page_range = range(1, 8) + range(self.total_pages - 1, self.total_pages + 1)
+            elif current_page >= self.total_pages - 4:
+                self.page_range = range(1, 3) + range(self.total_pages - 6, self.total_pages + 1)
+            else:
+                self.page_range = range(1, 3) + range(current_page - 2, current_page + 3) + range(self.total_pages - 1, self.total_pages + 1)

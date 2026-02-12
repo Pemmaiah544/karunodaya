@@ -1,0 +1,419 @@
+{% extends "admin/change_list.html" %}
+{% load table_tags %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Standard Django Admin Enhancement - Clean & Professional */
+
+    /* Enhanced Table Container */
+    .results {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        margin-bottom: 20px;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Use global table styling from admin_custom.css */
+
+    /* DEBUG: First column fix - inline test */
+    #result_list tbody tr td:first-child a {
+        color: #4b5563 !important;
+        /* Tailwind gray-600 */
+        font-weight: 600 !important;
+        text-decoration: none !important;
+        display: block !important;
+    }
+
+    #result_list tbody tr td:first-child a:hover {
+        color: #ea580c !important;
+        text-decoration: underline !important;
+    }
+
+    /* Inventory-specific pagination styling */
+    #inventory-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background: #f8fafc;
+        border-radius: 8px;
+        margin-top: 16px;
+        border: 1px solid #e2e8f0;
+    }
+
+    #inventory-pagination .ip-left,
+    #inventory-pagination .ip-center,
+    #inventory-pagination .ip-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    #inventory-pagination label {
+        font-weight: 600;
+        color: #374151;
+    }
+
+    #inventory-pagination select {
+        padding: 6px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: white;
+        color: #374151;
+    }
+
+    #inventory-pagination .ip-btn {
+        padding: 6px 12px;
+        background: white;
+        color: #4b5563;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    #inventory-pagination .ip-btn:hover {
+        background: #fb923c;
+        color: white;
+        border-color: #fb923c;
+    }
+
+    #inventory-pagination .ip-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    #inventory-pagination .ip-page-info {
+        font-weight: 600;
+        color: #374151;
+    }
+
+    /* Standard Django Pagination Enhancement */
+    .paginator {
+        background: white;
+        border: 1px solid #e2e8f0;
+        padding: 10px 16px;
+        margin: 20px 0;
+        border-radius: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .paginator .this-page {
+        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-weight: 600;
+        border: none;
+    }
+
+    .paginator a:link,
+    .paginator a:visited {
+        background: #f8fafc;
+        color: #4b5563;
+        padding: 6px 12px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        border: 1px solid #d1d5db;
+        transition: all 0.2s ease;
+        margin: 0 2px;
+    }
+
+    .paginator a:hover {
+        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+        color: white;
+        border-color: #fb923c;
+        text-decoration: none;
+    }
+
+    .paginator .showall,
+    .paginator .last {
+        background: #f3f4f6;
+        color: #6b7280;
+        padding: 6px 12px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        border: 1px solid #d1d5db;
+        transition: all 0.2s ease;
+    }
+
+    .paginator .showall:hover,
+    .paginator .last:hover {
+        background: #e5e7eb;
+        color: #374151;
+        text-decoration: none;
+    }
+
+    /* Enhanced Search Bar */
+    #toolbar {
+        background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #fdba74;
+        box-shadow: 0 2px 4px rgba(251, 146, 60, 0.1);
+    }
+
+    #toolbar form {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    #searchbar {
+        flex: 1;
+        min-width: 250px;
+    }
+
+    #searchbar input[type="text"] {
+        width: 100%;
+        padding: 10px 16px;
+        border: 2px solid #fdba74;
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(251, 146, 60, 0.05);
+        transition: all 0.2s ease;
+    }
+
+    #searchbar input[type="text"]:focus {
+        outline: none;
+        border-color: #fb923c;
+        box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.1);
+    }
+
+    #toolbar form input[type="submit"] {
+        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(251, 146, 60, 0.3);
+    }
+
+    #toolbar form input[type="submit"]:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(251, 146, 60, 0.3);
+    }
+
+    /* Filter Sidebar */
+    #changelist-filter {
+        background: white;
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+    }
+
+    #changelist-filter h2 {
+        color: #7c2d12;
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #fb923c;
+    }
+
+    #changelist-filter h3 {
+        color: #c2410c;
+        font-size: 14px;
+        font-weight: 600;
+        margin-top: 12px;
+        margin-bottom: 8px;
+    }
+
+    #changelist-filter ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    #changelist-filter li {
+        margin-bottom: 4px;
+    }
+
+    #changelist-filter li a {
+        color: #6b7280;
+        text-decoration: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        display: block;
+        transition: all 0.2s ease;
+        font-size: 13px;
+    }
+
+    #changelist-filter li a:hover {
+        background: #fff7ed;
+        color: #fb923c;
+        text-decoration: none;
+    }
+
+    #changelist-filter li.selected a {
+        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+        color: white;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    /* Action Buttons */
+    .addlink {
+        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(251, 146, 60, 0.3);
+    }
+
+    .addlink:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(251, 146, 60, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    /* Object Tools */
+    .object-tools li a {
+        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 12px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(251, 146, 60, 0.3);
+    }
+
+    .object-tools li a:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(251, 146, 60, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    /* Image Thumbnails */
+    td img {
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+        max-width: 40px;
+        max-height: 60px;
+    }
+
+    td img:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .paginator {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        #toolbar form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        #searchbar {
+            min-width: auto;
+        }
+
+        #result_list {
+            font-size: 12px;
+        }
+
+        #result_list th,
+        #result_list td {
+            padding: 8px 12px;
+        }
+    }
+
+    /* Ensure no horizontal scroll */
+    #content {
+        overflow-x: hidden;
+    }
+
+    #content-main {
+        overflow-x: hidden;
+    }
+</style>
+{% endblock %}
+
+{% block pagination %}
+{% if per_page %}
+<!-- Inventory pagination for tables using per_page parameter -->
+<div id="inventory-pagination">
+    <div class="ip-left">
+        <label for="inventory-per-page">Rows per page:</label>
+        <select id="inventory-per-page" aria-label="Rows per page" onchange="changePerPage(this.value)">
+            {% with current=per_page|default:'5' %}
+            <option value="5" {% if current == '5' %}selected{% endif %}>5</option>
+            <option value="10" {% if current == '10' %}selected{% endif %}>10</option>
+            <option value="25" {% if current == '25' %}selected{% endif %}>25</option>
+            <option value="50" {% if current == '50' %}selected{% endif %}>50</option>
+            {% endwith %}
+        </select>
+
+        <script>
+            function changePerPage(perPage) {
+                const url = new URL(window.location);
+                url.searchParams.delete('p');
+                url.searchParams.set('per_page', perPage);
+                window.location.href = url.toString();
+            }
+        </script>
+    </div>
+
+    <div class="ip-center">
+        {% if cl.result_count %}
+        Showing {{ cl.result_start|default:1 }} to {{ cl.result_end|default:cl.result_count }} of {{ cl.result_count }}
+        {{ cl.opts.verbose_name_plural }}
+        {% else %}
+        No {{ cl.opts.verbose_name_plural }} found
+        {% endif %}
+    </div>
+
+    <div class="ip-right">
+        {% if cl.result_count %}
+        {% if cl.page_num > 1 %}
+        <a class="ip-btn"
+            href="?p={{ cl.page_num|add:'-1' }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if cl.query %}&{{ cl.query }}{% endif %}">Previous</a>
+        {% else %}
+        <span class="ip-btn disabled">Previous</span>
+        {% endif %}
+
+        <span class="ip-page-info">Page {{ cl.page_num }} of {{ cl.paginator.num_pages }}</span>
+
+        {% if cl.page_num < cl.paginator.num_pages %} <a class="ip-btn"
+            href="?p={{ cl.page_num|add:'1' }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if cl.query %}&{{ cl.query }}{% endif %}">
+            Next</a>
+            {% else %}
+            <span class="ip-btn disabled">Next</span>
+            {% endif %}
+            {% endif %}
+    </div>
+</div>
+{% else %}
+{{ block.super }}
+{% endif %}
+{% endblock %}

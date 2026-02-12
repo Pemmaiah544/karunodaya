@@ -1,0 +1,95 @@
+{% extends "portal/base.html" %}
+{% load static %}
+
+{% block title %}Update Delivery Address - Karunodaya{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+</style>
+{% endblock %}
+
+{% block header %}
+<div
+    class="fixed top-0 left-0 right-0 z-50 bg-white px-4 py-5 flex items-center justify-between border-b border-gray-50">
+    <a href="{% url 'portal:profile' %}" class="p-1">
+        <svg class="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+        </svg>
+    </a>
+    <h1 class="text-xl font-extrabold text-[#1a1c1e] tracking-tight">Delivery Address</h1>
+    <div class="w-6"></div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pt-6 pb-20 px-5">
+    <!-- Info Message -->
+    <div class="bg-orange-50 border border-orange-200 rounded-2xl p-5 mb-6">
+        <div class="flex gap-3">
+            <svg class="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+                <h3 class="font-bold text-orange-900 mb-1">Confirm Delivery Address</h3>
+                <p class="text-sm text-orange-700">Please review and confirm your delivery address. You can edit any
+                    field if needed.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Address Form -->
+    <form method="post" class="space-y-5">
+        {% csrf_token %}
+
+        <div>
+            <label for="phone_number" class="block text-sm font-bold text-gray-700 mb-2">Phone Number *</label>
+            <input type="tel" id="phone_number" name="phone_number" value="{{ parent_profile.phone_number }}" required
+                maxlength="15" pattern="[0-9]{10}"
+                class="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                placeholder="10-digit mobile number">
+        </div>
+
+        <div>
+            <label for="address" class="block text-sm font-bold text-gray-700 mb-2">Street Address *</label>
+            <textarea id="address" name="address" required rows="3"
+                class="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                placeholder="House/Flat No., Building Name, Street">{{ parent_profile.address }}</textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="city" class="block text-sm font-bold text-gray-700 mb-2">City *</label>
+                <input type="text" id="city" name="city" value="{{ parent_profile.city }}" required maxlength="100"
+                    class="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    placeholder="City">
+            </div>
+
+            <div>
+                <label for="state" class="block text-sm font-bold text-gray-700 mb-2">State *</label>
+                <input type="text" id="state" name="state" value="{{ parent_profile.state }}" required maxlength="100"
+                    class="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    placeholder="State">
+            </div>
+        </div>
+
+        <div>
+            <label for="pincode" class="block text-sm font-bold text-gray-700 mb-2">Pincode *</label>
+            <input type="text" id="pincode" name="pincode" value="{{ parent_profile.pincode }}" required
+                pattern="[0-9]{6}" maxlength="6"
+                class="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                placeholder="6-digit pincode">
+        </div>
+
+        <button type="submit"
+            class="w-full bg-[#F97316] hover:bg-[#EA580C] text-white font-black py-4 px-6 rounded-xl transition-all active:scale-95 shadow-[0_8px_20px_rgba(249,115,22,0.25)] mt-8">
+            Save & Continue
+        </button>
+    </form>
+</div>
+{% endblock %}

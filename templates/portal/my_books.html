@@ -1,166 +1,245 @@
 {% extends "portal/base.html" %}
 {% load static %}
 
-{% block title %}My Books - Karunodaya{% endblock %}
+{% block title %}Manage Subscriptions - Karunodaya{% endblock %}
+
+{% block extra_head %}
+<!-- Modern Typography -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .premium-card {
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
+    }
+
+    .modal-backdrop {
+        transition: opacity 0.3s ease-in-out;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .modal-hidden .modal-content {
+        transform: scale(0.9) translateY(20px);
+    }
+</style>
+{% endblock %}
+
+{% block header %}
+<div
+    class="fixed top-0 left-0 right-0 z-50 bg-white px-4 py-5 flex items-center justify-between border-b border-gray-50">
+    <a href="{% url 'portal:dashboard' %}" class="p-1">
+        <svg class="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+        </svg>
+    </a>
+    <h1 class="text-xl font-extrabold text-[#1a1c1e] tracking-tight">Manage Subscriptions</h1>
+    <button class="p-1">
+        <svg class="w-6 h-6 text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M10 12a2 2 0 114 0 2 2 0 01-4 0zM4 12a2 2 0 114 0 2 2 0 01-4 0zM16 12a2 2 0 114 0 2 2 0 01-4 0z" />
+        </svg>
+    </button>
+</div>
+{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-gray-900 mb-2">My Books</h1>
-    <p class="text-gray-600 mb-8">Manage your borrowed books and returns</p>
-
-    {% if error %}
-    <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded mb-6">
-        {{ error }}
-    </div>
-    {% endif %}
-
-    <!-- Active/Overdue Subscriptions -->
-    <div class="mb-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">Currently Borrowed</h2>
-
-        {% if active_cycles %}
-            <div class="space-y-6">
-                {% for cycle in active_cycles %}
-                <div class="bg-white rounded-lg shadow overflow-hidden">
-                    <!-- Cycle Header -->
-                    <div class="bg-gradient-to-r from-purple-600 to-purple-700 p-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-white font-semibold text-lg">{{ cycle.child.name }}</h3>
-                                <p class="text-purple-100 text-sm">{{ cycle.plan.name }}</p>
-                            </div>
-                            <div class="text-right">
-                                {% if cycle.status == 'OVERDUE' %}
-                                <span class="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                                    Overdue
-                                </span>
-                                {% else %}
-                                <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                                    Active
-                                </span>
-                                {% endif %}
-                            </div>
+<div class="pt-6 pb-20 px-5">
+    {% if active_cycles %}
+    <div class="space-y-8">
+        {% for cycle in active_cycles %}
+        <div class="bg-white rounded-[2.5rem] premium-card border border-gray-50/50 overflow-hidden">
+            <div class="p-7">
+                <div class="flex items-center justify-between mb-9">
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="w-16 h-16 bg-[#FFF4E5] rounded-[1.5rem] flex items-center justify-center text-[#F97316] font-black text-3xl shadow-sm">
+                            {{ cycle.child.name|first|upper }}</div>
+                        <div>
+                            <h2 class="text-2xl font-black text-[#1a1c1e] tracking-tight">{{ cycle.child.name }}'s Box
+                            </h2>
+                            <p class="text-[#F97316] font-bold text-sm mt-0.5">{{ cycle.plan.name }}</p>
                         </div>
                     </div>
-
-                    <!-- Cycle Details -->
-                    <div class="p-4">
-                        <!-- Dates -->
-                        <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
-                            <div>
-                                <span class="text-gray-600">Issue Date:</span>
-                                <span class="font-medium text-gray-900">{{ cycle.issue_date }}</span>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Return By:</span>
-                                <span class="font-medium {% if cycle.status == 'OVERDUE' %}text-red-600{% else %}text-gray-900{% endif %}">
-                                    {{ cycle.expected_return_date }}
-                                </span>
-                            </div>
-                        </div>
-
-                        {% if cycle.late_fee > 0 %}
-                        <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                            <div class="flex items-center justify-between">
-                                <span class="text-red-900 font-medium">Late Fee:</span>
-                                <span class="text-red-900 font-bold text-lg">₹{{ cycle.late_fee }}</span>
-                            </div>
-                            <p class="text-xs text-red-700 mt-1">
-                                ₹50/day after 7-day grace period (max ₹500)
-                            </p>
-                        </div>
-                        {% endif %}
-
-                        <!-- Books List -->
-                        <div class="mb-4">
-                            <h4 class="font-semibold text-gray-900 mb-2">Books ({{ cycle.physical_copies.count }})</h4>
-                            <div class="space-y-2">
-                                {% for copy in cycle.physical_copies.all %}
-                                <div class="flex items-center bg-gray-50 rounded-lg p-3">
-                                    {% if copy.book.cover_image %}
-                                    <img src="{{ copy.book.cover_image.url }}"
-                                         alt="{{ copy.book.title }}"
-                                         class="w-12 h-16 object-cover rounded mr-3">
-                                    {% else %}
-                                    <div class="w-12 h-16 bg-gray-200 rounded flex items-center justify-center mr-3">
-                                        <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
-                                        </svg>
-                                    </div>
-                                    {% endif %}
-                                    <div class="flex-1">
-                                        <p class="font-medium text-gray-900">{{ copy.book.title }}</p>
-                                        <p class="text-sm text-gray-600">{{ copy.book.author }}</p>
-                                        <p class="text-xs text-gray-500">Barcode: {{ copy.barcode }}</p>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-
-                        <!-- Return Form -->
-                        <form method="POST" action="{% url 'portal:initiate_return' cycle.id %}"
-                              class="border-t border-gray-200 pt-4">
-                            {% csrf_token %}
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Condition Notes (Optional):
-                            </label>
-                            <textarea name="condition_notes" rows="2"
-                                      placeholder="Any damage or notes about book condition..."
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent mb-3"></textarea>
-                            <button type="submit"
-                                    class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg">
-                                Mark as Returned
-                            </button>
-                        </form>
+                    <div class="self-start mt-2">
+                        <span
+                            class="px-3.5 py-1 bg-[#FFF4E5] text-[#F97316] text-[10px] font-black tracking-widest rounded-full uppercase">
+                            {{ cycle.get_status_display }}
+                        </span>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-                <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                </svg>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">No books currently borrowed</h3>
-                <p class="text-gray-600 mb-4">Start a subscription to get curated books!</p>
-                <a href="{% url 'portal:subscribe' %}"
-                   class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded-lg">
-                    Subscribe Now
-                </a>
-            </div>
-        {% endif %}
-    </div>
 
-    <!-- Recently Returned -->
-    {% if returned_cycles %}
-    <div>
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">Recently Returned</h2>
-        <div class="space-y-4">
-            {% for cycle in returned_cycles %}
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <div class="flex items-center justify-between mb-2">
-                    <div>
-                        <h3 class="font-semibold text-gray-900">{{ cycle.child.name }}</h3>
-                        <p class="text-sm text-gray-600">{{ cycle.plan.name }}</p>
-                    </div>
-                    <span class="bg-gray-500 text-white px-3 py-1 rounded-full text-sm">
-                        Returned
-                    </span>
+                <div class="mb-5 flex justify-between items-end">
+                    <h3 class="text-lg font-black text-[#1a1c1e] tracking-tight">Current Books</h3>
+                    <p class="text-[10px] font-bold text-[#b0b9c1] uppercase tracking-[0.15em]">
+                        {{ cycle.books_count }} OF {{ cycle.plan.books_per_month }} BOOKS
+                    </p>
                 </div>
-                <div class="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                    <div>Issue: {{ cycle.issue_date }}</div>
-                    <div>Returned: {{ cycle.actual_return_date }}</div>
-                    <div>Books: {{ cycle.physical_copies.count }}</div>
-                    {% if cycle.late_fee > 0 %}
-                    <div class="text-red-600 font-medium">Late Fee: ₹{{ cycle.late_fee }}</div>
-                    {% endif %}
+
+                <div class="flex overflow-x-auto gap-5 -mx-7 px-7 pb-6 hide-scrollbar">
+                    {% for physical_copy in cycle.physical_copies.all %}
+                    <div class="flex-none w-36 group">
+                        <div
+                            class="aspect-[1/1.3] bg-[#f8f9fb] rounded-[1.5rem] p-2.5 mb-3 shadow-[0_5px_15px_rgba(0,0,0,0.03)] border border-gray-100/50 flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg active:scale-95 overflow-hidden">
+                            {% if physical_copy.book.cover_image %}
+                            <img src="{{ physical_copy.book.cover_image.url }}" alt="{{ physical_copy.book.title }}"
+                                class="w-full h-full object-cover rounded-xl shadow-sm">
+                            {% else %}
+                            <div
+                                class="w-full h-full flex flex-col items-center justify-center bg-teal-600/90 text-white p-4 text-center rounded-xl shadow-inner">
+                                <p class="text-[9px] font-black uppercase mb-1.5 leading-tight">{{
+                                    physical_copy.book.title }}</p>
+                                <div class="w-6 h-0.5 bg-white/20 my-1.5"></div>
+                                <p class="text-[8px] font-medium opacity-80">{{ physical_copy.book.author }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <h4 class="text-xs font-bold text-[#1a1c1e] line-clamp-2 leading-snug px-1">{{
+                            physical_copy.book.title }}</h4>
+                        <p class="text-[10px] text-gray-400 mt-1 line-clamp-1 italic px-1 font-medium">{{
+                            physical_copy.book.author }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="flex items-center justify-between mt-2 pt-7 border-t border-gray-50/80">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <span class="text-[14px] font-bold text-[#7d858d]">
+                            Return by {{ cycle.expected_return_date|date:"M d, Y" }}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2 pr-2">
+                        <div
+                            class="w-2.5 h-2.5 rounded-full {% if cycle.is_overdue %}bg-red-500{% else %}bg-[#F97316]{% endif %} animate-pulse">
+                        </div>
+                        <span
+                            class="text-[12px] font-black {% if cycle.is_overdue %}text-red-500{% else %}text-[#F97316]{% endif %} uppercase tracking-wide">
+                            {% if cycle.is_overdue %}OVERDUE{% else %}ON TIME{% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mt-9">
+                    <button type="button" onclick="showReturnModal('{{ cycle.id }}')"
+                        class="w-full bg-[#F97316] hover:bg-[#EA580C] active:scale-95 text-white py-4 px-4 rounded-[1.5rem] font-black text-[14px] transition-all flex items-center justify-center gap-2 shadow-[0_12px_30px_rgba(249,115,22,0.25)]">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M19,8V6.1C19,4.4,17.6,3,15.9,3H8.1C6.4,3,5,4.4,5,6.1V8H19z M12,18l-4-4h2.5V10h3v4H16L12,18z M19,21c1.1,0,2-0.9,2-2V9H3v10 c0,1.1,0.9,2,2,2H19z" />
+                        </svg>
+                        Return Box
+                    </button>
+                    <button type="button" data-renew-url="{% url 'portal:subscribe_child' cycle.child.id %}"
+                        onclick="showRenewModal(this.dataset.renewUrl)"
+                        class="w-full bg-[#f8fafc] hover:bg-[#f1f5f9] active:scale-95 text-[#475569] py-4 px-4 rounded-[1.5rem] font-black text-[14px] transition-all flex items-center justify-center gap-2 border border-gray-100">
+                        <svg class="w-5 h-5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Renew Plan
+                    </button>
+                    <form id="return-form-{{ cycle.id }}" action="{% url 'portal:initiate_return' cycle.id %}"
+                        method="post" class="hidden">{% csrf_token %}</form>
                 </div>
             </div>
-            {% endfor %}
         </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="min-h-[70vh] flex flex-col items-center justify-center text-center p-10">
+        <div class="w-24 h-24 bg-[#f8fafc] rounded-[2rem] flex items-center justify-center mb-8 shadow-inner">
+            <svg class="w-12 h-12 text-[#cbd5e1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.247 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+        </div>
+        <h3 class="text-2xl font-black text-[#1a1c1e] mb-3 tracking-tight">No active subscriptions</h3>
+        <p class="text-gray-500 mb-10 max-w-xs mx-auto text-sm font-medium leading-relaxed opacity-80">You don't have
+            any
+            books borrowed at the moment. Explore our curated collections!</p>
+        <a href="{% url 'portal:marketplace' %}"
+            class="bg-[#F97316] text-white font-black py-5 px-14 rounded-[1.5rem] hover:shadow-2xl transition-all shadow-[0_12px_40px_rgba(249,115,22,0.35)] active:scale-95">Browse
+            Books</a>
     </div>
     {% endif %}
 </div>
+
+<div id="confirmation-modal" class="fixed inset-0 z-[100] flex items-center justify-center px-6 modal-hidden">
+    <div class="absolute inset-0 bg-black/60 modal-backdrop" onclick="closeModal()"></div>
+    <div class="bg-white w-full max-w-[320px] rounded-[2rem] p-6 relative z-10 modal-content shadow-2xl">
+        <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center mb-4 mx-auto">
+            <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+        </div>
+        <h3 class="text-lg font-black text-[#1a1c1e] text-center mb-2">Are you sure?</h3>
+        <p id="modal-message" class="text-gray-500 text-center text-[13px] font-medium leading-relaxed mb-6 px-1"></p>
+        <div class="flex gap-3">
+            <button onclick="closeModal()"
+                class="flex-1 bg-gray-50 text-gray-400 py-3.5 rounded-xl font-bold text-[14px] active:scale-95 transition-transform border border-gray-100/50">Cancel</button>
+            <button id="modal-confirm-btn"
+                class="flex-1 bg-[#F97316] text-white py-3.5 rounded-xl font-bold text-[14px] active:scale-95 transition-transform shadow-[0_8px_15px_rgba(249,115,22,0.2)]">Yes</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('confirmation-modal');
+    const messageEl = document.getElementById('modal-message');
+    const confirmBtn = document.getElementById('modal-confirm-btn');
+    let currentCycleId = null;
+    let currentRenewUrl = null;
+
+    function showReturnModal(cycleId) {
+        currentCycleId = cycleId;
+        currentRenewUrl = null;
+        messageEl.innerText = "Are you sure you want to return before the subscription end date?";
+        confirmBtn.onclick = handleConfirm;
+        modal.classList.remove('modal-hidden');
+    }
+
+    function showRenewModal(url) {
+        currentRenewUrl = url;
+        currentCycleId = null;
+        messageEl.innerText = "Are you sure you want to renew?";
+        confirmBtn.onclick = handleConfirm;
+        modal.classList.remove('modal-hidden');
+    }
+
+    function handleConfirm() {
+        if (currentCycleId) {
+            document.getElementById(`return-form-${currentCycleId}`).submit();
+        } else if (currentRenewUrl) {
+            window.location.href = currentRenewUrl;
+        }
+    }
+
+    function closeModal() {
+        modal.classList.add('modal-hidden');
+    }
+</script>
 {% endblock %}
