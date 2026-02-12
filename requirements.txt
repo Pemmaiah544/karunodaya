@@ -19,6 +19,7 @@ python-decouple==3.8
 
 # Database (for production)
 libsql-experimental==0.0.55
+psycopg2-binary==2.9.9
 
 # Development tools
 django-debug-toolbar==4.4.6
