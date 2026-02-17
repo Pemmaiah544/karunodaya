@@ -515,6 +515,10 @@
             </div>
         </div>
 
+        <div id="retry-prompt" class="hidden text-center py-3">
+            <p class="text-sm text-orange-600 font-medium">Not detecting your voice. Please read louder or check your microphone.</p>
+        </div>
+
         <div id="reading-controls" class="flex gap-2">
             <button id="finish-btn"
                 class="flex-[2] bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-full shadow-lg transition-transform active:scale-95">
@@ -597,7 +601,12 @@
                     <!-- Dynamic content will be inserted here -->
                 </div>
 
-                <div class="w-full grid grid-cols-2 gap-4 mt-4 border-t border-gray-50 pt-6">
+                <!-- Average WPM comparison -->
+                <div id="avg-wpm-compare" class="w-full mt-4">
+                    <!-- Dynamic content inserted by JS -->
+                </div>
+
+                <div class="w-full grid grid-cols-3 gap-4 mt-4 border-t border-gray-50 pt-6">
                     <div class="text-center">
                         <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Accuracy</p>
                         <p class="text-xl font-bold text-green-600"><span id="result-accuracy">0</span>%</p>
@@ -606,6 +615,18 @@
                         <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Time Taken</p>
                         <p class="text-xl font-bold text-gray-800"><span id="result-time">0</span>s</p>
                     </div>
+                    <div class="text-center">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Words Read</p>
+                        <p class="text-xl font-bold text-blue-600"><span id="result-words-read">0</span>/<span id="result-words-total">0</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Missed Words Section -->
+            <div id="missed-words-section" class="hidden bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Missed / Skipped Words</p>
+                <div id="missed-words-list" class="flex flex-wrap gap-2">
+                    <!-- Dynamic content inserted by JS -->
                 </div>
             </div>
 
@@ -722,6 +743,44 @@
     let recognition;
     let isReading = false;
 
+    // Child info for benchmarks
+    const childAge = parseInt("{{ child.age|default:8 }}", 10);
+    const childGrade = '{{ child.grade|default:"GRADE_3" }}';
+    const childGradeDisplay = '{{ child.get_grade_display|default:"Grade 3" }}';
+
+    // Research-based WPM benchmarks by grade
+    const gradeBenchmarks = {
+        'Pre-K': { min: 0, avg: 10, max: 20, description: "pre-reader" },
+        'Kindergarten': { min: 20, avg: 40, max: 60, description: "emerging reader" },
+        'Grade 1': { min: 53, avg: 60, max: 111, description: "beginning reader" },
+        'Grade 2': { min: 89, avg: 100, max: 149, description: "developing reader" },
+        'Grade 3': { min: 107, avg: 115, max: 162, description: "fluent reader" },
+        'Grade 4': { min: 123, avg: 130, max: 180, description: "confident reader" },
+        'Grade 5': { min: 139, avg: 160, max: 194, description: "proficient reader" },
+        'Grade 6': { min: 150, avg: 170, max: 204, description: "advanced reader" },
+        'Grade 7': { min: 150, avg: 190, max: 204, description: "skilled reader" },
+        'Grade 8': { min: 150, avg: 190, max: 204, description: "accomplished reader" }
+    };
+
+    // Age-based benchmark lookup (used when grade not set)
+    const ageBenchmarks = {
+        3: gradeBenchmarks['Pre-K'],
+        4: gradeBenchmarks['Pre-K'],
+        5: gradeBenchmarks['Kindergarten'],
+        6: gradeBenchmarks['Grade 1'],
+        7: gradeBenchmarks['Grade 2'],
+        8: gradeBenchmarks['Grade 3'],
+        9: gradeBenchmarks['Grade 4'],
+        10: gradeBenchmarks['Grade 5'],
+        11: gradeBenchmarks['Grade 6'],
+        12: gradeBenchmarks['Grade 7'],
+        13: gradeBenchmarks['Grade 8'],
+        14: gradeBenchmarks['Grade 8']
+    };
+
+    // Pick benchmark: prefer grade, fall back to age
+    const benchmark = gradeBenchmarks[childGradeDisplay] || ageBenchmarks[childAge] || gradeBenchmarks['Grade 3'];
+
     const textDisplay = document.getElementById('reading-text-display');
     const rawText = passageText.trim().replace(/\r?\n|\r/g, ' ');
     const words = rawText.split(' ').filter(w => w.length > 0);
@@ -740,6 +799,10 @@
 
     let currentWordIndex = 0;
     let lastMatchTime = Date.now();
+    const matchedWords = new Set(); // Track which words were actually read
+
+    // Pre-clean all target words for faster matching
+    const cleanWords = words.map(w => w.toLowerCase().replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim());
 
     // Initialize Speech Recognition
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -759,36 +822,93 @@
             hideRetry();
 
             for (let i = event.resultIndex; i < event.results.length; ++i) {
+                const isFinal = event.results[i].isFinal;
                 const transcript = event.results[i][0].transcript.toLowerCase();
                 const spokenWords = transcript.split(/\s+/).filter(w => w.length > 0);
 
-                spokenWords.forEach(sWord => {
-                    const cleanSWord = sWord.replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
-                    if (cleanSWord.length < 1) return;
+                if (isFinal) {
+                    // FINAL results: match words and mark them as read
+                    spokenWords.forEach(sWord => {
+                        const cleanSWord = sWord.replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
+                        if (cleanSWord.length < 1) return;
 
-                    // Look ahead logic - skip ahead up to 10 words if needed
-                    const searchRange = 10;
-                    for (let j = 0; j < searchRange; j++) {
-                        let targetIdx = currentWordIndex + j;
-                        if (targetIdx >= words.length) break;
+                        let matched = false;
 
-                        let targetOriginal = words[targetIdx];
-                        let targetWord = targetOriginal.toLowerCase().replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
+                        // TIER 1: Near window (0-4 words ahead) — fuzzy matching
+                        for (let j = 0; j < 5 && !matched; j++) {
+                            let targetIdx = currentWordIndex + j;
+                            if (targetIdx >= words.length) break;
 
-                        // Robust matching: Exact match OR prefix match (for partial word detection)
-                        // If spoken word is at least 3 chars AND matches start of target
-                        const isMatch = targetWord === cleanSWord ||
-                            (cleanSWord.length >= 3 && targetWord.startsWith(cleanSWord)) ||
-                            (targetWord.length >= 5 && cleanSWord.length >= 4 && levenshteinDistance(targetWord, cleanSWord) <= 2);
+                            const targetWord = cleanWords[targetIdx];
+                            const maxDistance = targetWord.length <= 4 ? 1 : 2;
+                            const isMatch = targetWord === cleanSWord ||
+                                (cleanSWord.length >= 3 && targetWord.startsWith(cleanSWord)) ||
+                                (targetWord.length >= 4 && cleanSWord.length >= 3 && levenshteinDistance(targetWord, cleanSWord) <= maxDistance);
 
-                        if (isMatch) {
-                            highlightRead(targetIdx);
-                            currentWordIndex = targetIdx + 1;
-                            lastMatchTime = Date.now();
-                            break;
+                            if (isMatch) {
+                                matchedWords.add(targetIdx);
+                                highlightWord(targetIdx);
+
+                                currentWordIndex = targetIdx + 1;
+                                lastMatchTime = Date.now();
+                                showCurrentWord(currentWordIndex);
+                                matched = true;
+                            }
+                        }
+
+                        // TIER 2: Far window (5-20 words ahead) — exact match only
+                        // Handles skipped words / jumped to another sentence
+                        if (!matched && cleanSWord.length >= 3) {
+                            for (let j = 5; j < 20; j++) {
+                                let targetIdx = currentWordIndex + j;
+                                if (targetIdx >= words.length) break;
+
+                                if (cleanWords[targetIdx] === cleanSWord) {
+                                    matchedWords.add(targetIdx);
+                                    highlightWord(targetIdx);
+
+                                    // Don't auto-fill the gap — child clearly skipped those words
+                                    currentWordIndex = targetIdx + 1;
+                                    lastMatchTime = Date.now();
+                                    showCurrentWord(currentWordIndex);
+                                    matched = true;
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    // INTERIM results: only update the current-word indicator, don't mark as read
+                    const lastSpoken = spokenWords[spokenWords.length - 1];
+                    if (lastSpoken) {
+                        const cleanSWord = lastSpoken.replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
+                        if (cleanSWord.length >= 2) {
+                            // Search near (fuzzy) + far (exact) for current indicator
+                            let found = false;
+                            for (let j = 0; j < 5 && !found; j++) {
+                                let targetIdx = currentWordIndex + j;
+                                if (targetIdx >= words.length) break;
+                                const targetWord = cleanWords[targetIdx];
+                                if (targetWord === cleanSWord || (cleanSWord.length >= 3 && targetWord.startsWith(cleanSWord))) {
+                                    showCurrentWord(targetIdx);
+                                    lastMatchTime = Date.now();
+                                    found = true;
+                                }
+                            }
+                            if (!found && cleanSWord.length >= 3) {
+                                for (let j = 5; j < 20; j++) {
+                                    let targetIdx = currentWordIndex + j;
+                                    if (targetIdx >= words.length) break;
+                                    if (cleanWords[targetIdx] === cleanSWord) {
+                                        showCurrentWord(targetIdx);
+                                        lastMatchTime = Date.now();
+                                        break;
+                                    }
+                                }
+                            }
                         }
                     }
-                });
+                }
             }
         };
 
@@ -829,21 +949,24 @@
         };
     }
 
-    function highlightRead(index) {
-        for (let i = 0; i <= index; i++) {
-            const el = document.getElementById(`word-${i}`);
-            if (el) {
-                el.classList.add('word-read');
-                el.classList.remove('word-current');
-            }
+    function highlightWord(index) {
+        // Highlight only the specific word that was actually read
+        const el = document.getElementById(`word-${index}`);
+        if (el) {
+            el.classList.add('word-read');
+            el.classList.remove('word-current');
         }
+    }
 
-        const next = document.getElementById(`word-${index + 1}`);
-        if (next) {
+    function showCurrentWord(index) {
+        // Remove word-current from all previous words
+        document.querySelectorAll('.word-current').forEach(el => el.classList.remove('word-current'));
+
+        const next = document.getElementById(`word-${index}`);
+        if (next && !next.classList.contains('word-read')) {
             next.classList.add('word-current');
-            // Smoothly scroll the text display to keep the current word visible
             next.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-        } else if (index === words.length - 1) {
+        } else if (index >= words.length) {
             // Reached the end
             setTimeout(() => {
                 finishBtn.click();
@@ -852,11 +975,13 @@
     }
 
     function showRetry() {
-        document.getElementById('retry-prompt').classList.remove('hidden');
+        const el = document.getElementById('retry-prompt');
+        if (el) el.classList.remove('hidden');
     }
 
     function hideRetry() {
-        document.getElementById('retry-prompt').classList.add('hidden');
+        const el = document.getElementById('retry-prompt');
+        if (el) el.classList.add('hidden');
     }
 
     // Interest Area Logic
@@ -1008,34 +1133,16 @@
     }
 
     function processResults(duration) {
-        // Calculate Accuracy based on real-time matched words
-        const matchedWordsCount = document.querySelectorAll('.word-read').length;
-        let accuracy = Math.round((matchedWordsCount / words.length) * 100);
+        // Calculate Accuracy based on actually matched words (not all highlighted)
+        const actualMatchedCount = matchedWords.size;
+        let accuracy = Math.round((actualMatchedCount / words.length) * 100);
 
         // Safety check if STT was very poor but child definitely read
         if (accuracy < 30 && duration > 10) accuracy = 85;
         if (accuracy > 100) accuracy = 100;
 
-        const wpm = Math.round(wordCountTotal / (duration / 60));
-
-        // Grade-specific WPM benchmarks
-        const gradeBenchmarks = {
-            'Grade 1': { min: 30, avg: 50, max: 80, description: "beginning reader" },
-            'Grade 2': { min: 40, avg: 65, max: 90, description: "developing reader" },
-            'Grade 3': { min: 50, avg: 80, max: 110, description: "fluent reader" },
-            'Grade 4': { min: 60, avg: 90, max: 120, description: "confident reader" },
-            'Grade 5': { min: 70, avg: 100, max: 140, description: "proficient reader" },
-            'Grade 6': { min: 80, avg: 110, max: 150, description: "advanced reader" },
-            'Grade 7': { min: 90, avg: 120, max: 160, description: "skilled reader" },
-            'Grade 8': { min: 100, avg: 130, max: 170, description: "accomplished reader" },
-            'Grade 9': { min: 110, avg: 140, max: 180, description: "experienced reader" },
-            'Grade 10': { min: 120, avg: 150, max: 190, description: "mature reader" }
-        };
-
-        // Get child's grade
-        const childGrade = '{{ child.grade|default:"GRADE_3" }}';
-        const childGradeDisplay = '{{ child.get_grade_display|default:"Grade 3" }}';
-        const benchmark = gradeBenchmarks[childGradeDisplay] || gradeBenchmarks['Grade 3'];
+        // WPM based on words actually read, not total passage words
+        const wpm = Math.round(actualMatchedCount / (duration / 60));
 
         // Analyze performance against grade benchmarks
         let performance = '';
@@ -1200,10 +1307,69 @@
                 if (benchmarkInfo) {
                     benchmarkInfo.innerHTML = `
                         <div class="bg-gray-50 rounded-lg p-3 mb-4">
-                            <p class="text-sm text-gray-600 font-medium">Grade ${childGradeDisplay} Reading Range: <span class="font-bold text-gray-900">${benchmark.min}-${benchmark.max} WPM</span></p>
+                            <p class="text-sm text-gray-600 font-medium">${childGradeDisplay} Reading Range: <span class="font-bold text-gray-900">${benchmark.min}-${benchmark.max} WPM</span></p>
                             <p class="text-xs text-gray-500 mt-1">Current: <span class="font-bold">${performance}</span> (${wpm} WPM)</p>
                         </div>
                     `;
+                }
+
+                // Average WPM comparison bar
+                const avgCompare = document.getElementById('avg-wpm-compare');
+                if (avgCompare) {
+                    const scaleMax = benchmark.max * 1.1; // slight headroom
+                    const childPercent = Math.min((wpm / scaleMax) * 100, 100);
+                    const avgPercent = Math.min((benchmark.avg / scaleMax) * 100, 100);
+                    const minPercent = Math.min((benchmark.min / scaleMax) * 100, 100);
+                    const barColor = wpm >= benchmark.avg ? '#10b981' : (wpm >= benchmark.min ? '#f59e0b' : '#ef4444');
+                    const ageLabel = childAge ? `Age ${childAge}` : childGradeDisplay;
+                    avgCompare.innerHTML = `
+                        <div class="bg-gray-50 rounded-xl p-4">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">vs ${ageLabel} Average (${benchmark.avg} WPM)</p>
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="text-xs font-bold text-gray-500 w-10">You</span>
+                                <div class="flex-1 relative h-4 bg-gray-200 rounded-full">
+                                    <div class="absolute h-full rounded-full transition-all duration-1000" style="width: ${childPercent}%; background: ${barColor};"></div>
+                                </div>
+                                <span class="text-xs font-bold text-gray-900 w-12 text-right">${wpm}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs font-bold text-gray-400 w-10">Avg</span>
+                                <div class="flex-1 relative h-4 bg-gray-200 rounded-full">
+                                    <div class="absolute h-full rounded-full bg-blue-400" style="width: ${avgPercent}%;"></div>
+                                </div>
+                                <span class="text-xs font-bold text-blue-600 w-12 text-right">${benchmark.avg}</span>
+                            </div>
+                            <div class="flex justify-between mt-2">
+                                <span class="text-[10px] text-gray-400">Min: ${benchmark.min}</span>
+                                <span class="text-[10px] text-gray-400">Max: ${benchmark.max}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Words read count
+                const wordsReadEl = document.getElementById('result-words-read');
+                const wordsTotalEl = document.getElementById('result-words-total');
+                if (wordsReadEl) wordsReadEl.textContent = matchedWords.size;
+                if (wordsTotalEl) wordsTotalEl.textContent = words.length;
+
+                // Missed words section — only words within the range the child attempted
+                const missedSection = document.getElementById('missed-words-section');
+                const missedListEl = document.getElementById('missed-words-list');
+                if (missedSection && missedListEl) {
+                    const missedWordsList = [];
+                    const readUpTo = currentWordIndex; // how far the child got
+                    for (let idx = 0; idx < readUpTo && idx < words.length; idx++) {
+                        if (!matchedWords.has(idx)) {
+                            missedWordsList.push(words[idx]);
+                        }
+                    }
+                    if (missedWordsList.length > 0) {
+                        missedSection.classList.remove('hidden');
+                        missedListEl.innerHTML = missedWordsList.map(w =>
+                            `<span class="inline-block px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-sm font-medium border border-red-100">${w}</span>`
+                        ).join('');
+                    }
                 }
             })
             .catch(error => {
@@ -1214,7 +1380,8 @@
             });
     }
 
-    document.getElementById('see-recommendations-btn').addEventListener('click', () => {
+    const seeRecsBtn = document.getElementById('see-recommendations-btn');
+    if (seeRecsBtn) seeRecsBtn.addEventListener('click', () => {
         document.getElementById('step-4').classList.add('hidden');
         document.getElementById('step-5').classList.remove('hidden');
 

@@ -442,7 +442,12 @@ class FluencyCheckView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
         if lang not in ['EN', 'HI', 'KN']:
             lang = 'EN'
             
-        passage_idx = int(self.request.GET.get('p', 0))
+        import random
+        passage_idx = self.request.GET.get('p')
+        if passage_idx is not None:
+            passage_idx = int(passage_idx)
+        else:
+            passage_idx = random.randint(0, 99)  # random pick, get_passage_for_grade will cycle via modulo
         passage = get_passage_for_grade(child.grade, lang=lang, passage_idx=passage_idx)
         
         context['passage'] = passage
@@ -475,11 +480,25 @@ def fluency_check_save(request, child_id):
             if gaps:
                 child.reading_gaps = gaps
             
-            # Determine difficulty level based on WPM and Grade
+            # Determine difficulty level based on WPM and grade-specific benchmarks
+            # Research-based oral reading fluency norms (min, avg, max WPM)
+            grade_benchmarks = {
+                'PRE_K': (0, 10, 20),
+                'KINDERGARTEN': (20, 40, 60),
+                'GRADE_1': (53, 60, 111),
+                'GRADE_2': (89, 100, 149),
+                'GRADE_3': (107, 115, 162),
+                'GRADE_4': (123, 130, 180),
+                'GRADE_5': (139, 160, 194),
+                'GRADE_6': (150, 170, 204),
+                'GRADE_7': (150, 190, 204),
+                'GRADE_8': (150, 190, 204),
+            }
             wpm_val = int(float(wpm))
-            if wpm_val < 40:
+            benchmark = grade_benchmarks.get(child.grade, (107, 115, 162))
+            if wpm_val < benchmark[0]:
                 child.reading_difficulty_level = 'BEGINNER'
-            elif wpm_val < 80:
+            elif wpm_val < benchmark[1]:
                 child.reading_difficulty_level = 'INTERMEDIATE'
             else:
                 child.reading_difficulty_level = 'ADVANCED'
