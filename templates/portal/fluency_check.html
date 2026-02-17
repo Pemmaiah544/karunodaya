@@ -363,12 +363,12 @@
             <div class="mb-8">
                 <div class="flex justify-between items-end mb-4">
                     <h3 class="font-bold text-gray-900">Interest Areas</h3>
-                    <span class="text-[10px] font-bold text-orange-500">Pick as many as you like</span>
+                    <span class="text-[10px] font-bold text-orange-500">Pick one for your story</span>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <!-- Adventure -->
-                    <button onclick="toggleInterest(this)"
+                    <button onclick="toggleInterest(this)" data-interest="adventure"
                         class="interest-btn group border-2 border-orange-500 bg-orange-50/30 rounded-3xl p-4 flex flex-col items-center gap-3 transition-all duration-200">
                         <div
                             class="w-14 h-14 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
@@ -378,7 +378,7 @@
                     </button>
 
                     <!-- Animals -->
-                    <button onclick="toggleInterest(this)"
+                    <button onclick="toggleInterest(this)" data-interest="animals"
                         class="interest-btn group border-2 border-gray-100 bg-white hover:border-green-200 rounded-3xl p-4 flex flex-col items-center gap-3 transition-all duration-200">
                         <div
                             class="w-14 h-14 rounded-full bg-green-100 text-green-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
@@ -388,7 +388,7 @@
                     </button>
 
                     <!-- Space -->
-                    <button onclick="toggleInterest(this)"
+                    <button onclick="toggleInterest(this)" data-interest="space"
                         class="interest-btn group border-2 border-gray-100 bg-white hover:border-purple-200 rounded-3xl p-4 flex flex-col items-center gap-3 transition-all duration-200">
                         <div
                             class="w-14 h-14 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
@@ -398,7 +398,7 @@
                     </button>
 
                     <!-- Fairy Tales -->
-                    <button onclick="toggleInterest(this)"
+                    <button onclick="toggleInterest(this)" data-interest="fairy_tales"
                         class="interest-btn group border-2 border-gray-100 bg-white hover:border-pink-200 rounded-3xl p-4 flex flex-col items-center gap-3 transition-all duration-200">
                         <div
                             class="w-14 h-14 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
@@ -515,8 +515,8 @@
             </div>
         </div>
 
-        <div id="retry-prompt" class="hidden text-center py-3">
-            <p class="text-sm text-orange-600 font-medium">Not detecting your voice. Please read louder or check your microphone.</p>
+        <div id="retry-prompt" class="hidden fixed top-0 left-0 right-0 z-50 bg-red-500 text-white text-center py-3 px-4 shadow-lg">
+            <p class="text-sm font-bold">Not detecting voice. Please read louder or check your microphone.</p>
         </div>
 
         <div id="reading-controls" class="flex gap-2">
@@ -818,96 +818,90 @@
         };
         recognition.lang = langCodes[config.lang] || 'en-US';
 
+        // Helper: check if spoken word matches target word
+        // STRICT matching to avoid false positives that cause paragraph jumping
+        function wordsMatch(target, spoken) {
+            // 1. Exact match — always accept
+            if (target === spoken) return true;
+
+            // 2. Words 1-3 chars: ONLY exact match (no fuzzy).
+            //    Short words like "a", "the", "and", "is" must match exactly.
+            //    Fuzzy matching on short words causes false jumps
+            //    (e.g. "he" matching "the", "an" matching "and").
+            if (target.length <= 3 || spoken.length <= 2) return false;
+
+            // 3. Length must be similar (within 2 chars) to avoid wild mismatches
+            if (Math.abs(target.length - spoken.length) > 2) return false;
+
+            // 4. Prefix matching — only if shorter is >= 80% of longer
+            const shorter = Math.min(target.length, spoken.length);
+            const longer = Math.max(target.length, spoken.length);
+            if (shorter >= 4 && shorter / longer >= 0.8) {
+                if (target.startsWith(spoken) || spoken.startsWith(target)) return true;
+            }
+
+            // 5. Levenshtein fuzzy matching — conservative thresholds
+            //    4-5 chars: max distance 1
+            //    6+ chars: max distance 2
+            const maxDist = target.length <= 5 ? 1 : 2;
+            if (levenshteinDistance(target, spoken) <= maxDist) return true;
+
+            return false;
+        }
+
+        // Try to match spoken word STRICTLY near currentWordIndex.
+        // Checks up to 6 words ahead so skipping a few words still works.
+        // The strict wordsMatch() rules prevent false jumps to later paragraphs.
+        // Missed words simply stay gray (no red marking).
+        function tryMatch(cleanSWord) {
+            if (cleanSWord.length < 1) return false;
+
+            const maxLookAhead = 6;
+            for (let j = 0; j < maxLookAhead; j++) {
+                let targetIdx = currentWordIndex + j;
+                if (targetIdx >= words.length) break;
+
+                if (wordsMatch(cleanWords[targetIdx], cleanSWord)) {
+                    matchedWords.add(targetIdx);
+                    highlightWord(targetIdx);
+                    currentWordIndex = targetIdx + 1;
+                    lastMatchTime = Date.now();
+                    showCurrentWord(currentWordIndex);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        let lastInterimWordCount = 0;
+
         recognition.onresult = (event) => {
             hideRetry();
 
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 const isFinal = event.results[i].isFinal;
-                const transcript = event.results[i][0].transcript.toLowerCase();
-                const spokenWords = transcript.split(/\s+/).filter(w => w.length > 0);
+                const primaryTranscript = event.results[i][0].transcript.toLowerCase();
+                const primaryWords = primaryTranscript.split(/\s+/).filter(w => w.length > 0);
+
+                // Only process NEW words (beyond what previous interims already handled)
+                const newWords = primaryWords.slice(lastInterimWordCount);
+                newWords.forEach(w => {
+                    const clean = w.replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
+                    if (clean.length >= 1) tryMatch(clean);
+                });
 
                 if (isFinal) {
-                    // FINAL results: match words and mark them as read
-                    spokenWords.forEach(sWord => {
-                        const cleanSWord = sWord.replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
-                        if (cleanSWord.length < 1) return;
-
-                        let matched = false;
-
-                        // TIER 1: Near window (0-4 words ahead) — fuzzy matching
-                        for (let j = 0; j < 5 && !matched; j++) {
-                            let targetIdx = currentWordIndex + j;
-                            if (targetIdx >= words.length) break;
-
-                            const targetWord = cleanWords[targetIdx];
-                            const maxDistance = targetWord.length <= 4 ? 1 : 2;
-                            const isMatch = targetWord === cleanSWord ||
-                                (cleanSWord.length >= 3 && targetWord.startsWith(cleanSWord)) ||
-                                (targetWord.length >= 4 && cleanSWord.length >= 3 && levenshteinDistance(targetWord, cleanSWord) <= maxDistance);
-
-                            if (isMatch) {
-                                matchedWords.add(targetIdx);
-                                highlightWord(targetIdx);
-
-                                currentWordIndex = targetIdx + 1;
-                                lastMatchTime = Date.now();
-                                showCurrentWord(currentWordIndex);
-                                matched = true;
-                            }
-                        }
-
-                        // TIER 2: Far window (5-20 words ahead) — exact match only
-                        // Handles skipped words / jumped to another sentence
-                        if (!matched && cleanSWord.length >= 3) {
-                            for (let j = 5; j < 20; j++) {
-                                let targetIdx = currentWordIndex + j;
-                                if (targetIdx >= words.length) break;
-
-                                if (cleanWords[targetIdx] === cleanSWord) {
-                                    matchedWords.add(targetIdx);
-                                    highlightWord(targetIdx);
-
-                                    // Don't auto-fill the gap — child clearly skipped those words
-                                    currentWordIndex = targetIdx + 1;
-                                    lastMatchTime = Date.now();
-                                    showCurrentWord(currentWordIndex);
-                                    matched = true;
-                                    break;
-                                }
-                            }
-                        }
-                    });
-                } else {
-                    // INTERIM results: only update the current-word indicator, don't mark as read
-                    const lastSpoken = spokenWords[spokenWords.length - 1];
-                    if (lastSpoken) {
-                        const cleanSWord = lastSpoken.replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
-                        if (cleanSWord.length >= 2) {
-                            // Search near (fuzzy) + far (exact) for current indicator
-                            let found = false;
-                            for (let j = 0; j < 5 && !found; j++) {
-                                let targetIdx = currentWordIndex + j;
-                                if (targetIdx >= words.length) break;
-                                const targetWord = cleanWords[targetIdx];
-                                if (targetWord === cleanSWord || (cleanSWord.length >= 3 && targetWord.startsWith(cleanSWord))) {
-                                    showCurrentWord(targetIdx);
-                                    lastMatchTime = Date.now();
-                                    found = true;
-                                }
-                            }
-                            if (!found && cleanSWord.length >= 3) {
-                                for (let j = 5; j < 20; j++) {
-                                    let targetIdx = currentWordIndex + j;
-                                    if (targetIdx >= words.length) break;
-                                    if (cleanWords[targetIdx] === cleanSWord) {
-                                        showCurrentWord(targetIdx);
-                                        lastMatchTime = Date.now();
-                                        break;
-                                    }
-                                }
-                            }
-                        }
+                    // Also check ALL words from alternatives (different transcriptions)
+                    for (let a = 1; a < Math.min(event.results[i].length, 3); a++) {
+                        const altWords = event.results[i][a].transcript.toLowerCase().split(/\s+/).filter(w => w.length > 0);
+                        altWords.forEach(w => {
+                            const clean = w.replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
+                            if (clean.length >= 1) tryMatch(clean);
+                        });
                     }
+                    lastInterimWordCount = 0; // reset for next speech segment
+                } else {
+                    lastInterimWordCount = primaryWords.length;
                 }
             }
         };
@@ -984,18 +978,17 @@
         if (el) el.classList.add('hidden');
     }
 
-    // Interest Area Logic
+    // Interest Area Logic — single select (pick one for the story)
     function toggleInterest(btn) {
-        btn.classList.toggle('active');
-        const isActive = btn.classList.contains('active');
+        // Deselect all others first
+        document.querySelectorAll('.interest-btn').forEach(b => {
+            b.classList.remove('active', 'ring-2', 'ring-orange-500', 'bg-orange-50', 'bg-orange-50/30', 'border-orange-500');
+            b.classList.add('border-gray-100', 'bg-white');
+        });
 
-        if (isActive) {
-            btn.classList.add('ring-2', 'ring-orange-500', 'bg-orange-50');
-            btn.classList.remove('border-gray-100', 'bg-white');
-        } else {
-            btn.classList.remove('ring-2', 'ring-orange-500', 'bg-orange-50');
-            btn.classList.add('border-gray-100', 'bg-white');
-        }
+        // Select this one
+        btn.classList.add('active', 'ring-2', 'ring-orange-500', 'bg-orange-50');
+        btn.classList.remove('border-gray-100', 'bg-white');
     }
 
     // Comfort Selection Logic
@@ -1022,13 +1015,41 @@
 
     // Proceed to Mic Check Screen (Step 1)
     function proceedToMicCheck() {
-        // Hide the customize journey overlay
+        // Get selected interest
+        const activeBtn = document.querySelector('.interest-btn.active');
+        const interest = activeBtn ? activeBtn.dataset.interest : '';
+
+        // Build URL with interest and lang params, reload to get themed passage
+        const url = new URL(window.location.href);
+        if (interest) {
+            url.searchParams.set('interest', interest);
+        } else {
+            url.searchParams.delete('interest');
+        }
+        // Remove passage index to get a random one
+        url.searchParams.delete('p');
+
+        // If interest changed from what server rendered, reload for new passage
+        const currentInterest = '{{ current_interest|default:"" }}';
+        if (interest !== currentInterest) {
+            window.location.href = url.toString();
+            return;
+        }
+
+        // Same interest (or none) — just hide overlay
         document.getElementById('pre-test-overlay').classList.add('opacity-0');
         setTimeout(() => {
             document.getElementById('pre-test-overlay').classList.add('hidden');
-            // Step 1 is already visible, just needs the overlay removed
         }, 300);
     }
+
+    // Auto-skip overlay if page was reloaded with an interest param
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('interest')) {
+            document.getElementById('pre-test-overlay').classList.add('hidden');
+        }
+    })();
 
     // Show Customize Journey (for retake or change story)
     function showCustomizeJourney() {

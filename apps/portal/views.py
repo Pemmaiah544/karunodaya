@@ -447,12 +447,25 @@ class FluencyCheckView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
         if passage_idx is not None:
             passage_idx = int(passage_idx)
         else:
-            passage_idx = random.randint(0, 99)  # random pick, get_passage_for_grade will cycle via modulo
-        passage = get_passage_for_grade(child.grade, lang=lang, passage_idx=passage_idx)
-        
+            passage_idx = random.randint(0, 99)
+
+        # Map interest param to theme key
+        interest = self.request.GET.get('interest', '').lower()
+        theme_map = {
+            'adventure': 'adventure',
+            'animals': 'animals',
+            'space': 'space',
+            'fairy tales': 'fairy_tales',
+            'fairy_tales': 'fairy_tales',
+        }
+        theme = theme_map.get(interest)
+
+        passage = get_passage_for_grade(child.grade, lang=lang, passage_idx=passage_idx, theme=theme)
+
         context['passage'] = passage
         context['current_lang'] = lang
         context['current_passage_idx'] = passage_idx
+        context['current_interest'] = interest
         return context
 
 
