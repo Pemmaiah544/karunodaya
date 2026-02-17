@@ -116,15 +116,14 @@ WSGI_APPLICATION = 'karunodaya_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+import dj_database_url
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='karunodaya'),
-        'USER': config('DB_USER', default=''),
-        'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
-    }
+    'default': dj_database_url.parse(
+        config('DATABASE_URL', default=f"postgres://{config('DB_USER', default='karunodaya1')}:{config('DB_PASSWORD', default='1010')}@{config('DB_HOST', default='localhost')}:{config('DB_PORT', default='5432')}/{config('DB_NAME', default='karunodaya')}"),
+        conn_max_age=600,
+        ssl_require=config('DB_SSL', default=False, cast=bool)
+    )
 }
 
 
