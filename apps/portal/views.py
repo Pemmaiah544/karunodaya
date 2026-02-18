@@ -8,6 +8,9 @@ from django.contrib.auth.views import PasswordResetView
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 from apps.profiles.models import ParentProfile, Child
 from apps.catalog.models import Book
@@ -525,6 +528,143 @@ def fluency_check_save(request, child_id):
             })
             
     return JsonResponse({'status': 'error'}, status=400)
+
+
+@login_required
+def fluency_check_analyze(request, child_id):
+    """Receive recorded audio, transcribe with Whisper, compare to passage, return results."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+
+    child = get_object_or_404(Child, id=child_id, parent__user=request.user)
+
+    audio_file = request.FILES.get('audio')
+    if not audio_file:
+        return JsonResponse({'status': 'error', 'message': 'No audio file provided'}, status=400)
+
+    if audio_file.size > 10 * 1024 * 1024:
+        return JsonResponse({'status': 'error', 'message': 'Audio file too large (max 10MB)'}, status=400)
+
+    passage_text = request.POST.get('passage_text', '').strip()
+    if not passage_text:
+        return JsonResponse({'status': 'error', 'message': 'No passage text provided'}, status=400)
+
+    try:
+        duration = float(request.POST.get('duration', 0))
+    except (ValueError, TypeError):
+        duration = 0
+    if duration <= 0:
+        return JsonResponse({'status': 'error', 'message': 'Invalid duration'}, status=400)
+
+    language = request.POST.get('language', 'EN').upper()
+
+    from services.speech_service import (
+        _save_uploaded_audio, transcribe, compare_transcript_to_passage, cleanup_audio_files
+    )
+
+    audio_path = None
+    try:
+        audio_path = _save_uploaded_audio(audio_file)
+        transcript_text = transcribe(audio_path, language=language)
+    except (ValueError, RuntimeError) as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    except Exception as e:
+        logger.error(f"Unexpected error in fluency analysis: {e}")
+        return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred'}, status=500)
+    finally:
+        if audio_path:
+            cleanup_audio_files(audio_path)
+
+    comparison = compare_transcript_to_passage(transcript_text, passage_text)
+    words_read = comparison['words_read']
+    total_words = comparison['total_words']
+    accuracy = comparison['accuracy']
+    missed_words = comparison['missed_words']
+
+    wpm = round(words_read / (duration / 60)) if duration > 0 else 0
+
+    # Grade benchmarks (same as fluency_check_save)
+    grade_benchmarks = {
+        'PRE_K': (0, 10, 20), 'KINDERGARTEN': (20, 40, 60),
+        'GRADE_1': (53, 60, 111), 'GRADE_2': (89, 100, 149),
+        'GRADE_3': (107, 115, 162), 'GRADE_4': (123, 130, 180),
+        'GRADE_5': (139, 160, 194), 'GRADE_6': (150, 170, 204),
+        'GRADE_7': (150, 190, 204), 'GRADE_8': (150, 190, 204),
+    }
+    bm = grade_benchmarks.get(child.grade, (107, 115, 162))
+
+    if wpm >= bm[2]:
+        performance = 'Excellent'
+    elif wpm >= bm[1]:
+        performance = 'Good'
+    elif wpm >= bm[0]:
+        performance = 'Developing'
+    else:
+        performance = 'Needs Practice'
+
+    # Strengths
+    strengths = ['Clear pronunciation', 'Good volume']
+    if accuracy > 95:
+        strengths.append('Excellent word recognition')
+    elif accuracy > 85:
+        strengths.append('Good word recognition')
+    strengths = strengths[:2]
+
+    # Recommendations
+    recommendations = []
+    if wpm < bm[0]:
+        recommendations.extend([
+            'Practice reading aloud for 10 minutes daily',
+            'Try finger-tracking to maintain steady pace',
+            'Focus on one-syllable words first',
+        ])
+    if accuracy < 90:
+        recommendations.extend([
+            'Focus on clearly pronouncing word endings',
+            'Take brief pauses at punctuation marks',
+            'Sound out difficult words slowly',
+        ])
+    if wpm > bm[2] and accuracy < 95:
+        recommendations.extend([
+            'Slow down slightly to improve accuracy',
+            'Focus on comprehension over speed',
+        ])
+    if len(recommendations) < 3:
+        recommendations.extend([
+            'Read age-appropriate books daily',
+            'Practice with stories your child loves',
+            'Create a consistent reading routine',
+        ])
+    recommendations = recommendations[:4]
+
+    # Save to Child model
+    child.reading_wpm = wpm
+    child.reading_test_completed = True
+    child.reading_accuracy = float(accuracy)
+    child.reading_strengths = ', '.join(strengths)
+    child.reading_gaps = '. '.join(recommendations)
+    if wpm < bm[0]:
+        child.reading_difficulty_level = 'BEGINNER'
+    elif wpm < bm[1]:
+        child.reading_difficulty_level = 'INTERMEDIATE'
+    else:
+        child.reading_difficulty_level = 'ADVANCED'
+    child.save()
+
+    return JsonResponse({
+        'status': 'success',
+        'wpm': wpm,
+        'accuracy': accuracy,
+        'words_read': words_read,
+        'total_words': total_words,
+        'duration': round(duration),
+        'performance': performance,
+        'level': child.get_reading_difficulty_level_display(),
+        'strengths': ', '.join(strengths),
+        'gaps': recommendations,
+        'missed_words': missed_words,
+        'benchmark': {'min': bm[0], 'avg': bm[1], 'max': bm[2]},
+    })
 
 
 class CuratedBoxView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
