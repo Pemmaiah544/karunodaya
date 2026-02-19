@@ -432,6 +432,9 @@ def dashboard_callback(request, context):
     # Recent Orders
     recent_orders = Order.objects.select_related('parent__user').order_by('-created_at')[:5]
 
+    # Recent Complaints
+    recent_complaints = Complaint.objects.select_related('parent__user').order_by('-created_at')[:5]
+
     # Complaints
     complaints_count = Complaint.objects.count()
     pending_complaints = Complaint.objects.filter(status='PENDING').count()
@@ -452,5 +455,6 @@ def dashboard_callback(request, context):
 
     context['recent_orders'] = recent_orders
     context['low_stock_books'] = low_stock_books[:5]
+    context['recent_complaints'] = recent_complaints
 
     return context
