@@ -1,7 +1,7 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 from apps.core.admin_mixins import AdminPaginationMixin
-from .models import Complaint
+from .models import Complaint, ReadingPassage
 
 
 @admin.register(Complaint)
@@ -32,6 +32,30 @@ class ComplaintAdmin(AdminPaginationMixin, ModelAdmin):
         }),
         ('Complaint Details', {
             'fields': ('subject', 'description')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(ReadingPassage)
+class ReadingPassageAdmin(AdminPaginationMixin, ModelAdmin):
+    list_display = ['title', 'language', 'grade', 'theme', 'word_count', 'is_active']
+    list_filter = ['language', 'grade', 'theme', 'is_active']
+    search_fields = ['title', 'text']
+    readonly_fields = ['word_count', 'created_at', 'updated_at']
+    list_editable = ['is_active']
+
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'language', 'grade', 'theme', 'is_active')
+        }),
+        ('Passage Content', {
+            'fields': ('text', 'word_count')
         }),
         ('Metadata', {
             'fields': ('created_at', 'updated_at'),

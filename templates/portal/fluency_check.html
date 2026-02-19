@@ -5,334 +5,61 @@
 
 {% block extra_head %}
 <style>
-    .progress-bar-container {
-        height: 8px;
-        background-color: #f3f4f6;
-        border-radius: 4px;
-        overflow: hidden;
-    }
+    /* ── Layout & Structure ── */
+    .progress-bar-container { height: 8px; background-color: #f3f4f6; border-radius: 4px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background-color: #ffa500; transition: width 0.3s ease; }
+    .reading-card { background: #fff; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px dashed #e5e7eb; }
+    .buddy-message { background: #fff9f0; border-radius: 20px; border: 1px solid #fee2e2; padding: 16px; }
+    .gauge-container { position: relative; width: 200px; height: 120px; margin: 0 auto; }
+    .gauge-arc { fill: none; stroke: #f3f4f6; stroke-width: 20; stroke-linecap: round; }
+    .gauge-progress { fill: none; stroke: #ffa500; stroke-width: 20; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; transition: stroke-dashoffset 1.5s cubic-bezier(0.175,0.885,0.32,1.1) 0.5s; }
 
-    .progress-bar-fill {
-        height: 100%;
-        background-color: #ffa500;
-        transition: width 0.3s ease;
-    }
+    /* ── Word Display States ── */
+    .word-span { display: inline-block; padding: 6px 12px; margin: 6px 4px; border-radius: 12px; color: #94a3b8; font-size: 32px; font-weight: 600; transition: all 0.2s ease; border: 3px solid transparent; line-height: normal; white-space: nowrap; vertical-align: middle; }
+    .word-read { color: #ea580c; background-color: #fff7ed; border-color: #ffedd5; }
+    .word-skipped { color: #f87171; background-color: #fef2f2; border-color: #fecaca; border-style: dashed; animation: gentle-pulse 2s ease-in-out infinite; }
+    .word-current { background-color: #f97316 !important; color: white !important; font-weight: 800; box-shadow: 0 10px 30px rgba(249,115,22,0.4); transform: scale(1.1); z-index: 20; position: relative; border-color: #ea580c !important; }
+    .strikethrough { text-decoration: line-through; color: #ef4444; }
 
-    .reading-card {
-        background: #fff;
-        border-radius: 24px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        border: 1px dashed #e5e7eb;
-    }
+    /* ── Voice Wave ── */
+    .wave-container { display: flex; align-items: center; justify-content: center; gap: 4px; height: 40px; }
+    .wave-bar { width: 4px; height: 8px; background: #ffa500; border-radius: 2px; transition: height 0.1s ease; }
+    .wave-bar.active { animation: wave 1s infinite ease-in-out; }
+    .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+    .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+    .wave-bar:nth-child(5) { animation-delay: 0.4s; }
 
-    .buddy-message {
-        background: #fff9f0;
-        border-radius: 20px;
-        border: 1px solid #fee2e2;
-        padding: 16px;
-    }
+    /* ── Book Loader ── */
+    .book-loader { position: relative; width: 120px; height: 90px; perspective: 1200px; }
+    .book-page { position: absolute; width: 60px; height: 90px; background: linear-gradient(to right, #fafafa 0%, #fff 50%, #fafafa 100%); border: 2px solid #e5e7eb; border-left: none; border-radius: 0 6px 6px 0; transform-origin: left center; box-shadow: 3px 3px 10px rgba(0,0,0,0.15); right: 0; }
+    .book-page::before { content: ''; position: absolute; top: 15px; left: 8px; right: 8px; height: 60px; background: repeating-linear-gradient(to bottom, #e5e7eb 0px, #e5e7eb 1px, transparent 1px, transparent 8px); }
+    .book-page:nth-child(1) { z-index: 3; animation: pageTurn 3s ease-in-out infinite; }
+    .book-page:nth-child(2) { z-index: 2; animation: pageTurn 3s ease-in-out infinite; animation-delay: 0.1s; opacity: 0.9; }
+    .book-page:nth-child(3) { z-index: 1; animation: pageTurn 3s ease-in-out infinite; animation-delay: 0.2s; opacity: 0.8; }
+    .book-spine { position: absolute; left: 0; top: 0; width: 8px; height: 90px; background: linear-gradient(to right, #ea580c, #f97316, #ea580c); border-radius: 4px 0 0 4px; box-shadow: inset -2px 0 4px rgba(0,0,0,0.2); z-index: 5; }
+    .book-cover { position: absolute; left: 0; top: 0; width: 60px; height: 90px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border: 2px solid #c2410c; border-right: none; border-radius: 6px 0 0 6px; box-shadow: -2px 2px 8px rgba(0,0,0,0.2); }
 
-    /* Voice Wave Animation */
-    .wave-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        height: 40px;
-    }
+    /* ── UI Components ── */
+    .retry-nudge { background: #ef4444; color: white; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; position: absolute; top: -30px; left: 50%; transform: translateX(-50%); box-shadow: 0 4px 12px rgba(239,68,68,0.3); animation: bounce 1s infinite; z-index: 10; text-transform: uppercase; }
+    .lang-btn { padding: 8px 16px; border-radius: 12px; font-size: 11px; font-weight: 800; transition: all 0.2s; border: 2px solid transparent; text-transform: uppercase; letter-spacing: 0.05em; }
+    .lang-btn.active { background: #fff; border-color: #ffa500; color: #ffa500; box-shadow: 0 4px 12px rgba(255,165,0,0.15); }
+    .lang-btn.inactive { background: #f3f4f6; color: #9ca3af; }
+    .poke-bubble { position: relative; background: #6366f1; color: white; padding: 6px 10px; border-radius: 10px; font-size: 10px; font-weight: 800; display: inline-block; animation: bounce 2s infinite; text-transform: uppercase; }
+    .poke-bubble::after { content: ''; position: absolute; bottom: -5px; left: 15px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid #6366f1; }
 
-    .wave-bar {
-        width: 4px;
-        height: 8px;
-        background: #ffa500;
-        border-radius: 2px;
-        transition: height 0.1s ease;
-    }
+    /* ── Utilities ── */
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
 
-    .wave-bar.active {
-        animation: wave 1s infinite ease-in-out;
-    }
-
-    @keyframes wave {
-
-        0%,
-        100% {
-            height: 8px;
-        }
-
-        50% {
-            height: 32px;
-        }
-    }
-
-    .wave-bar:nth-child(2) {
-        animation-delay: 0.1s;
-    }
-
-    .wave-bar:nth-child(3) {
-        animation-delay: 0.2s;
-    }
-
-    .wave-bar:nth-child(4) {
-        animation-delay: 0.3s;
-    }
-
-    .wave-bar:nth-child(5) {
-        animation-delay: 0.4s;
-    }
-
-    /* Book Page Turning Animation */
-    .book-loader {
-        position: relative;
-        width: 120px;
-        height: 90px;
-        perspective: 1200px;
-    }
-
-    .book-page {
-        position: absolute;
-        width: 60px;
-        height: 90px;
-        background: linear-gradient(to right, #fafafa 0%, #fff 50%, #fafafa 100%);
-        border: 2px solid #e5e7eb;
-        border-left: none;
-        border-radius: 0 6px 6px 0;
-        transform-origin: left center;
-        box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.15);
-        right: 0;
-    }
-
-    /* Create page lines for realism */
-    .book-page::before {
-        content: '';
-        position: absolute;
-        top: 15px;
-        left: 8px;
-        right: 8px;
-        height: 1px;
-        background: repeating-linear-gradient(to bottom,
-                #e5e7eb 0px,
-                #e5e7eb 1px,
-                transparent 1px,
-                transparent 8px);
-        height: 60px;
-    }
-
-    .book-page:nth-child(1) {
-        z-index: 3;
-        animation: pageTurn 3s ease-in-out infinite;
-    }
-
-    .book-page:nth-child(2) {
-        z-index: 2;
-        animation: pageTurn 3s ease-in-out infinite;
-        animation-delay: 0.1s;
-        opacity: 0.9;
-    }
-
-    .book-page:nth-child(3) {
-        z-index: 1;
-        animation: pageTurn 3s ease-in-out infinite;
-        animation-delay: 0.2s;
-        opacity: 0.8;
-    }
-
-    .book-spine {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 8px;
-        height: 90px;
-        background: linear-gradient(to right, #ea580c, #f97316, #ea580c);
-        border-radius: 4px 0 0 4px;
-        box-shadow: inset -2px 0 4px rgba(0, 0, 0, 0.2);
-        z-index: 5;
-    }
-
-    /* Base book cover */
-    .book-cover {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 60px;
-        height: 90px;
-        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-        border: 2px solid #c2410c;
-        border-right: none;
-        border-radius: 6px 0 0 6px;
-        box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.2);
-    }
-
-    @keyframes pageTurn {
-
-        0%,
-        100% {
-            transform: rotateY(0deg);
-            z-index: 3;
-        }
-
-        25% {
-            transform: rotateY(180deg);
-            z-index: 1;
-        }
-
-        50%,
-        100% {
-            transform: rotateY(180deg);
-            z-index: 1;
-        }
-    }
-
-    /* Gauge */
-    .gauge-container {
-        position: relative;
-        width: 200px;
-        height: 120px;
-        margin: 0 auto;
-    }
-
-    .gauge-arc {
-        fill: none;
-        stroke: #f3f4f6;
-        stroke-width: 20;
-        stroke-linecap: round;
-    }
-
-    .gauge-progress {
-        fill: none;
-        stroke: #ffa500;
-        stroke-width: 20;
-        stroke-linecap: round;
-        stroke-dasharray: 283;
-        stroke-dashoffset: 283;
-        transition: stroke-dashoffset 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) 0.5s;
-    }
-
-    .strikethrough {
-        text-decoration: line-through;
-        color: #ef4444;
-    }
-
-    .word-span {
-        display: inline-block;
-        padding: 6px 12px;
-        margin: 6px 4px;
-        border-radius: 12px;
-        color: #94a3b8;
-        font-size: 32px;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        border: 3px solid transparent;
-        line-height: normal;
-        white-space: nowrap;
-        vertical-align: middle;
-    }
-
-    .word-read {
-        color: #ea580c;
-        background-color: #fff7ed;
-        border-color: #ffedd5;
-    }
-
-    .word-current {
-        background-color: #f97316 !important;
-        color: white !important;
-        font-weight: 800;
-        box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
-        transform: scale(1.1);
-        z-index: 20;
-        position: relative;
-        border-color: #ea580c !important;
-    }
-
-    @keyframes active-pulse {
-        0% {
-            transform: scale(1.1);
-        }
-
-        50% {
-            transform: scale(1.22);
-        }
-
-        100% {
-            transform: scale(1.1);
-        }
-    }
-
-    .retry-nudge {
-        background: #ef4444;
-        color: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 800;
-        position: absolute;
-        top: -30px;
-        left: 50%;
-        transform: translateX(-50%);
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        animation: bounce 1s infinite;
-        z-index: 10;
-        text-transform: uppercase;
-    }
-
-    .lang-btn {
-        padding: 8px 16px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 800;
-        transition: all 0.2s;
-        border: 2px solid transparent;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .lang-btn.active {
-        background: #fff;
-        border-color: #ffa500;
-        color: #ffa500;
-        box-shadow: 0 4px 12px rgba(255, 165, 0, 0.15);
-    }
-
-    .lang-btn.inactive {
-        background: #f3f4f6;
-        color: #9ca3af;
-    }
-
-    .poke-bubble {
-        position: relative;
-        background: #6366f1;
-        color: white;
-        padding: 6px 10px;
-        border-radius: 10px;
-        font-size: 10px;
-        font-weight: 800;
-        display: inline-block;
-        animation: bounce 2s infinite;
-        text-transform: uppercase;
-    }
-
-    .poke-bubble::after {
-        content: '';
-        position: absolute;
-        bottom: -5px;
-        left: 15px;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-top: 5px solid #6366f1;
-    }
-
-    @keyframes bounce {
-
-        0%,
-        100% {
-            transform: translateY(0);
-        }
-
-        50% {
-            transform: translateY(-4px);
-        }
-    }
+    /* ── Animations ── */
+    @keyframes wave { 0%, 100% { height: 8px; } 50% { height: 32px; } }
+    @keyframes pageTurn { 0%, 100% { transform: rotateY(0deg); z-index: 3; } 25% { transform: rotateY(180deg); z-index: 1; } 50%, 100% { transform: rotateY(180deg); z-index: 1; } }
+    @keyframes active-pulse { 0% { transform: scale(1.1); } 50% { transform: scale(1.22); } 100% { transform: scale(1.1); } }
+    @keyframes gentle-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 {% endblock %}
 
@@ -363,12 +90,12 @@
             <div class="mb-8">
                 <div class="flex justify-between items-end mb-4">
                     <h3 class="font-bold text-gray-900">Interest Areas</h3>
-                    <span class="text-[10px] font-bold text-orange-500">Pick as many as you like</span>
+                    <span class="text-[10px] font-bold text-orange-500">Pick one for your story</span>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <!-- Adventure -->
-                    <button onclick="toggleInterest(this)"
+                    <button onclick="toggleInterest(this)" data-interest="adventure"
                         class="interest-btn group border-2 border-orange-500 bg-orange-50/30 rounded-3xl p-4 flex flex-col items-center gap-3 transition-all duration-200">
                         <div
                             class="w-14 h-14 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
@@ -378,7 +105,7 @@
                     </button>
 
                     <!-- Animals -->
-                    <button onclick="toggleInterest(this)"
+                    <button onclick="toggleInterest(this)" data-interest="animals"
                         class="interest-btn group border-2 border-gray-100 bg-white hover:border-green-200 rounded-3xl p-4 flex flex-col items-center gap-3 transition-all duration-200">
                         <div
                             class="w-14 h-14 rounded-full bg-green-100 text-green-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
@@ -388,7 +115,7 @@
                     </button>
 
                     <!-- Space -->
-                    <button onclick="toggleInterest(this)"
+                    <button onclick="toggleInterest(this)" data-interest="space"
                         class="interest-btn group border-2 border-gray-100 bg-white hover:border-purple-200 rounded-3xl p-4 flex flex-col items-center gap-3 transition-all duration-200">
                         <div
                             class="w-14 h-14 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
@@ -398,7 +125,7 @@
                     </button>
 
                     <!-- Fairy Tales -->
-                    <button onclick="toggleInterest(this)"
+                    <button onclick="toggleInterest(this)" data-interest="fairy_tales"
                         class="interest-btn group border-2 border-gray-100 bg-white hover:border-pink-200 rounded-3xl p-4 flex flex-col items-center gap-3 transition-all duration-200">
                         <div
                             class="w-14 h-14 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
@@ -515,6 +242,10 @@
             </div>
         </div>
 
+        <div id="retry-prompt" class="hidden fixed top-0 left-0 right-0 z-50 bg-red-500 text-white text-center py-3 px-4 shadow-lg">
+            <p class="text-sm font-bold">Not detecting voice. Please read louder or check your microphone.</p>
+        </div>
+
         <div id="reading-controls" class="flex gap-2">
             <button id="finish-btn"
                 class="flex-[2] bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-full shadow-lg transition-transform active:scale-95">
@@ -597,7 +328,12 @@
                     <!-- Dynamic content will be inserted here -->
                 </div>
 
-                <div class="w-full grid grid-cols-2 gap-4 mt-4 border-t border-gray-50 pt-6">
+                <!-- Average WPM comparison -->
+                <div id="avg-wpm-compare" class="w-full mt-4">
+                    <!-- Dynamic content inserted by JS -->
+                </div>
+
+                <div class="w-full grid grid-cols-3 gap-4 mt-4 border-t border-gray-50 pt-6">
                     <div class="text-center">
                         <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Accuracy</p>
                         <p class="text-xl font-bold text-green-600"><span id="result-accuracy">0</span>%</p>
@@ -606,6 +342,18 @@
                         <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Time Taken</p>
                         <p class="text-xl font-bold text-gray-800"><span id="result-time">0</span>s</p>
                     </div>
+                    <div class="text-center">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Words Read</p>
+                        <p class="text-xl font-bold text-blue-600"><span id="result-words-read">0</span>/<span id="result-words-total">0</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Missed Words Section -->
+            <div id="missed-words-section" class="hidden bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Missed / Skipped Words</p>
+                <div id="missed-words-list" class="flex flex-wrap gap-2">
+                    <!-- Dynamic content inserted by JS -->
                 </div>
             </div>
 
@@ -706,559 +454,486 @@
 </div>
 
 <script>
-    const passageText = "{{ passage.text|escapejs }}";
-    const wordCountTotal = parseInt("{{ passage.word_count|default:1 }}", 10);
-    const childId = parseInt("{{ child.id|default:0 }}", 10);
+/**
+ * Fluency Check — Reading Assessment Module
+ * Handles audio recording, server-side analysis, and performance display.
+ */
+(function() {
+    'use strict';
 
-    const config = {
-        lang: "{{ current_lang }}",
-        saveUrl: "{% url 'portal:fluency_check_save' child.id %}",
-        curatedBoxUrl: "{% url 'portal:curated_box' child.id %}",
-        dashboardUrl: "{% url 'portal:dashboard' %}"
+    /* ================================================================
+     *  CONFIGURATION
+     * ================================================================ */
+
+    var WPM_GAUGE_MAX    = 200;
+    var GAUGE_ARC_LENGTH = 283;
+
+    var config = {
+        lang:            "{{ current_lang }}",
+        analyzeUrl:      "{% url 'portal:fluency_check_analyze' child.id %}",
+        curatedBoxUrl:   "{% url 'portal:curated_box' child.id %}",
+        dashboardUrl:    "{% url 'portal:dashboard' %}",
+        csrfToken:       "{{ csrf_token }}",
+        currentInterest: "{{ current_interest|default:'' }}"
     };
 
-    let startTime;
-    let timerInterval;
-    let recognition;
-    let isReading = false;
+    var child = {
+        id:           parseInt("{{ child.id|default:0 }}", 10),
+        age:          parseInt("{{ child.age|default:8 }}", 10),
+        grade:        "{{ child.grade|default:'GRADE_3' }}",
+        gradeDisplay: "{{ child.get_grade_display|default:'Grade 3' }}"
+    };
 
-    const textDisplay = document.getElementById('reading-text-display');
-    const rawText = passageText.trim().replace(/\r?\n|\r/g, ' ');
-    const words = rawText.split(' ').filter(w => w.length > 0);
+    var GRADE_BENCHMARKS = {
+        'Pre-K':        { min: 0,   avg: 10,  max: 20,  description: 'pre-reader' },
+        'Kindergarten': { min: 20,  avg: 40,  max: 60,  description: 'emerging reader' },
+        'Grade 1':      { min: 53,  avg: 60,  max: 111, description: 'beginning reader' },
+        'Grade 2':      { min: 89,  avg: 100, max: 149, description: 'developing reader' },
+        'Grade 3':      { min: 107, avg: 115, max: 162, description: 'fluent reader' },
+        'Grade 4':      { min: 123, avg: 130, max: 180, description: 'confident reader' },
+        'Grade 5':      { min: 139, avg: 160, max: 194, description: 'proficient reader' },
+        'Grade 6':      { min: 150, avg: 170, max: 204, description: 'advanced reader' },
+        'Grade 7':      { min: 150, avg: 190, max: 204, description: 'skilled reader' },
+        'Grade 8':      { min: 150, avg: 190, max: 204, description: 'accomplished reader' }
+    };
 
-    // Clear and inject words with guaranteed full-word spans
+    var AGE_BENCHMARKS = {
+        3: GRADE_BENCHMARKS['Pre-K'],     4: GRADE_BENCHMARKS['Pre-K'],
+        5: GRADE_BENCHMARKS['Kindergarten'], 6: GRADE_BENCHMARKS['Grade 1'],
+        7: GRADE_BENCHMARKS['Grade 2'],   8: GRADE_BENCHMARKS['Grade 3'],
+        9: GRADE_BENCHMARKS['Grade 4'],   10: GRADE_BENCHMARKS['Grade 5'],
+        11: GRADE_BENCHMARKS['Grade 6'],  12: GRADE_BENCHMARKS['Grade 7'],
+        13: GRADE_BENCHMARKS['Grade 8'],  14: GRADE_BENCHMARKS['Grade 8']
+    };
+
+    var GAUGE_COLORS = {
+        'Excellent': '#10b981', 'Good': '#3b82f6',
+        'Developing': '#f59e0b', 'Needs Practice': '#ef4444'
+    };
+
+    var TITLE_MAP = {
+        'Excellent': 'Outstanding Performance!', 'Good': 'Great Progress!',
+        'Developing': 'Good Effort!', 'Needs Practice': 'Keep Practicing!'
+    };
+
+    /* ================================================================
+     *  TEXT PROCESSING
+     * ================================================================ */
+
+    var rawText   = "{{ passage.text|escapejs }}".trim().replace(/\r?\n|\r/g, ' ');
+    var words     = rawText.split(' ').filter(function(w) { return w.length > 0; });
+    var benchmark = GRADE_BENCHMARKS[child.gradeDisplay] || AGE_BENCHMARKS[child.age] || GRADE_BENCHMARKS['Grade 3'];
+
+    /* ================================================================
+     *  MUTABLE STATE
+     * ================================================================ */
+
+    var startTime     = null;
+    var timerInterval  = null;
+    var isReading      = false;
+    var mediaRecorder  = null;
+    var audioChunks    = [];
+    var audioStream    = null;
+
+    /* ================================================================
+     *  DEVICE DETECTION
+     * ================================================================ */
+
+    var isSecure    = window.isSecureContext;
+    var isLocalhost = ['localhost', '127.0.0.1'].indexOf(location.hostname) !== -1;
+
+    if (!isSecure && !isLocalhost) {
+        console.warn('Page not served over HTTPS — microphone will not work on mobile.');
+    }
+
+    /* ================================================================
+     *  DOM REFERENCES & SETUP
+     * ================================================================ */
+
+    var textDisplay  = document.getElementById('reading-text-display');
+    var startBtn     = document.getElementById('start-btn');
+    var finishBtn    = document.getElementById('finish-btn');
+    var secondsSpan  = document.getElementById('seconds');
+    var stepProgress = document.getElementById('step-progress');
+    var stepTitle    = document.getElementById('step-title');
+
+    // Render passage words as individual spans
     textDisplay.innerHTML = '';
-    words.forEach((w, i) => {
-        const span = document.createElement('span');
-        span.id = `word-${i}`;
+    words.forEach(function(w, i) {
+        var span = document.createElement('span');
+        span.id = 'word-' + i;
         span.className = 'word-span';
         span.textContent = w;
         textDisplay.appendChild(span);
-        // Add a visible space that isn't highlighted
         textDisplay.appendChild(document.createTextNode(' '));
     });
 
-    let currentWordIndex = 0;
-    let lastMatchTime = Date.now();
+    /* ================================================================
+     *  UI HELPERS
+     * ================================================================ */
 
-    // Initialize Speech Recognition
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-
-        const langCodes = {
-            'HI': 'hi-IN',
-            'KN': 'kn-IN',
-            'EN': 'en-US'
-        };
-        recognition.lang = langCodes[config.lang] || 'en-US';
-
-        recognition.onresult = (event) => {
-            hideRetry();
-
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                const transcript = event.results[i][0].transcript.toLowerCase();
-                const spokenWords = transcript.split(/\s+/).filter(w => w.length > 0);
-
-                spokenWords.forEach(sWord => {
-                    const cleanSWord = sWord.replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
-                    if (cleanSWord.length < 1) return;
-
-                    // Look ahead logic - skip ahead up to 10 words if needed
-                    const searchRange = 10;
-                    for (let j = 0; j < searchRange; j++) {
-                        let targetIdx = currentWordIndex + j;
-                        if (targetIdx >= words.length) break;
-
-                        let targetOriginal = words[targetIdx];
-                        let targetWord = targetOriginal.toLowerCase().replace(/[.,!?;:"'\u201C\u201D\u2018\u2019]/g, '').trim();
-
-                        // Robust matching: Exact match OR prefix match (for partial word detection)
-                        // If spoken word is at least 3 chars AND matches start of target
-                        const isMatch = targetWord === cleanSWord ||
-                            (cleanSWord.length >= 3 && targetWord.startsWith(cleanSWord)) ||
-                            (targetWord.length >= 5 && cleanSWord.length >= 4 && levenshteinDistance(targetWord, cleanSWord) <= 2);
-
-                        if (isMatch) {
-                            highlightRead(targetIdx);
-                            currentWordIndex = targetIdx + 1;
-                            lastMatchTime = Date.now();
-                            break;
-                        }
-                    }
-                });
-            }
-        };
-
-        // Fuzzy matching logic for better results with child speech
-        function levenshteinDistance(a, b) {
-            const matrix = [];
-            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-            for (let i = 1; i <= b.length; i++) {
-                for (let j = 1; j <= a.length; j++) {
-                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                        matrix[i][j] = matrix[i - 1][j - 1];
-                    } else {
-                        matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
-                    }
-                }
-            }
-            return matrix[b.length][a.length];
-        }
-
-        recognition.onend = () => {
-            if (isReading) {
-                try {
-                    recognition.start();
-                } catch (e) {
-                    console.log("Recognition restart failed", e);
-                }
-            }
-        };
-
-        recognition.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
-            if (event.error === 'not-allowed') {
-                isReading = false;
-                alert("Microphone access was denied. Please enable it to continue.");
-            }
-            showRetry();
-        };
+    function updateStep(percent, label) {
+        stepProgress.style.width = percent + '%';
+        stepTitle.textContent = label;
     }
 
-    function highlightRead(index) {
-        for (let i = 0; i <= index; i++) {
-            const el = document.getElementById(`word-${i}`);
-            if (el) {
-                el.classList.add('word-read');
-                el.classList.remove('word-current');
-            }
-        }
-
-        const next = document.getElementById(`word-${index + 1}`);
-        if (next) {
-            next.classList.add('word-current');
-            // Smoothly scroll the text display to keep the current word visible
-            next.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-        } else if (index === words.length - 1) {
-            // Reached the end
-            setTimeout(() => {
-                finishBtn.click();
-            }, 1000);
-        }
-    }
-
-    function showRetry() {
-        document.getElementById('retry-prompt').classList.remove('hidden');
-    }
-
-    function hideRetry() {
-        document.getElementById('retry-prompt').classList.add('hidden');
-    }
-
-    // Interest Area Logic
-    function toggleInterest(btn) {
-        btn.classList.toggle('active');
-        const isActive = btn.classList.contains('active');
-
-        if (isActive) {
-            btn.classList.add('ring-2', 'ring-orange-500', 'bg-orange-50');
-            btn.classList.remove('border-gray-100', 'bg-white');
-        } else {
-            btn.classList.remove('ring-2', 'ring-orange-500', 'bg-orange-50');
-            btn.classList.add('border-gray-100', 'bg-white');
-        }
-    }
-
-    // Comfort Selection Logic
-    function selectComfort(btn, level) {
-        // Reset all
-        document.querySelectorAll('.comfort-btn').forEach(b => {
-            b.classList.remove('active', 'border-orange-500', 'bg-orange-50/30');
-            b.classList.add('border-gray-100', 'bg-white');
-
-            // Reset circle icon
-            const circle = b.querySelector('div');
-            circle.classList.remove('border-[6px]', 'border-orange-500');
-            circle.classList.add('border-2', 'border-gray-300');
-        });
-
-        // Activate selected
-        btn.classList.add('active', 'border-orange-500', 'bg-orange-50/30');
-        btn.classList.remove('border-gray-100', 'bg-white');
-
-        const circle = btn.querySelector('div');
-        circle.classList.remove('border-2', 'border-gray-300');
-        circle.classList.add('border-[6px]', 'border-orange-500');
-    }
-
-    // Proceed to Mic Check Screen (Step 1)
-    function proceedToMicCheck() {
-        // Hide the customize journey overlay
-        document.getElementById('pre-test-overlay').classList.add('opacity-0');
-        setTimeout(() => {
-            document.getElementById('pre-test-overlay').classList.add('hidden');
-            // Step 1 is already visible, just needs the overlay removed
-        }, 300);
-    }
-
-    // Show Customize Journey (for retake or change story)
-    function showCustomizeJourney() {
-        // Show the overlay again
-        const overlay = document.getElementById('pre-test-overlay');
-        overlay.classList.remove('hidden', 'opacity-0');
-
-        // Reset to step 1 if needed
-        document.getElementById('step-1').classList.remove('hidden');
-        document.getElementById('step-2').classList.add('hidden');
-        document.getElementById('step-3').classList.add('hidden');
-        document.getElementById('step-4').classList.add('hidden');
-        document.getElementById('step-progress').style.width = '25%';
-        document.getElementById('step-title').textContent = 'Step 1 of 4: Voice Check';
-    }
-
-
-    const startBtn = document.getElementById('start-btn');
-    const finishBtn = document.getElementById('finish-btn');
-    const secondsSpan = document.getElementById('seconds');
-
-    startBtn.addEventListener('click', async () => {
-        try {
-            await navigator.mediaDevices.getUserMedia({ audio: true });
-            startReading();
-        } catch (err) {
-            alert("Please allow microphone access to use the listening feature!");
-            startReading(); // Fallback anyway
-        }
-    });
+    /* ================================================================
+     *  READING FLOW
+     * ================================================================ */
 
     function startReading() {
         document.getElementById('step-1').classList.add('hidden');
         document.getElementById('step-2').classList.remove('hidden');
-        document.getElementById('step-progress').style.width = '50%';
-        document.getElementById('step-title').textContent = 'Step 2 of 4: Reading Out Loud';
+        updateStep(50, 'Step 2 of 4: Reading Out Loud');
 
         document.getElementById('word-0').classList.add('word-current');
 
         startTime = Date.now();
-        lastMatchTime = Date.now();
         isReading = true;
-        if (recognition) {
-            try {
-                recognition.start();
-            } catch (e) {
-                console.log("Recognition already started or failed:", e);
-            }
-        }
+        audioChunks = [];
 
-        timerInterval = setInterval(() => {
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            secondsSpan.textContent = elapsed;
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function(stream) {
+                audioStream = stream;
 
-            // Show retry if no words matched for 8 seconds (give more time)
-            if (Date.now() - lastMatchTime > 8000) {
-                showRetry();
-            }
+                var mimeType = 'audio/webm;codecs=opus';
+                if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/webm';
+                if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/ogg;codecs=opus';
+                if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
+
+                var options = mimeType ? { mimeType: mimeType } : {};
+                mediaRecorder = new MediaRecorder(stream, options);
+
+                mediaRecorder.ondataavailable = function(event) {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+
+                mediaRecorder.start(1000);
+            })
+            .catch(function(err) {
+                console.error('MediaRecorder failed:', err);
+                alert('Could not start audio recording: ' + err.message);
+            });
+
+        timerInterval = setInterval(function() {
+            secondsSpan.textContent = Math.floor((Date.now() - startTime) / 1000);
         }, 1000);
     }
 
-    finishBtn.addEventListener('click', () => {
+    function finishReading() {
         isReading = false;
         clearInterval(timerInterval);
-        if (recognition) {
-            try {
-                recognition.stop();
-            } catch (e) { }
+
+        document.querySelectorAll('.word-current').forEach(function(el) {
+            el.classList.remove('word-current');
+        });
+
+        var duration = (Date.now() - startTime) / 1000;
+
+        if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+            showAnalyzing();
+            return;
         }
 
-        const durationSec = (Date.now() - startTime) / 1000;
-        showAnalyzing(durationSec);
-    });
-
-    function showAnalyzing(duration) {
-        document.getElementById('step-2').classList.add('hidden');
-        document.getElementById('step-3').classList.remove('hidden');
-        document.getElementById('step-progress').style.width = '75%';
-        document.getElementById('step-title').textContent = 'Step 3 of 4: Analyzing Voice';
-
-        const msgs = [
-            "Processing voice waveforms...",
-            "Matching transcript to story text...",
-            "Evaluating pronunciation accuracy...",
-            "Calculating reading speed...",
-            "Identifying core strengths...",
-            "Finding perfect book matches..."
-        ];
-
-        let i = 0;
-        const msgInterval = setInterval(() => {
-            if (i < msgs.length) {
-                document.getElementById('loading-msg').textContent = msgs[i];
-                i++;
+        mediaRecorder.onstop = function() {
+            if (audioStream) {
+                audioStream.getTracks().forEach(function(t) { t.stop(); });
+                audioStream = null;
             }
-        }, 800);
 
-        setTimeout(() => {
-            clearInterval(msgInterval);
-            processResults(duration);
-        }, 5000);
-    }
+            var mimeType = mediaRecorder.mimeType || 'audio/webm';
+            var audioBlob = new Blob(audioChunks, { type: mimeType });
 
-    function processResults(duration) {
-        // Calculate Accuracy based on real-time matched words
-        const matchedWordsCount = document.querySelectorAll('.word-read').length;
-        let accuracy = Math.round((matchedWordsCount / words.length) * 100);
+            if (audioBlob.size < 1000) {
+                alert('Recording appears to be empty. Please try again.');
+                window.location.reload();
+                return;
+            }
 
-        // Safety check if STT was very poor but child definitely read
-        if (accuracy < 30 && duration > 10) accuracy = 85;
-        if (accuracy > 100) accuracy = 100;
-
-        const wpm = Math.round(wordCountTotal / (duration / 60));
-
-        // Grade-specific WPM benchmarks
-        const gradeBenchmarks = {
-            'Grade 1': { min: 30, avg: 50, max: 80, description: "beginning reader" },
-            'Grade 2': { min: 40, avg: 65, max: 90, description: "developing reader" },
-            'Grade 3': { min: 50, avg: 80, max: 110, description: "fluent reader" },
-            'Grade 4': { min: 60, avg: 90, max: 120, description: "confident reader" },
-            'Grade 5': { min: 70, avg: 100, max: 140, description: "proficient reader" },
-            'Grade 6': { min: 80, avg: 110, max: 150, description: "advanced reader" },
-            'Grade 7': { min: 90, avg: 120, max: 160, description: "skilled reader" },
-            'Grade 8': { min: 100, avg: 130, max: 170, description: "accomplished reader" },
-            'Grade 9': { min: 110, avg: 140, max: 180, description: "experienced reader" },
-            'Grade 10': { min: 120, avg: 150, max: 190, description: "mature reader" }
+            sendAudioToServer(audioBlob, duration);
         };
 
-        // Get child's grade
-        const childGrade = '{{ child.grade|default:"GRADE_3" }}';
-        const childGradeDisplay = '{{ child.get_grade_display|default:"Grade 3" }}';
-        const benchmark = gradeBenchmarks[childGradeDisplay] || gradeBenchmarks['Grade 3'];
-
-        // Analyze performance against grade benchmarks
-        let performance = '';
-        let strengths = ["Clear pronunciation", "Good volume"];
-        let gaps = '';
-        let recommendations = [];
-
-        if (wpm >= benchmark.max) {
-            performance = 'Excellent';
-            strengths.push(`Outstanding reading speed for ${childGrade}!`);
-        } else if (wpm >= benchmark.avg) {
-            performance = 'Good';
-            strengths.push(`Strong reading pace for ${childGrade}`);
-        } else if (wpm >= benchmark.min) {
-            performance = 'Developing';
-            strengths.push(`Making good progress for ${childGrade}`);
-        } else {
-            performance = 'Needs Practice';
-            gaps = `Keep practicing! Focus on daily reading to reach the ${benchmark.min}-${benchmark.max} WPM range for ${childGrade}.`;
-        }
-
-        // Specific improvement areas based on performance
-        if (wpm < benchmark.min) {
-            recommendations.push("Practice reading aloud for 10 minutes daily");
-            recommendations.push("Try finger-tracking to maintain steady pace");
-            recommendations.push("Focus on one-syllable words first");
-        }
-        if (accuracy < 90) {
-            recommendations.push("Focus on clearly pronouncing word endings");
-            recommendations.push("Take brief pauses at punctuation marks");
-            recommendations.push("Sound out difficult words slowly");
-        }
-        if (wpm > benchmark.max && accuracy < 95) {
-            recommendations.push("Slow down slightly to improve accuracy");
-            recommendations.push("Focus on comprehension over speed");
-        }
-
-        // Ensure we have at least 3-4 improvement points
-        if (recommendations.length < 3) {
-            recommendations.push("Read age-appropriate books daily");
-            recommendations.push("Practice with stories your child loves");
-            recommendations.push("Create a consistent reading routine");
-        }
-
-        // Create detailed feedback as array
-        if (recommendations.length >= 3) {
-            gaps = recommendations;
-        } else if (performance === 'Excellent') {
-            gaps = [
-                "Challenge yourself with more complex texts",
-                "Try reading different genres to expand vocabulary",
-                "Practice comprehension questions after reading"
-            ];
-        } else if (performance === 'Good') {
-            gaps = [
-                `Continue regular practice to reach ${benchmark.max} WPM`,
-                "Focus on understanding story details",
-                "Try reading slightly more challenging books"
-            ];
-        } else if (performance === 'Developing') {
-            gaps = [
-                `Practice daily to reach ${benchmark.min} WPM minimum`,
-                "Focus on reading confidence building",
-                "Choose books with familiar topics",
-                "Practice sight words recognition"
-            ];
-        } else {
-            gaps = [
-                "Start with 15 minutes daily reading practice",
-                "Focus on basic phonics and letter sounds",
-                "Use picture books to build interest",
-                "Practice with very simple texts first"
-            ];
-        }
-
-        if (accuracy > 95) strengths.push("Excellent word recognition");
-        else if (accuracy > 85) strengths.push("Good word recognition");
-
-        // Limit strengths to maximum 2 points
-        if (strengths.length > 2) {
-            strengths = strengths.slice(0, 2);
-        }
-
-        // Add delay to build curiosity
-        setTimeout(() => {
-            saveAndShowResults(wpm, accuracy, strengths.join(","), gaps, duration, performance, benchmark);
-        }, 3000); // 3 second delay for analysis
+        mediaRecorder.stop();
     }
 
-    function saveAndShowResults(wpm, accuracy, strengths, gaps, duration, performance, benchmark) {
-        // Show analyzing state first
+    /* ================================================================
+     *  ANALYSIS & RESULTS
+     * ================================================================ */
+
+    function showAnalyzing() {
+        document.getElementById('step-2').classList.add('hidden');
+        document.getElementById('step-3').classList.remove('hidden');
+        updateStep(75, 'Step 3 of 4: Analyzing Voice');
+
+        var msgs = [
+            'Uploading your recording...', 'Processing voice waveforms...',
+            'Matching transcript to story text...', 'Evaluating pronunciation accuracy...',
+            'Calculating reading speed...', 'Almost done...'
+        ];
+        var i = 0;
+        var loadingEl = document.getElementById('loading-msg');
+        window._analyzeInterval = setInterval(function() {
+            if (i < msgs.length) loadingEl.textContent = msgs[i++];
+        }, 2000);
+    }
+
+    function sendAudioToServer(audioBlob, duration) {
+        showAnalyzing();
+
+        var ext = 'webm';
+        if (audioBlob.type.indexOf('ogg') !== -1) ext = 'ogg';
+        if (audioBlob.type.indexOf('mp4') !== -1) ext = 'mp4';
+
+        var formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.' + ext);
+        formData.append('passage_text', rawText);
+        formData.append('duration', duration);
+        formData.append('language', config.lang);
+        formData.append('csrfmiddlewaretoken', config.csrfToken);
+
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, 120000);
+
+        fetch(config.analyzeUrl, {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal,
+        })
+        .then(function(response) {
+            var contentType = response.headers.get('content-type') || '';
+            if (!response.ok) {
+                if (contentType.indexOf('application/json') !== -1) {
+                    return response.json().then(function(data) {
+                        throw new Error(data.message || 'Server error (' + response.status + ')');
+                    });
+                }
+                throw new Error('Server error (' + response.status + '). Check server logs.');
+            }
+            if (contentType.indexOf('application/json') === -1) {
+                throw new Error('Server returned unexpected response. Check server logs.');
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            clearTimeout(timeoutId);
+            clearInterval(window._analyzeInterval);
+            if (data.status === 'success') {
+                renderServerResults(data);
+            } else {
+                throw new Error(data.message || 'Analysis failed');
+            }
+        })
+        .catch(function(error) {
+            clearTimeout(timeoutId);
+            clearInterval(window._analyzeInterval);
+            console.error('Analysis error:', error);
+            var loadingEl = document.getElementById('loading-msg');
+            loadingEl.textContent = 'Analysis failed. Please try again.';
+            setTimeout(function() {
+                if (confirm('Analysis failed: ' + error.message + '. Try again?')) {
+                    window.location.reload();
+                }
+            }, 1500);
+        });
+    }
+
+    function renderServerResults(data) {
         document.getElementById('step-3').classList.add('hidden');
         document.getElementById('step-4').classList.remove('hidden');
-        document.getElementById('analyzing-state').classList.remove('hidden');
-        document.getElementById('results-state').classList.add('hidden');
-        document.getElementById('step-progress').style.width = '100%';
-        document.getElementById('step-title').textContent = 'Step 4 of 4: Results';
+        document.getElementById('analyzing-state').classList.add('hidden');
+        document.getElementById('results-state').classList.remove('hidden');
+        updateStep(100, 'Step 4 of 4: Results');
 
-        const formData = new FormData();
-        formData.append('wpm', wpm);
-        formData.append('accuracy', accuracy);
-        formData.append('strengths', strengths);
-        formData.append('gaps', gaps.join(". "));
-        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        var wpm         = data.wpm;
+        var accuracy    = data.accuracy;
+        var performance = data.performance;
+        var strengths   = data.strengths;
+        var gaps        = data.gaps;
+        var duration    = data.duration;
 
-        fetch(config.saveUrl, { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => {
-                // Hide analyzing state and show results
-                document.getElementById('analyzing-state').classList.add('hidden');
-                document.getElementById('results-state').classList.remove('hidden');
+        document.getElementById('result-wpm').textContent = wpm;
+        document.getElementById('result-accuracy').textContent = accuracy;
+        document.getElementById('result-time').textContent = Math.round(duration);
+        document.getElementById('level-tag').textContent = data.level;
 
-                document.getElementById('result-wpm').textContent = wpm;
-                document.getElementById('result-accuracy').textContent = accuracy;
-                document.getElementById('result-time').textContent = Math.round(duration);
-                document.getElementById('level-tag').textContent = data.level;
+        // Gauge
+        var gauge = document.getElementById('gauge-progress');
+        gauge.style.strokeDashoffset = GAUGE_ARC_LENGTH - (Math.min(wpm / WPM_GAUGE_MAX, 1) * GAUGE_ARC_LENGTH);
+        gauge.style.stroke = GAUGE_COLORS[performance] || '#ef4444';
 
-                // Update gauge with grade-specific coloring
-                const gauge = document.getElementById('gauge-progress');
-                const percentage = Math.min(wpm / 200, 1); // Updated max for higher grades
-                gauge.style.strokeDashoffset = 283 - (percentage * 283);
+        // Strengths & gaps lists
+        var strengthsList = document.getElementById('strengths-list');
+        var gapsList = document.getElementById('gaps-list');
+        if (strengthsList) {
+            strengthsList.innerHTML = strengths.split(',').map(function(s) {
+                return '<li class="flex items-start gap-2"><svg class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 006 0zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l2-2z" clip-rule="evenodd"></path></svg><span>' + s.trim() + '</span></li>';
+            }).join('');
+        }
+        if (gapsList && Array.isArray(gaps)) {
+            gapsList.innerHTML = gaps.map(function(gap) {
+                return '<li class="flex items-start gap-2"><svg class="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000-2v3a1 1 0 102 0V9zM9 5a1 1 0 012 0v1a1 1 0 11-2 0V5z" clip-rule="evenodd"></path></svg><span>' + gap + '</span></li>';
+            }).join('');
+        }
 
-                // Color code gauge based on performance
-                if (performance === 'Excellent') {
-                    gauge.style.stroke = '#10b981'; // green
-                } else if (performance === 'Good') {
-                    gauge.style.stroke = '#3b82f6'; // blue
-                } else if (performance === 'Developing') {
-                    gauge.style.stroke = '#f59e0b'; // amber
-                } else {
-                    gauge.style.stroke = '#ef4444'; // red
-                }
+        // Title
+        var titleEl = document.querySelector('#results-state h2');
+        if (titleEl) titleEl.textContent = TITLE_MAP[performance] || 'Good Effort!';
 
-                // Populate lists
-                const strengthsList = document.getElementById('strengths-list');
-                const gapsList = document.getElementById('gaps-list');
+        // Benchmark info
+        var benchmarkInfo = document.getElementById('benchmark-info');
+        if (benchmarkInfo) {
+            benchmarkInfo.innerHTML =
+                '<div class="bg-gray-50 rounded-lg p-3 mb-4">' +
+                '<p class="text-sm text-gray-600 font-medium">' + child.gradeDisplay + ' Reading Range: <span class="font-bold text-gray-900">' + benchmark.min + '-' + benchmark.max + ' WPM</span></p>' +
+                '<p class="text-xs text-gray-500 mt-1">Current: <span class="font-bold">' + performance + '</span> (' + wpm + ' WPM)</p>' +
+                '</div>';
+        }
 
-                if (strengthsList) {
-                    strengthsList.innerHTML = strengths.split(',').map(s => `<li class="flex items-start gap-2"><svg class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 016 0zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l2-2z" clip-rule="evenodd"></path></svg><span>${s.trim()}</span></li>`).join('');
-                }
+        // Average WPM comparison bar
+        var avgCompare = document.getElementById('avg-wpm-compare');
+        if (avgCompare) {
+            var scaleMax     = benchmark.max * 1.1;
+            var childPercent = Math.min((wpm / scaleMax) * 100, 100);
+            var avgPercent   = Math.min((benchmark.avg / scaleMax) * 100, 100);
+            var barColor     = wpm >= benchmark.avg ? '#10b981' : (wpm >= benchmark.min ? '#f59e0b' : '#ef4444');
+            var ageLabel     = child.age ? 'Age ' + child.age : child.gradeDisplay;
+            avgCompare.innerHTML =
+                '<div class="bg-gray-50 rounded-xl p-4">' +
+                '<p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">vs ' + ageLabel + ' Average (' + benchmark.avg + ' WPM)</p>' +
+                '<div class="flex items-center gap-3 mb-2">' +
+                '<span class="text-xs font-bold text-gray-500 w-10">You</span>' +
+                '<div class="flex-1 relative h-4 bg-gray-200 rounded-full"><div class="absolute h-full rounded-full transition-all duration-1000" style="width: ' + childPercent + '%; background: ' + barColor + ';"></div></div>' +
+                '<span class="text-xs font-bold text-gray-900 w-12 text-right">' + wpm + '</span></div>' +
+                '<div class="flex items-center gap-3">' +
+                '<span class="text-xs font-bold text-gray-400 w-10">Avg</span>' +
+                '<div class="flex-1 relative h-4 bg-gray-200 rounded-full"><div class="absolute h-full rounded-full bg-blue-400" style="width: ' + avgPercent + '%;"></div></div>' +
+                '<span class="text-xs font-bold text-blue-600 w-12 text-right">' + benchmark.avg + '</span></div>' +
+                '<div class="flex justify-between mt-2"><span class="text-[10px] text-gray-400">Min: ' + benchmark.min + '</span><span class="text-[10px] text-gray-400">Max: ' + benchmark.max + '</span></div>' +
+                '</div>';
+        }
 
-                if (gapsList) {
-                    gapsList.innerHTML = gaps.map(gap => `<li class="flex items-start gap-2"><svg class="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000-2v3a1 1 0 102 0V9zM9 5a1 1 0 012 0v1a1 1 0 11-2 0V5z" clip-rule="evenodd"></path></svg><span>${gap}</span></li>`).join('');
-                }
+        // Words read count
+        var wordsReadEl  = document.getElementById('result-words-read');
+        var wordsTotalEl = document.getElementById('result-words-total');
+        if (wordsReadEl)  wordsReadEl.textContent = data.words_read;
+        if (wordsTotalEl) wordsTotalEl.textContent = data.total_words;
 
-                // Update title based on performance
-                const titleElement = document.querySelector('#results-state h2');
-                if (titleElement) {
-                    if (performance === 'Excellent') {
-                        titleElement.textContent = 'Outstanding Performance!';
-                    } else if (performance === 'Good') {
-                        titleElement.textContent = 'Great Progress!';
-                    } else if (performance === 'Developing') {
-                        titleElement.textContent = 'Good Effort!';
-                    } else {
-                        titleElement.textContent = 'Keep Practicing!';
-                    }
-                }
-
-                // Add benchmark info
-                const benchmarkInfo = document.getElementById('benchmark-info');
-                if (benchmarkInfo) {
-                    benchmarkInfo.innerHTML = `
-                        <div class="bg-gray-50 rounded-lg p-3 mb-4">
-                            <p class="text-sm text-gray-600 font-medium">Grade ${childGradeDisplay} Reading Range: <span class="font-bold text-gray-900">${benchmark.min}-${benchmark.max} WPM</span></p>
-                            <p class="text-xs text-gray-500 mt-1">Current: <span class="font-bold">${performance}</span> (${wpm} WPM)</p>
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                console.error('Error saving results:', error);
-                // Still show results even if save fails
-                document.getElementById('analyzing-state').classList.add('hidden');
-                document.getElementById('results-state').classList.remove('hidden');
-            });
+        // Missed words section
+        var missedSection = document.getElementById('missed-words-section');
+        var missedListEl  = document.getElementById('missed-words-list');
+        if (missedSection && missedListEl && data.missed_words && data.missed_words.length > 0) {
+            missedSection.classList.remove('hidden');
+            missedListEl.innerHTML = data.missed_words.map(function(w) {
+                return '<span class="inline-block px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-sm font-medium border border-red-100">' + w + '</span>';
+            }).join('');
+        }
     }
 
-    document.getElementById('see-recommendations-btn').addEventListener('click', () => {
+    /* ================================================================
+     *  CUSTOMIZATION OVERLAY (exposed globally for onclick handlers)
+     * ================================================================ */
+
+    window.toggleInterest = function(btn) {
+        document.querySelectorAll('.interest-btn').forEach(function(b) {
+            b.classList.remove('active', 'ring-2', 'ring-orange-500', 'bg-orange-50', 'bg-orange-50/30', 'border-orange-500');
+            b.classList.add('border-gray-100', 'bg-white');
+        });
+        btn.classList.add('active', 'ring-2', 'ring-orange-500', 'bg-orange-50');
+        btn.classList.remove('border-gray-100', 'bg-white');
+    };
+
+    window.selectComfort = function(btn, level) {
+        document.querySelectorAll('.comfort-btn').forEach(function(b) {
+            b.classList.remove('active', 'border-orange-500', 'bg-orange-50/30');
+            b.classList.add('border-gray-100', 'bg-white');
+            var circle = b.querySelector('div');
+            circle.classList.remove('border-[6px]', 'border-orange-500');
+            circle.classList.add('border-2', 'border-gray-300');
+        });
+        btn.classList.add('active', 'border-orange-500', 'bg-orange-50/30');
+        btn.classList.remove('border-gray-100', 'bg-white');
+        var circle = btn.querySelector('div');
+        circle.classList.remove('border-2', 'border-gray-300');
+        circle.classList.add('border-[6px]', 'border-orange-500');
+    };
+
+    window.proceedToMicCheck = function() {
+        var activeBtn = document.querySelector('.interest-btn.active');
+        var interest  = activeBtn ? activeBtn.dataset.interest : '';
+        var url = new URL(window.location.href);
+        if (interest) url.searchParams.set('interest', interest);
+        else url.searchParams.delete('interest');
+        url.searchParams.delete('p');
+
+        if (interest !== config.currentInterest) {
+            window.location.href = url.toString();
+            return;
+        }
+        document.getElementById('pre-test-overlay').classList.add('opacity-0');
+        setTimeout(function() { document.getElementById('pre-test-overlay').classList.add('hidden'); }, 300);
+    };
+
+    window.showCustomizeJourney = function() {
+        var overlay = document.getElementById('pre-test-overlay');
+        overlay.classList.remove('hidden', 'opacity-0');
+        document.getElementById('step-1').classList.remove('hidden');
+        document.getElementById('step-2').classList.add('hidden');
+        document.getElementById('step-3').classList.add('hidden');
+        document.getElementById('step-4').classList.add('hidden');
+        updateStep(25, 'Step 1 of 4: Voice Check');
+    };
+
+    /* ================================================================
+     *  EVENT BINDING & INITIALIZATION
+     * ================================================================ */
+
+    startBtn.addEventListener('click', async function() {
+        if (!isSecure && !isLocalhost) {
+            alert('Microphone requires a secure connection (HTTPS). On mobile, please access this page using https://');
+            return;
+        }
+        if (typeof MediaRecorder === 'undefined') {
+            alert('Your browser does not support audio recording. Please use Chrome, Firefox, or Edge.');
+            return;
+        }
+        try {
+            var testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            testStream.getTracks().forEach(function(t) { t.stop(); });
+            startReading();
+        } catch (err) {
+            console.error('getUserMedia error:', err);
+            if (err.name === 'NotAllowedError') alert('Microphone access was denied. Please allow microphone permission in your browser settings and try again.');
+            else if (err.name === 'NotFoundError') alert('No microphone found. Please connect a microphone and try again.');
+            else alert('Could not access microphone: ' + err.message);
+        }
+    });
+
+    finishBtn.addEventListener('click', finishReading);
+
+    var seeRecsBtn = document.getElementById('see-recommendations-btn');
+    if (seeRecsBtn) seeRecsBtn.addEventListener('click', function() {
         document.getElementById('step-4').classList.add('hidden');
         document.getElementById('step-5').classList.remove('hidden');
-
         fetch(config.curatedBoxUrl)
-            .then(r => r.text())
-            .then(html => {
-                const doc = new DOMParser().parseFromString(html, 'text/html');
-                const books = doc.querySelectorAll('.book-card');
-                const container = document.getElementById('recommendations-list');
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var books = doc.querySelectorAll('.book-card');
+                var container = document.getElementById('recommendations-list');
                 container.innerHTML = '';
-                if (books.length > 0) {
-                    books.forEach(b => container.appendChild(b));
-                } else {
+                if (books.length > 0) books.forEach(function(b) { container.appendChild(b); });
+                else {
                     container.innerHTML = '<p class="text-sm text-gray-400">Loading your perfect matches...</p>';
-                    setTimeout(() => { window.location.href = config.dashboardUrl; }, 2000);
+                    setTimeout(function() { window.location.href = config.dashboardUrl; }, 2000);
                 }
             });
     });
+
+    // Auto-skip overlay if page was reloaded with an interest param
+    if (new URLSearchParams(window.location.search).has('interest')) {
+        document.getElementById('pre-test-overlay').classList.add('hidden');
+    }
+
+})();
 </script>
-
-<style>
-    .hide-scrollbar::-webkit-scrollbar {
-        display: none;
-    }
-
-    .hide-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .animate-fade-in {
-        animation: fadeIn 0.5s ease-out forwards;
-    }
-</style>
 {% endblock %}
