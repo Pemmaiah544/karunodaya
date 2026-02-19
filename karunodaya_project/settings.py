@@ -385,6 +385,7 @@ def dashboard_callback(request, context):
     from apps.orders.models import Order, SubscriptionCycle
     from apps.inventory.models import PhysicalCopy
     from apps.catalog.models import Book
+    from apps.portal.models import Complaint
     from django.db.models import Sum, Q, Count
     from datetime import datetime, timedelta
 
@@ -431,6 +432,10 @@ def dashboard_callback(request, context):
     # Recent Orders
     recent_orders = Order.objects.select_related('parent__user').order_by('-created_at')[:5]
 
+    # Complaints
+    complaints_count = Complaint.objects.count()
+    pending_complaints = Complaint.objects.filter(status='PENDING').count()
+
     # Add to context
     context['stats'] = {
         'active_subscriptions': active_subscriptions,
@@ -441,6 +446,8 @@ def dashboard_callback(request, context):
         'available_copies': available_copies,
         'low_inventory_count': low_inventory_count,
         'critical_inventory_count': critical_inventory_count,
+        'complaints_count': complaints_count,
+        'pending_complaints': pending_complaints,
     }
 
     context['recent_orders'] = recent_orders

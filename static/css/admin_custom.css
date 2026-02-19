@@ -127,7 +127,8 @@ div#content-main #result_list td,
     border-bottom: 1px solid #f1f5f9 !important;
     vertical-align: middle !important;
     line-height: 1.5 !important;
-    color: #4b5563 !important; /* Tailwind gray-600 for all cells */
+    color: #4b5563 !important;
+    /* Tailwind gray-600 for all cells */
 }
 
 /* Header styling - ONLY for actual headers */
@@ -143,7 +144,8 @@ div#content-main #result_list td,
 /* First column links - OVERRIDE both header and row styles */
 div#content-main #result_list tbody tr td:first-child a,
 #result_list tbody tr td:first-child a {
-    color: #4b5563 !important; /* Tailwind gray-600 */
+    color: #4b5563 !important;
+    /* Tailwind gray-600 */
     font-weight: 600 !important;
     text-decoration: none !important;
     display: block !important;
