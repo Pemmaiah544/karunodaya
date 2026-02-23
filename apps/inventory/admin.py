@@ -1,6 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
-from apps.core.admin_mixins import AdminPaginationMixin
+from apps.core.admin_mixins import AdminPaginationMixin, SectionPermissionMixin
 from .models import PhysicalCopy, InventoryLog
 
 
@@ -16,7 +16,8 @@ class InventoryLogInline(TabularInline):
 
 
 @admin.register(PhysicalCopy)
-class PhysicalCopyAdmin(AdminPaginationMixin, ModelAdmin):
+class PhysicalCopyAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
+    admin_section = 'inventory'
     list_display = ('barcode_link', 'book', 'status', 'purchased_date', 'updated_at')
     list_filter = ('status', 'purchased_date')
     search_fields = ('barcode', 'book__title')
@@ -105,7 +106,8 @@ class PhysicalCopyAdmin(AdminPaginationMixin, ModelAdmin):
 
 
 @admin.register(InventoryLog)
-class InventoryLogAdmin(AdminPaginationMixin, ModelAdmin):
+class InventoryLogAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
+    admin_section = 'inventory'
     list_display = ('physical_copy_display', 'barcode', 'action', 'performed_by', 'timestamp', 'notes')
     list_filter = ('action', 'timestamp', 'performed_by')
     search_fields = (

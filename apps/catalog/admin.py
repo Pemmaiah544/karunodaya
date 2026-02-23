@@ -1,13 +1,14 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin
-from apps.core.admin_mixins import AdminPaginationMixin
+from apps.core.admin_mixins import AdminPaginationMixin, SectionPermissionMixin
 from .models import Publisher, Book
 from .forms import BookAdminForm
 
 
 @admin.register(Publisher)
-class PublisherAdmin(AdminPaginationMixin, ModelAdmin):
+class PublisherAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
+    admin_section = 'catalog'
     list_display = ('name_link', 'email', 'phone', 'created_at')
     search_fields = ('name', 'email', 'phone')
     readonly_fields = ('created_at', 'updated_at')
@@ -29,7 +30,8 @@ class PublisherAdmin(AdminPaginationMixin, ModelAdmin):
 
 
 @admin.register(Book)
-class BookAdmin(AdminPaginationMixin, ModelAdmin):
+class BookAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
+    admin_section = 'catalog'
     form = BookAdminForm
     list_display = (
         'title_link', 'author', 'cover_image_thumbnail', 'publisher', 'difficulty_rating',

@@ -1,11 +1,12 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from apps.core.admin_mixins import AdminPaginationMixin
+from apps.core.admin_mixins import AdminPaginationMixin, SectionPermissionMixin
 from .models import Complaint, ReadingPassage
 
 
 @admin.register(Complaint)
-class ComplaintAdmin(AdminPaginationMixin, ModelAdmin):
+class ComplaintAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
+    admin_section = 'portal'
     list_display = ['subject_link', 'parent', 'category', 'status', 'created_at']
     list_filter = ['status', 'category', 'created_at']
     search_fields = ['subject', 'description', 'parent__user__username', 'order__id']
@@ -61,7 +62,8 @@ class ComplaintAdmin(AdminPaginationMixin, ModelAdmin):
 
 
 @admin.register(ReadingPassage)
-class ReadingPassageAdmin(AdminPaginationMixin, ModelAdmin):
+class ReadingPassageAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
+    admin_section = 'portal'
     list_display = ['title', 'language', 'grade', 'theme', 'word_count', 'is_active']
     list_filter = ['language', 'grade', 'theme', 'is_active']
     search_fields = ['title', 'text']
