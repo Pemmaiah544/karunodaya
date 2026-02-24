@@ -173,6 +173,102 @@
             </select>
         </div>
 
+        <!-- Home Learning Environment (New Section) -->
+        <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl p-5 border border-teal-100">
+            <h3 class="text-sm font-bold text-teal-900 mb-4 flex items-center gap-2">
+                <span class="text-lg">🏠</span>
+                Home Learning Environment
+            </h3>
+
+            <!-- Reading Companion -->
+            <div class="mb-5">
+                <label class="block text-sm font-medium text-gray-800 mb-3">
+                    Who usually helps your child read?
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                    {% for val, label in extra.COMPANION_CHOICES %}
+                    <label class="flex items-center gap-2 p-3 rounded-xl border border-gray-100 cursor-pointer hover:border-teal-200 hover:bg-white transition-all has-[:checked]:border-teal-400 has-[:checked]:bg-teal-50">
+                        <input type="radio" name="reading_companion" value="{{ val }}"
+                            {% if extra.reading_companion == val %}checked{% endif %}
+                            class="w-4 h-4 text-teal-600 border-gray-300 focus:ring-teal-500">
+                        <span class="text-sm text-gray-700">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="border-t border-teal-100 my-4"></div>
+
+            <!-- Reading Space -->
+            <div class="mb-5">
+                <label class="block text-sm font-medium text-gray-800 mb-3">
+                    Where does your child usually read?
+                </label>
+                <div class="grid grid-cols-1 gap-2">
+                    {% for val, label in extra.SPACE_CHOICES %}
+                    <label class="flex items-center gap-2 p-3 rounded-xl border border-gray-100 cursor-pointer hover:border-teal-200 hover:bg-white transition-all has-[:checked]:border-teal-400 has-[:checked]:bg-teal-50">
+                        <input type="radio" name="reading_space" value="{{ val }}"
+                            {% if extra.reading_space == val %}checked{% endif %}
+                            class="w-4 h-4 text-teal-600 border-gray-300 focus:ring-teal-500">
+                        <span class="text-sm text-gray-700">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="border-t border-teal-100 my-4"></div>
+
+            <!-- Study Environment -->
+            <div class="mb-5">
+                <label class="block text-sm font-medium text-gray-800 mb-3">
+                    How quiet is the reading environment?
+                </label>
+                <div class="grid grid-cols-1 gap-2">
+                    {% for val, label in extra.ENVIRONMENT_CHOICES %}
+                    <label class="flex items-center gap-2 p-3 rounded-xl border border-gray-100 cursor-pointer hover:border-teal-200 hover:bg-white transition-all has-[:checked]:border-teal-400 has-[:checked]:bg-teal-50">
+                        <input type="radio" name="study_environment" value="{{ val }}"
+                            {% if extra.study_environment == val %}checked{% endif %}
+                            class="w-4 h-4 text-teal-600 border-gray-300 focus:ring-teal-500">
+                        <span class="text-sm text-gray-700">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="border-t border-teal-100 my-4"></div>
+
+            <!-- Supervision Level -->
+            <div class="mb-5">
+                <label class="block text-sm font-medium text-gray-800 mb-3">
+                    How closely do you monitor reading sessions?
+                </label>
+                <div class="grid grid-cols-1 gap-2">
+                    {% for val, label in extra.SUPERVISION_CHOICES %}
+                    <label class="flex items-center gap-2 p-3 rounded-xl border border-gray-100 cursor-pointer hover:border-teal-200 hover:bg-white transition-all has-[:checked]:border-teal-400 has-[:checked]:bg-teal-50">
+                        <input type="radio" name="supervision_level" value="{{ val }}"
+                            {% if extra.supervision_level == val %}checked{% endif %}
+                            class="w-4 h-4 text-teal-600 border-gray-300 focus:ring-teal-500">
+                        <span class="text-sm text-gray-700">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="border-t border-teal-100 my-4"></div>
+
+            <!-- Motivation Support -->
+            <div>
+                <label for="motivation_method" class="block text-sm font-medium text-gray-800 mb-1">
+                    What motivates your child to read?
+                </label>
+                <p class="text-xs text-gray-500 mb-3">Optional — separate with commas (e.g., rewards, praise, routine)</p>
+                <input type="text" id="motivation_method" name="motivation_method"
+                    value="{{ extra.motivation_method|default:'' }}"
+                    placeholder="e.g., stickers, praise, screen time, routine"
+                    class="w-full border border-gray-200 rounded-xl p-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent bg-white">
+            </div>
+        </div>
+
         <!-- Submit -->
         <button id="enhance-submit-btn" type="submit"
             class="w-full bg-teal-500 text-white py-4 rounded-2xl font-bold text-base shadow-lg

@@ -264,6 +264,34 @@ class ParentProfileExtra(models.Model):
         ('WEEKEND', 'Weekends only'),
     ]
 
+    COMPANION_CHOICES = [
+        ('FATHER', 'Father'),
+        ('MOTHER', 'Mother'),
+        ('BOTH', 'Both Parents'),
+        ('GRANDPARENT', 'Grandparent'),
+        ('SIBLING', 'Sibling'),
+        ('TUTOR', 'Tutor'),
+        ('SELF', 'Self-Reading'),
+    ]
+
+    SPACE_CHOICES = [
+        ('SEPARATE_ROOM', 'Separate Room'),
+        ('SHARED_SPACE', 'Shared Space'),
+        ('NO_FIXED', 'No Fixed Place'),
+    ]
+
+    ENVIRONMENT_CHOICES = [
+        ('QUIET', 'Always Quiet'),
+        ('SOMETIMES_NOISY', 'Sometimes Noisy'),
+        ('MOSTLY_NOISY', 'Mostly Noisy'),
+    ]
+
+    SUPERVISION_CHOICES = [
+        ('ALWAYS', 'Always Monitored'),
+        ('SOMETIMES', 'Sometimes Monitored'),
+        ('RARELY', 'Rarely Monitored'),
+    ]
+
     parent = models.OneToOneField(
         ParentProfile,
         on_delete=models.CASCADE,
@@ -301,6 +329,41 @@ class ParentProfileExtra(models.Model):
         null=True,
         validators=[MaxValueValidator(180)],
         help_text="Typical reading session duration in minutes"
+    )
+
+    # Home Learning Environment
+    reading_companion = models.CharField(
+        max_length=20,
+        choices=COMPANION_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Who typically helps the child read"
+    )
+    reading_space = models.CharField(
+        max_length=20,
+        choices=SPACE_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Where the child usually reads"
+    )
+    study_environment = models.CharField(
+        max_length=20,
+        choices=ENVIRONMENT_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Quietness level of reading environment"
+    )
+    supervision_level = models.CharField(
+        max_length=20,
+        choices=SUPERVISION_CHOICES,
+        blank=True,
+        null=True,
+        help_text="How closely parent monitors reading"
+    )
+    motivation_method = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Comma-separated list of motivation methods (rewards, praise, routine, etc.)"
     )
 
     profile_completed = models.BooleanField(

@@ -1779,6 +1779,23 @@ def profile_enhance_parent(request):
         extra.books_at_home = int(books_raw) if books_raw.isdigit() else None
         extra.preferred_reading_time = preferred_reading_time
         extra.reading_duration_minutes = int(duration_raw)
+
+        # Home Learning Environment fields (optional)
+        reading_companion = request.POST.get('reading_companion', '').strip()
+        extra.reading_companion = reading_companion if reading_companion else None
+
+        reading_space = request.POST.get('reading_space', '').strip()
+        extra.reading_space = reading_space if reading_space else None
+
+        study_environment = request.POST.get('study_environment', '').strip()
+        extra.study_environment = study_environment if study_environment else None
+
+        supervision_level = request.POST.get('supervision_level', '').strip()
+        extra.supervision_level = supervision_level if supervision_level else None
+
+        motivation_method = request.POST.get('motivation_method', '').strip()
+        extra.motivation_method = motivation_method if motivation_method else None
+
         extra.profile_completed = True
         extra.save()
 

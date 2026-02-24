@@ -91,7 +91,9 @@ class ParentProfileExtraInline(TabularInline):
     verbose_name_plural = "Reading Support Info"
     fields = (
         'reading_frequency', 'provides_assistance', 'books_at_home',
-        'preferred_reading_time', 'reading_duration_minutes', 'profile_completed'
+        'preferred_reading_time', 'reading_duration_minutes',
+        'reading_companion', 'reading_space', 'study_environment',
+        'supervision_level', 'motivation_method', 'profile_completed'
     )
 
 
