@@ -12,7 +12,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from apps.profiles.models import ParentProfile, Child
+from apps.profiles.models import ParentProfile, Child, ChildProfileExtra, ParentProfileExtra, ReadingAssessment
 from apps.catalog.models import Book
 from apps.orders.models import Order, SubscriptionCycle, SubscriptionPlan
 from django.contrib import messages
@@ -520,7 +520,19 @@ def fluency_check_save(request, child_id):
                 child.reading_difficulty_level = 'ADVANCED'
             
             child.save()
-            
+
+            # Save historical assessment record
+            ReadingAssessment.objects.create(
+                child=child,
+                passage=None,
+                wpm=child.reading_wpm,
+                accuracy=child.reading_accuracy if child.reading_accuracy else 0.0,
+                level=child.reading_difficulty_level,
+                strengths=child.reading_strengths or '',
+                gaps=child.reading_gaps or '',
+                language='EN',
+            )
+
             return JsonResponse({
                 'status': 'success',
                 'wpm': child.reading_wpm,
@@ -650,6 +662,18 @@ def fluency_check_analyze(request, child_id):
     else:
         child.reading_difficulty_level = 'ADVANCED'
     child.save()
+
+    # Save historical assessment record
+    ReadingAssessment.objects.create(
+        child=child,
+        passage=None,
+        wpm=wpm,
+        accuracy=float(accuracy),
+        level=child.reading_difficulty_level,
+        strengths=', '.join(strengths),
+        gaps='. '.join(recommendations),
+        language=language,
+    )
 
     return JsonResponse({
         'status': 'success',
@@ -1250,7 +1274,13 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
             
         # Check if address is complete
         context['address_complete'] = is_address_complete(self.request.user.parent_profile)
-        
+
+        # Soft gate: nudge parents to complete enhanced profile for better curation
+        try:
+            context['profile_enhancement_pending'] = not self.request.user.parent_profile.extra_profile.profile_completed
+        except (ParentProfile.DoesNotExist, ParentProfileExtra.DoesNotExist, AttributeError):
+            context['profile_enhancement_pending'] = True
+
         return context
 
     def post(self, request, child_id=None):
@@ -1706,3 +1736,148 @@ class UpdateDeliveryAddressView(LoginRequiredMixin, OnboardingRequiredMixin, Tem
         # Default redirect to profile
         return redirect('portal:profile')
 
+
+# ===========================
+# Profile Enhancement Flow
+# ===========================
+
+@onboarding_required
+def profile_enhance_parent(request):
+    """
+    Step 1 of profile enhancement: collect ParentProfileExtra data.
+    GET: render form. POST (HTMX): save and redirect to child enhancement.
+    """
+    from django.urls import reverse
+    parent_profile = request.user.parent_profile
+    extra, _ = ParentProfileExtra.objects.get_or_create(parent=parent_profile)
+
+    if request.method == 'POST':
+        # Validate required fields
+        reading_frequency = request.POST.get('reading_frequency', '').strip()
+        preferred_reading_time = request.POST.get('preferred_reading_time', '').strip()
+        duration_raw = request.POST.get('reading_duration_minutes', '').strip()
+
+        errors = []
+        if not reading_frequency:
+            errors.append('How often you read with your child is required')
+        if not preferred_reading_time:
+            errors.append('Preferred reading time is required')
+        if not duration_raw or not duration_raw.isdigit():
+            errors.append('Reading session duration is required')
+
+        if errors:
+            return render(request, 'portal/profile_enhance_parent.html', {
+                'extra': extra,
+                'parent_profile': parent_profile,
+                'errors': errors,
+            }, status=400)
+
+        # Save validated data
+        extra.reading_frequency = reading_frequency
+        extra.provides_assistance = request.POST.get('provides_assistance') == 'true'
+        books_raw = request.POST.get('books_at_home', '').strip()
+        extra.books_at_home = int(books_raw) if books_raw.isdigit() else None
+        extra.preferred_reading_time = preferred_reading_time
+        extra.reading_duration_minutes = int(duration_raw)
+        extra.profile_completed = True
+        extra.save()
+
+        active_child = parent_profile.children.filter(is_active=True).first()
+        if active_child:
+            redirect_url = reverse('portal:profile_enhance_child', kwargs={'child_id': active_child.id})
+        else:
+            redirect_url = reverse('portal:dashboard')
+
+        if request.headers.get('HX-Request'):
+            response = HttpResponse(status=204)
+            response['HX-Redirect'] = redirect_url
+            return response
+        return redirect(redirect_url)
+
+    return render(request, 'portal/profile_enhance_parent.html', {
+        'extra': extra,
+        'parent_profile': parent_profile,
+    })
+
+
+@onboarding_required
+def profile_enhance_child(request, child_id):
+    """
+    Step 2 of profile enhancement: collect ChildProfileExtra data for one child.
+    GET: render form. POST (HTMX): save and redirect to dashboard.
+    """
+    from django.urls import reverse
+    parent_profile = request.user.parent_profile
+    child = get_object_or_404(Child, id=child_id, parent=parent_profile)
+    extra, _ = ChildProfileExtra.objects.get_or_create(child=child)
+
+    if request.method == 'POST':
+        # Validate required fields
+        medium = request.POST.get('medium', '').strip()
+        primary_language = request.POST.get('primary_language', '').strip()
+        comprehension_level = request.POST.get('comprehension_level', '').strip()
+
+        errors = []
+        if not medium:
+            errors.append('School language medium is required')
+        if not primary_language:
+            errors.append('Primary language is required')
+        if not comprehension_level:
+            errors.append('Comprehension level is required')
+
+        if errors:
+            return render(request, 'portal/profile_enhance_child.html', {
+                'child': child,
+                'extra': extra,
+                'errors': errors,
+            }, status=400)
+
+        # Save validated data
+        extra.medium = medium
+        extra.primary_language = primary_language
+        extra.other_languages = request.POST.get('other_languages', '').strip() or None
+        extra.comprehension_level = comprehension_level
+        extra.reads_aloud = request.POST.get('reads_aloud') == 'true'
+        extra.skips_words = request.POST.get('skips_words') == 'true'
+        extra.reading_speed_perception = request.POST.get('reading_speed_perception') or None
+        screen_raw = request.POST.get('avg_screen_time_hours', '').strip()
+        try:
+            extra.avg_screen_time_hours = float(screen_raw) if screen_raw else None
+        except ValueError:
+            extra.avg_screen_time_hours = None
+        extra.save()
+
+        redirect_url = reverse('portal:dashboard')
+        if request.headers.get('HX-Request'):
+            response = HttpResponse(status=204)
+            response['HX-Redirect'] = redirect_url
+            return response
+        return redirect(redirect_url)
+
+    return render(request, 'portal/profile_enhance_child.html', {
+        'child': child,
+        'extra': extra,
+    })
+
+
+@login_required
+def profile_enhance_check(request):
+    """
+    HTMX lazy-load endpoint: returns nudge fragment if enhancement is pending.
+    Used by the dashboard to lazy-load the profile completion prompt.
+    """
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return HttpResponse('')
+
+    try:
+        extra = parent_profile.extra_profile
+        completed = extra.profile_completed
+    except ParentProfileExtra.DoesNotExist:
+        completed = False
+
+    return render(request, 'portal/components/profile_enhance_nudge.html', {
+        'enhancement_completed': completed,
+        'parent_profile': parent_profile,
+    })

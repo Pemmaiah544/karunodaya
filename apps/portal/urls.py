@@ -73,6 +73,11 @@ urlpatterns = [
     path('profile/child/add/', views.AddChildView.as_view(), name='add_child'),
     path('profile/child/<int:child_id>/toggle/', views.toggle_child_status, name='toggle_child'),
 
+    # Profile Enhancement Flow (post-onboarding)
+    path('profile-enhance/parent/', views.profile_enhance_parent, name='profile_enhance_parent'),
+    path('profile-enhance/child/<int:child_id>/', views.profile_enhance_child, name='profile_enhance_child'),
+    path('profile-enhance/check/', views.profile_enhance_check, name='profile_enhance_check'),
+
     # Subscriptions
     path('plans/', views.PlansView.as_view(), name='plans'),
     path('subscribe/', views.SubscribeView.as_view(), name='subscribe'),

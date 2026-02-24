@@ -5,7 +5,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django import forms
 from unfold.admin import ModelAdmin, TabularInline
 from apps.core.admin_mixins import AdminPaginationMixin
-from .models import ParentProfile, Child
+from .models import ParentProfile, Child, ChildProfileExtra, ParentProfileExtra, ReadingAssessment
 
 
 # Custom User Admin to override the default Django User admin
@@ -82,13 +82,50 @@ class ChildInline(TabularInline):
     readonly_fields = []
 
 
+class ParentProfileExtraInline(TabularInline):
+    model = ParentProfileExtra
+    extra = 0
+    max_num = 1
+    can_delete = False
+    verbose_name = "Reading Support Info"
+    verbose_name_plural = "Reading Support Info"
+    fields = (
+        'reading_frequency', 'provides_assistance', 'books_at_home',
+        'preferred_reading_time', 'reading_duration_minutes', 'profile_completed'
+    )
+
+
+class ChildProfileExtraInline(TabularInline):
+    model = ChildProfileExtra
+    extra = 0
+    max_num = 1
+    can_delete = False
+    verbose_name = "Extended Profile"
+    verbose_name_plural = "Extended Profile"
+    fields = (
+        'medium', 'primary_language', 'other_languages', 'comprehension_level',
+        'reads_aloud', 'skips_words', 'reading_speed_perception', 'avg_screen_time_hours'
+    )
+
+
+class ReadingAssessmentInline(TabularInline):
+    model = ReadingAssessment
+    extra = 0
+    can_delete = False
+    verbose_name = "Assessment History"
+    verbose_name_plural = "Assessment History"
+    readonly_fields = ('assessed_at', 'wpm', 'accuracy', 'level', 'language', 'strengths', 'gaps')
+    fields = ('assessed_at', 'wpm', 'accuracy', 'level', 'language', 'strengths', 'gaps')
+    ordering = ('-assessed_at',)
+
+
 @admin.register(ParentProfile)
 class ParentProfileAdmin(AdminPaginationMixin, ModelAdmin):
     list_display = ('first_name_link', 'user__last_name', 'phone_number', 'user__email', 'is_staff_status', 'city', 'created_at')
     list_filter = ('city', 'state', 'created_at', 'user__is_staff')
     search_fields = ('user__first_name', 'user__last_name', 'user__email', 'phone_number')
     readonly_fields = ('created_at', 'updated_at')
-    inlines = [ChildInline]
+    inlines = [ChildInline, ParentProfileExtraInline]
     
     def first_name_link(self, obj):
         from django.urls import reverse
@@ -131,6 +168,7 @@ class ChildAdmin(AdminPaginationMixin, ModelAdmin):
     list_filter = ('grade', 'reading_difficulty_level', 'age')
     search_fields = ('name', 'parent__user__username')
     readonly_fields = ('created_at', 'updated_at')
+    inlines = [ChildProfileExtraInline, ReadingAssessmentInline]
 
     def name_link(self, obj):
         from django.urls import reverse
@@ -153,6 +191,39 @@ class ChildAdmin(AdminPaginationMixin, ModelAdmin):
         }),
         ('Metadata', {
             'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(ReadingAssessment)
+class ReadingAssessmentAdmin(AdminPaginationMixin, ModelAdmin):
+    list_display = ('child_name_link', 'wpm', 'accuracy', 'level', 'language', 'assessed_at')
+    list_filter = ('level', 'language', 'assessed_at')
+    search_fields = ('child__name', 'child__parent__user__username')
+    readonly_fields = ('child', 'passage', 'wpm', 'accuracy', 'level', 'strengths', 'gaps', 'language', 'assessed_at')
+    ordering = ('-assessed_at',)
+
+    def child_name_link(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        url = reverse('admin:profiles_child_change', args=[obj.child.pk])
+        return format_html(
+            '<a href="{}" style="color: #4b5563 !important; font-weight: 600; font-size: 14px;">{}</a>',
+            url, obj.child.name
+        )
+    child_name_link.short_description = 'Child'
+    child_name_link.admin_order_field = 'child__name'
+
+    fieldsets = (
+        ('Assessment Record', {
+            'fields': ('child', 'passage', 'language', 'assessed_at')
+        }),
+        ('Results', {
+            'fields': ('wpm', 'accuracy', 'level')
+        }),
+        ('Feedback', {
+            'fields': ('strengths', 'gaps'),
             'classes': ('collapse',)
         }),
     )

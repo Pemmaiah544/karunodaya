@@ -222,6 +222,14 @@
     {% endfor %}
     {% endif %}
 
+    <!-- Profile Enhancement Nudge (lazy-loaded, shown until parent completes enhanced profile) -->
+    {% if has_children %}
+    <div hx-get="{% url 'portal:profile_enhance_check' %}"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+    </div>
+    {% endif %}
+
     <!-- Learning Progress Section -->
     <div class="mb-8">
         <div class="flex items-center gap-2 mb-4 px-1">
