@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'apps.payments',
     'apps.portal',
     'apps.core',  # Enhanced table system
+    'apps.feedback',
 ]
 
 MIDDLEWARE = [
@@ -342,6 +343,16 @@ UNFOLD = {
                         "title": _("Complaints"),
                         "icon": "report_problem",
                         "link": reverse_lazy("admin:portal_complaint_changelist"),
+                    },
+                    {
+                        "title": _("App Feedback"),
+                        "icon": "feedback",
+                        "link": reverse_lazy("admin:feedback_appfeedback_changelist"),
+                    },
+                    {
+                        "title": _("Cycle Feedback"),
+                        "icon": "rate_review",
+                        "link": reverse_lazy("admin:feedback_cyclefeedback_changelist"),
                     },
                 ],
             },

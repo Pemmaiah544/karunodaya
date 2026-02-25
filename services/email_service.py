@@ -198,3 +198,60 @@ def send_order_out_for_delivery_email(order):
     except Exception as e:
         logger.error(f"Failed to send out for delivery email for Order #{order.id}: {str(e)}")
         return False
+
+
+def send_feedback_notification_email(feedback, feedback_type='app'):
+    """
+    Send admin notification email for low-rating feedback.
+    Only sends for ratings <= 2 stars.
+
+    Args:
+        feedback: AppFeedback or CycleFeedback instance
+        feedback_type: 'app' or 'cycle'
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        # Get admin email
+        admin_email = settings.ADMIN_EMAIL
+        if not admin_email:
+            logger.warning(f"No ADMIN_EMAIL configured for feedback notification")
+            return False
+
+        # Build subject based on feedback type
+        if feedback_type == 'app':
+            parent_name = feedback.parent.user.get_full_name() if feedback.parent else "Unknown"
+            subject = f"⚠ Low Feedback ({feedback.rating}★) — {parent_name}"
+        elif feedback_type == 'cycle':
+            child_name = feedback.child.name if feedback.child else "Unknown"
+            parent_name = feedback.parent.user.get_full_name() if feedback.parent else "Unknown"
+            subject = f"⚠ Low Book Feedback ({feedback.rating}★) — {child_name} ({parent_name})"
+        else:
+            subject = f"⚠ Low Feedback ({feedback.rating}★)"
+
+        # Render HTML email template
+        html_content = render_to_string('emails/feedback_notification.html', {
+            'feedback': feedback,
+            'feedback_type': feedback_type,
+        })
+
+        # Create plain text version
+        text_content = strip_tags(html_content)
+
+        # Send email
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[admin_email]
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+
+        logger.info(f"Feedback notification email sent to admin for {feedback_type} feedback #{feedback.id}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Failed to send feedback notification email: {str(e)}")
+        return False

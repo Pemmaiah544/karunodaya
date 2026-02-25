@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #ea580c 0%, #fb923c 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .feedback-box {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .rating {
+            font-size: 32px;
+            margin: 10px 0;
+        }
+        .label {
+            font-weight: 600;
+            color: #374151;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        .list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .list li {
+            padding: 5px 0;
+            color: #4b5563;
+        }
+        .list li:before {
+            content: "• ";
+            color: #ea580c;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .comments {
+            background-color: #f3f4f6;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            color: #4b5563;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .footer {
+            background-color: #f9fafb;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .button {
+            display: inline-block;
+            background-color: #ea580c;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚠ Low Rating Feedback</h1>
+            <p style="margin: 0; font-size: 14px; opacity: 0.9;">Action needed</p>
+        </div>
+
+        <div class="content">
+            {% if feedback_type == 'app' %}
+                <p>A parent has submitted low-rating feedback about the app.</p>
+
+                <div class="feedback-box">
+                    <div class="rating">{{ feedback.rating }}★ / 5</div>
+                    {% if feedback.parent %}
+                        <strong>{{ feedback.parent.user.get_full_name }}</strong>
+                        <br><span style="color: #6b7280;">{{ feedback.parent.user.email }}</span>
+                    {% else %}
+                        <strong>Anonymous</strong>
+                    {% endif %}
+                </div>
+
+                {% if feedback.child_age_group %}
+                    <div class="label">Child Age Group:</div>
+                    <p style="margin: 0 0 15px 0; color: #4b5563;">
+                        {{ feedback.get_child_age_group_display }}
+                    </p>
+                {% endif %}
+
+                {% if feedback.going_well %}
+                    <div class="label">What's Working Well:</div>
+                    <ul class="list">
+                        {% for choice_key in feedback.going_well %}
+                            <li>{{ feedback.GOING_WELL_CHOICES|dictsort|selectattr:'0'|first }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                {% if feedback.needs_improvement %}
+                    <div class="label">Needs Improvement:</div>
+                    <ul class="list">
+                        {% for choice in feedback.NEEDS_IMPROVEMENT_CHOICES %}
+                            {% if choice.0 in feedback.needs_improvement %}
+                                <li>{{ choice.1 }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+            {% elif feedback_type == 'cycle' %}
+                <p>A parent has submitted low-rating feedback about a subscription cycle.</p>
+
+                <div class="feedback-box">
+                    <div class="rating">{{ feedback.rating }}★ / 5</div>
+                    {% if feedback.child %}
+                        <strong>{{ feedback.child.name }}</strong>
+                        <br><span style="color: #6b7280;">Grade {{ feedback.child.get_grade_display }}</span>
+                    {% else %}
+                        <strong>Unknown Child</strong>
+                    {% endif %}
+                    {% if feedback.parent %}
+                        <br><span style="color: #6b7280;">{{ feedback.parent.user.email }}</span>
+                    {% endif %}
+                </div>
+
+                {% if feedback.enjoyed %}
+                    <div class="label">What Child Enjoyed:</div>
+                    <ul class="list">
+                        {% for choice in feedback.ENJOYED_CHOICES %}
+                            {% if choice.0 in feedback.enjoyed %}
+                                <li>{{ choice.1 }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                {% if feedback.needs_improvement %}
+                    <div class="label">Needs Improvement:</div>
+                    <ul class="list">
+                        {% for choice in feedback.NEEDS_IMPROVEMENT_CHOICES %}
+                            {% if choice.0 in feedback.needs_improvement %}
+                                <li>{{ choice.1 }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endif %}
+
+            {% if feedback.comments %}
+                <div class="label">Comments:</div>
+                <div class="comments">{{ feedback.comments }}</div>
+            {% endif %}
+
+            <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+                Review this feedback in the admin panel to take action and improve the app experience.
+            </p>
+        </div>
+
+        <div class="footer">
+            <p style="margin: 0;">Karunodaya Feedback Notification</p>
+        </div>
+    </div>
+</body>
+</html>

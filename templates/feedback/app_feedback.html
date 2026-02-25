@@ -1,0 +1,690 @@
+{% extends 'portal/base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        background: #f9fafb;
+    }
+
+    .feedback-page {
+        width: 100%;
+        min-height: 100vh;
+        background: #f9fafb;
+    }
+
+    .feedback-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 32px 28px;
+    }
+
+    .feedback-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 28px;
+    }
+
+    .back-button {
+        background: #fb923c;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s ease;
+        letter-spacing: 0.5px;
+    }
+
+    .back-button:hover {
+        background: #ea580c;
+        transform: translateX(-3px);
+    }
+
+    .close-button {
+        display: none;
+    }
+
+    .feedback-header {
+        text-align: center;
+        margin-bottom: 36px;
+    }
+
+    .feedback-header h1 {
+        font-size: 32px;
+        font-weight: 800;
+        color: #1f2937;
+        margin: 0 0 8px 0;
+        letter-spacing: -0.5px;
+    }
+
+    .feedback-header p {
+        color: #6b7280;
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+
+    .form-section {
+        margin-bottom: 24px;
+    }
+
+    /* Question Card */
+    .question-card {
+        background: white;
+        border: 2px solid #f0f0f0;
+        border-radius: 16px;
+        padding: 24px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .question-card:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        border-color: #e5e7eb;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 20px;
+        font-size: 16px;
+        letter-spacing: -0.3px;
+    }
+
+    .form-label-optional {
+        color: #9ca3af;
+        font-weight: 600;
+        font-size: 14px;
+        margin-left: 4px;
+    }
+
+    /* Rating section */
+    .rating-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .rating-stars {
+        display: flex;
+        gap: 14px;
+        justify-content: center;
+    }
+
+    .rating-labels {
+        display: flex;
+        gap: 8px;
+        font-size: 12px;
+        color: #9ca3af;
+        text-align: center;
+        font-weight: 600;
+        width: 100%;
+    }
+
+    .rating-label {
+        flex: 1;
+    }
+
+    .star-btn {
+        background: none;
+        border: none;
+        font-size: 44px;
+        cursor: pointer;
+        color: #e5e7eb;
+        padding: 0;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
+    }
+
+    .star-btn:hover {
+        transform: scale(1.25) rotate(10deg);
+        filter: drop-shadow(0 6px 16px rgba(251, 146, 60, 0.35));
+    }
+
+    .star-btn.active {
+        color: #fb923c;
+        transform: scale(1.3) rotate(0deg);
+        filter: drop-shadow(0 8px 24px rgba(251, 146, 60, 0.4));
+    }
+
+    /* Checkbox list */
+    .checkbox-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .checkbox-item:hover {
+        background: #fef9f5;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #fb923c;
+        flex-shrink: 0;
+    }
+
+    .checkbox-item label {
+        flex: 1;
+        cursor: pointer;
+        margin: 0;
+        padding: 0;
+    }
+
+    .checkbox-item-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        line-height: 1.4;
+        cursor: pointer;
+    }
+
+    /* Textarea */
+    textarea {
+        width: 100%;
+        padding: 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-family: inherit;
+        font-size: 15px;
+        resize: vertical;
+        min-height: 110px;
+        background: #fafbfc;
+        transition: all 0.3s ease;
+        color: #1f2937;
+    }
+
+    textarea:focus {
+        outline: none;
+        border-color: #fb923c;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(251, 146, 60, 0.1);
+    }
+
+    textarea::placeholder {
+        color: #9ca3af;
+    }
+
+    .char-count {
+        font-size: 13px;
+        color: #9ca3af;
+        margin-top: 8px;
+        font-weight: 600;
+    }
+
+    /* Buttons */
+    .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 32px;
+    }
+
+    .btn {
+        padding: 16px 24px;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        text-decoration: none;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: 0.3px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+        color: white;
+        box-shadow: 0 8px 20px rgba(251, 146, 60, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(251, 146, 60, 0.4);
+    }
+
+    .btn-primary:active {
+        transform: translateY(0);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        color: #6b7280;
+        border: none;
+        text-decoration: underline;
+        font-weight: 600;
+        padding: 12px 16px;
+    }
+
+    .btn-secondary:hover {
+        color: #1f2937;
+    }
+
+    .error-message {
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 14px 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border-left: 4px solid #dc2626;
+        font-weight: 500;
+    }
+
+    .success-message {
+        background: #dcfce7;
+        color: #166534;
+        padding: 14px 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border-left: 4px solid #16a34a;
+        font-weight: 500;
+    }
+
+    /* Thank you animation */
+    .thank-you-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        opacity: 0;
+        animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .thank-you-card {
+        background: white;
+        border-radius: 24px;
+        padding: 48px 32px;
+        text-align: center;
+        max-width: 420px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+    }
+
+    .book-animation {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 28px;
+        animation: bookOpen 1.2s ease-in-out infinite;
+    }
+
+    .book-spine {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 56px;
+        color: white;
+        box-shadow: 0 12px 40px rgba(251, 146, 60, 0.35);
+    }
+
+    @keyframes bookOpen {
+        0% { transform: perspective(1200px) rotateY(0deg); }
+        50% { transform: perspective(1200px) rotateY(-35deg); }
+        100% { transform: perspective(1200px) rotateY(0deg); }
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .thank-you-title {
+        font-size: 28px;
+        font-weight: 800;
+        color: #1f2937;
+        margin: 0 0 12px 0;
+    }
+
+    .thank-you-message {
+        font-size: 15px;
+        color: #6b7280;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgba(251, 146, 60, 0.3);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(251, 146, 60, 0.5);
+    }
+
+    @media (max-width: 768px) {
+        .feedback-modal-overlay {
+            padding: 0;
+        }
+
+        .feedback-modal {
+            border-radius: 20px 20px 0 0;
+            max-height: 100vh;
+        }
+
+        .feedback-container {
+            padding: 24px 20px;
+        }
+
+        .feedback-header h1 {
+            font-size: 26px;
+        }
+
+        .question-card {
+            padding: 20px;
+        }
+
+        .checkbox-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .checkbox-card {
+            min-height: 80px;
+        }
+
+        .age-group-buttons {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .rating-stars {
+            gap: 10px;
+        }
+
+        .star-btn {
+            font-size: 36px;
+        }
+
+        .thank-you-card {
+            padding: 40px 24px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="feedback-page">
+    <div class="feedback-container">
+            <!-- Header -->
+            <div class="feedback-header-top">
+                <button type="button" class="back-button" id="backBtn" title="Go back" aria-label="Go back">
+                    ← BACK
+                </button>
+            </div>
+
+            <div class="feedback-header">
+                <h1>Help Us Improve</h1>
+                <p>Share how Karunodaya is helping your child's reading journey</p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'error' %}
+                        <div class="error-message">{{ message }}</div>
+                    {% elif message.tags == 'success' %}
+                        <div class="success-message">{{ message }}</div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" id="feedbackForm">
+                {% csrf_token %}
+
+                <!-- Rating Question Card -->
+                <div class="form-section">
+                    <div class="question-card">
+                        <label class="form-label">How helpful is Karunodaya for your child's reading?<span class="form-label-optional">*</span></label>
+                        <div class="rating-section">
+                            <div class="rating-stars" id="ratingStars">
+                                {% for i in '12345'|make_list %}
+                                    <button type="button" class="star-btn" data-rating="{{ i }}" aria-label="Rate {{ i }} stars">★</button>
+                                {% endfor %}
+                            </div>
+                            <div class="rating-labels">
+                                <div class="rating-label">Poor</div>
+                                <div class="rating-label">Fair</div>
+                                <div class="rating-label">Good</div>
+                                <div class="rating-label">Great</div>
+                                <div class="rating-label">Excellent</div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="rating" id="ratingInput" required>
+                    </div>
+                </div>
+
+                <!-- Working Well Question Card -->
+                <div class="form-section">
+                    <div class="question-card">
+                        <label class="form-label">What is working well?<span class="form-label-optional">(optional)</span></label>
+                        <div class="checkbox-list">
+                            {% for choice_key, choice_label in going_well_choices %}
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="going_well" value="{{ choice_key }}" id="going_well_{{ choice_key }}">
+                                    <label for="going_well_{{ choice_key }}" class="checkbox-item-label">{{ choice_label }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Improvement Question Card -->
+                <div class="form-section">
+                    <div class="question-card">
+                        <label class="form-label">What would help your child improve more?<span class="form-label-optional">(optional)</span></label>
+                        <div class="checkbox-list">
+                            {% for choice_key, choice_label in needs_improvement_choices %}
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="needs_improvement" value="{{ choice_key }}" id="needs_improvement_{{ choice_key }}">
+                                    <label for="needs_improvement_{{ choice_key }}" class="checkbox-item-label">{{ choice_label }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comments Question Card -->
+                <div class="form-section">
+                    <div class="question-card">
+                        <label class="form-label">Additional thoughts<span class="form-label-optional">(optional)</span></label>
+                        <textarea name="comments" placeholder="Share any other feedback..." id="commentsBox"></textarea>
+                        <div class="char-count"><span id="charCount">0</span> / 500 characters</div>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Submit Feedback →</button>
+                    <a href="{% url 'portal:dashboard' %}" class="btn btn-secondary">Maybe Later</a>
+                </div>
+            </form>
+    </div>
+</div>
+
+<!-- Thank you animation -->
+<div id="thankYouOverlay" class="thank-you-overlay" style="display: none;">
+    <div class="thank-you-card">
+        <div class="book-animation">
+            <div class="book-spine">📚</div>
+        </div>
+        <div class="thank-you-title">Thank You!</div>
+        <p class="thank-you-message">
+            Your feedback helps us create a better learning experience for your child.
+        </p>
+    </div>
+</div>
+
+<script>
+(function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        const ratingStars = document.querySelectorAll('.star-btn');
+        const ratingInput = document.getElementById('ratingInput');
+        const form = document.getElementById('feedbackForm');
+        const commentsBox = document.getElementById('commentsBox');
+        const charCount = document.getElementById('charCount');
+        const checkboxItems = document.querySelectorAll('.checkbox-item input[type="checkbox"]');
+        const backBtn = document.getElementById('backBtn');
+        const thankYouOverlay = document.getElementById('thankYouOverlay');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Restore form state
+        function restoreFormState() {
+            const savedState = localStorage.getItem('feedbackFormState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+
+                if (state.rating) {
+                    ratingInput.value = state.rating;
+                    ratingStars.forEach((s, index) => {
+                        if (index < parseInt(state.rating)) s.classList.add('active');
+                    });
+                }
+
+                if (state.goingWell) {
+                    document.querySelectorAll('input[name="going_well"]').forEach(cb => {
+                        if (state.goingWell.includes(cb.value)) {
+                            cb.checked = true;
+                        }
+                    });
+                }
+
+                if (state.needsImprovement) {
+                    document.querySelectorAll('input[name="needs_improvement"]').forEach(cb => {
+                        if (state.needsImprovement.includes(cb.value)) {
+                            cb.checked = true;
+                        }
+                    });
+                }
+
+                if (state.comments) {
+                    commentsBox.value = state.comments;
+                    charCount.textContent = state.comments.length;
+                }
+            }
+        }
+
+        // Save form state
+        function saveFormState() {
+            const state = {
+                rating: ratingInput.value,
+                goingWell: Array.from(document.querySelectorAll('input[name="going_well"]:checked')).map(cb => cb.value),
+                needsImprovement: Array.from(document.querySelectorAll('input[name="needs_improvement"]:checked')).map(cb => cb.value),
+                comments: commentsBox.value
+            };
+            localStorage.setItem('feedbackFormState', JSON.stringify(state));
+        }
+
+        // Rating stars
+        ratingStars.forEach(star => {
+            star.addEventListener('click', function(e) {
+                e.preventDefault();
+                const rating = this.dataset.rating;
+                ratingInput.value = rating;
+                saveFormState();
+
+                ratingStars.forEach((s, index) => {
+                    if (index < rating) s.classList.add('active');
+                    else s.classList.remove('active');
+                });
+            });
+
+            star.addEventListener('mouseover', function() {
+                const rating = this.dataset.rating;
+                ratingStars.forEach((s, index) => {
+                    s.style.color = index < rating ? '#fb923c' : '#e5e7eb';
+                });
+            });
+        });
+
+        document.addEventListener('mouseleave', function() {
+            if (!ratingInput.value) {
+                ratingStars.forEach(s => s.style.color = '#e5e7eb');
+            }
+        });
+
+        // Checkbox items
+        checkboxItems.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                saveFormState();
+            });
+        });
+
+        // Character count
+        commentsBox.addEventListener('input', function() {
+            charCount.textContent = this.value.length;
+            saveFormState();
+        });
+
+        // Back button
+        backBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.history.back();
+        });
+
+        // Form submission
+        form.addEventListener('submit', function(e) {
+            if (!ratingInput.value) {
+                e.preventDefault();
+                alert('Please provide a rating.');
+                return;
+            }
+
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+            thankYouOverlay.style.display = 'flex';
+            localStorage.removeItem('feedbackFormState');
+
+            setTimeout(() => {
+                form.submit();
+            }, 2000);
+        });
+
+        restoreFormState();
+    });
+})();
+</script>
+{% endblock %}

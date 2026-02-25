@@ -1542,7 +1542,8 @@ def initiate_return(request, cycle_id):
         success, message = return_subscription_books(cycle, condition_notes)
 
         if success:
-            return redirect('portal:my_books')
+            # Redirect to feedback page for the returned cycle
+            return redirect('feedback:cycle_feedback', cycle_id=cycle.id)
         else:
             return render(request, 'portal/my_books.html', {
                 'error': message,
