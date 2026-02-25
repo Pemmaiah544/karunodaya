@@ -420,12 +420,22 @@ class ReadingAssessment(models.Model):
         choices=[('EN', 'English'), ('HI', 'Hindi'), ('KN', 'Kannada')],
         default='EN'
     )
+    improvement_percent = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(-100), MaxValueValidator(100)],
+        help_text="% change in WPM compared to previous assessment"
+    )
     assessed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = "Reading Assessment"
         verbose_name_plural = "Reading Assessments"
         ordering = ['-assessed_at']
+        indexes = [
+            models.Index(fields=['child', '-assessed_at']),
+            models.Index(fields=['level']),
+        ]
 
     def __str__(self):
         return f"{self.child.name} – {self.wpm} WPM – {self.assessed_at.strftime('%d %b %Y')}"

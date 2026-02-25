@@ -105,3 +105,51 @@ class ReadingPassage(models.Model):
     def save(self, *args, **kwargs):
         self.word_count = len(self.text.split())
         super().save(*args, **kwargs)
+
+
+class CommunityProgress(models.Model):
+    """
+    Aggregated reading statistics for a geographic location (city + locality).
+    Automatically maintained via signals when ReadingAssessment records are created/updated.
+    Provides real-time community-level reading progress metrics.
+    """
+    READING_LEVEL_CHOICES = [
+        ('BEGINNER', 'Beginner (Ages 3-6)'),
+        ('INTERMEDIATE', 'Intermediate (Ages 7-10)'),
+        ('ADVANCED', 'Advanced (Ages 11-14)'),
+    ]
+
+    city = models.CharField(max_length=100, db_index=True)
+    locality = models.CharField(max_length=100, db_index=True)
+    reading_level = models.CharField(max_length=20, choices=READING_LEVEL_CHOICES, db_index=True)
+
+    # Aggregate counts and averages
+    child_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of children at this level in this location"
+    )
+    avg_wpm = models.FloatField(null=True, blank=True, help_text="Average words per minute")
+    avg_accuracy = models.FloatField(null=True, blank=True, help_text="Average accuracy percentage")
+    improvement_percent = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Average % improvement compared to previous assessments"
+    )
+
+    # Tracking
+    last_updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Community Progress"
+        verbose_name_plural = "Community Progress"
+        unique_together = ('city', 'locality', 'reading_level')
+        indexes = [
+            models.Index(fields=['city', 'locality']),
+            models.Index(fields=['reading_level']),
+            models.Index(fields=['-last_updated']),
+        ]
+        ordering = ['city', 'locality', 'reading_level']
+
+    def __str__(self):
+        return f"{self.city}, {self.locality} – {self.get_reading_level_display()} ({self.child_count} children)"

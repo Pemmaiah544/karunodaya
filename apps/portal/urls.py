@@ -97,6 +97,17 @@ urlpatterns = [
     
     # Delivery Address
     path('update-delivery-address/', views.UpdateDeliveryAddressView.as_view(), name='update_delivery_address'),
-    
+
+    # Community Progress Feature
+    path('api/address-status/', views.api_address_status, name='api_address_status'),
+    path('api/user/address/', views.api_user_address, name='api_user_address'),
+    path('api/community-progress/', views.api_community_progress, name='api_community_progress'),
+    path('api/young-readers/', views.api_young_readers, name='api_young_readers'),
+    path('api/cities-by-state/', views.api_cities_by_state, name='api_cities_by_state'),
+    path('api/community-stats/', views.api_community_stats, name='api_community_stats'),
+    path('api/community-states/', views.api_community_states, name='api_community_states'),
+    path('community-progress/', views.community_progress_page, name='community_progress_page'),
+    path('address-banner/', views.address_banner_check, name='address_banner_check'),
+
     path('support/', views.SupportView.as_view(), name='support'),
 ]

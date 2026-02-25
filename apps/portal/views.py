@@ -9,6 +9,7 @@ from django.http import HttpResponse, JsonResponse
 from django.db.models import Q
 import re
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -2014,3 +2015,370 @@ def profile_enhance_check(request):
         'enhancement_completed': completed,
         'parent_profile': parent_profile,
     })
+
+
+# ============================================================================
+# Community Progress Feature - API Endpoints & Views
+# ============================================================================
+
+@login_required
+def api_address_status(request):
+    """
+    GET /api/address-status/
+    Returns the current parent's address completion status.
+    """
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return JsonResponse({'error': 'Parent profile not found'}, status=404)
+
+    # Check if address is completed (has city + pincode)
+    is_address_completed = bool(parent_profile.city and parent_profile.pincode)
+
+    return JsonResponse({
+        'is_completed': is_address_completed,
+        'city': parent_profile.city or '',
+        'locality': getattr(parent_profile, 'locality', '') or '',
+        'address': parent_profile.address or '',
+        'state': parent_profile.state or '',
+        'pincode': parent_profile.pincode or '',
+        'verified_at': getattr(parent_profile, 'address_verified_at', None).isoformat() if getattr(parent_profile, 'address_verified_at', None) else None,
+        'last_updated': parent_profile.updated_at.isoformat(),
+    })
+
+
+@login_required
+def api_user_address(request):
+    """
+    POST /api/user/address/
+    Validate and save parent's address.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    from services.community_service import AddressValidator
+    from django.utils import timezone
+
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return JsonResponse({'error': 'Parent profile not found'}, status=404)
+
+    # Get and validate address data
+    data = {
+        'address': request.POST.get('address', '').strip(),
+        'city': request.POST.get('city', '').strip(),
+        'locality': request.POST.get('locality', '').strip(),
+        'state': request.POST.get('state', '').strip(),
+        'pincode': request.POST.get('pincode', '').strip(),
+    }
+
+    is_valid, errors = AddressValidator.validate_address(data)
+    if not is_valid:
+        return JsonResponse({
+            'success': False,
+            'errors': errors,
+        }, status=400)
+
+    # Normalize and save
+    normalized = AddressValidator.normalize_address(data)
+    parent_profile.address = normalized['address']
+    parent_profile.city = normalized['city']
+    parent_profile.state = normalized['state']
+    parent_profile.pincode = normalized['pincode']
+    parent_profile.save()
+
+    messages.success(request, 'Address saved successfully!')
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Address saved successfully',
+        'address_completed': True,
+        'verified_at': timezone.now().isoformat(),
+    })
+
+
+@login_required
+def api_community_progress(request):
+    """
+    GET /api/community-progress/
+    Returns aggregated community progress for a location.
+    Query params: city (required), locality (optional), level (optional)
+    """
+    from services.community_service import CommunityProgressService
+
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return JsonResponse({'error': 'Parent profile not found'}, status=404)
+
+    # Check if address is completed (has city + pincode)
+    is_address_completed = bool(parent_profile.city and parent_profile.pincode)
+    if not is_address_completed:
+        return JsonResponse({
+            'error': 'Address required to view community progress'
+        }, status=400)
+
+    # Get query parameters
+    city = request.GET.get('city', '').strip()
+    locality = request.GET.get('locality', '').strip() or None
+    level = request.GET.get('level', '').strip() or None
+
+    # Use parent's location if not specified
+    if not city:
+        city = parent_profile.city
+        # locality is a form input, not stored in parent_profile
+        locality = getattr(parent_profile, 'locality', None)
+
+    if not city:
+        return JsonResponse({
+            'error': 'City not specified and parent address incomplete'
+        }, status=400)
+
+    # Fetch community progress
+    progress_data = CommunityProgressService.get_community_progress(
+        city, locality, level
+    )
+
+    return JsonResponse(progress_data)
+
+
+@login_required
+def community_progress_page(request):
+    """
+    GET /community-progress/
+    Displays the community progress page with stats and charts.
+    """
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return redirect('portal:onboarding')
+
+    # Ensure address is completed (check for city and pincode)
+    if not (parent_profile.city and parent_profile.pincode):
+        messages.info(request, 'Please complete your address to view community progress.')
+        return redirect('portal:dashboard')
+
+    # Get context
+    children = parent_profile.children.filter(is_active=True)
+    active_child = children.first()
+
+    from services.community_service import STATE_TO_CITIES
+
+    # Get cities for parent's state from STATE_TO_CITIES mapping
+    parent_state = parent_profile.state or ''
+    state_cities = STATE_TO_CITIES.get(parent_state, [])
+
+    # Use state cities if available, otherwise show all major cities
+    db_cities = state_cities if state_cities else list(set(
+        city for cities in STATE_TO_CITIES.values()
+        for city in cities
+    ))
+
+    context = {
+        'parent_profile': parent_profile,
+        'active_child': active_child,
+        'children': children,
+        'state_to_cities': json.dumps(STATE_TO_CITIES),
+        'db_cities': json.dumps(db_cities),
+        'parent_city': parent_profile.city or '',
+    }
+
+    return render(request, 'portal/community_progress.html', context)
+
+
+
+@login_required
+def address_banner_check(request):
+    """
+    GET /address-banner/ (HTMX endpoint)
+    Returns address banner fragment if address is incomplete.
+    Used for lazy-loading on dashboard with hx-trigger="load".
+    """
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return HttpResponse('')
+
+    # Return empty if address completed (has city + pincode)
+    if parent_profile.city and parent_profile.pincode:
+        return HttpResponse('')
+
+    # Return banner fragment
+    return render(request, 'portal/components/address_banner_fragment.html', {
+        'parent_profile': parent_profile,
+    })
+
+
+@login_required
+def api_young_readers(request):
+    """
+    GET /api/young-readers/?city=X
+    Returns anonymized individual reader cards for a city.
+    """
+    from services.community_service import CommunityProgressService
+
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return JsonResponse({'error': 'Parent profile not found'}, status=404)
+
+    # Check if address is completed (has city + pincode)
+    is_address_completed = bool(parent_profile.city and parent_profile.pincode)
+    if not is_address_completed:
+        return JsonResponse({
+            'error': 'Address required to view community progress'
+        }, status=400)
+
+    # Get query parameters
+    city = request.GET.get('city', '').strip()
+
+    # Use parent's location if not specified
+    if not city:
+        city = parent_profile.city
+
+    if not city:
+        return JsonResponse({
+            'error': 'City not specified and parent address incomplete'
+        }, status=400)
+
+    # Fetch young readers
+    readers_data = CommunityProgressService.get_young_readers(
+        city, current_user_id=request.user.id
+    )
+
+    return JsonResponse(readers_data)
+
+
+@login_required
+def api_cities_by_state(request):
+    """
+    GET /api/cities-by-state/?state=X
+    Returns cities for a given state.
+    """
+    from services.community_service import STATE_TO_CITIES
+
+    state = request.GET.get('state', '').strip()
+
+    if not state:
+        return JsonResponse({'error': 'State not provided'}, status=400)
+
+    cities = STATE_TO_CITIES.get(state, [])
+
+    return JsonResponse({
+        'state': state,
+        'cities': cities,
+    })
+
+
+@login_required
+def api_community_stats(request):
+    """
+    GET /api/community-stats/?city=X
+    Returns real-time statistics for a city:
+    - Total books read
+    - Active readers this week
+    - Total learners
+    """
+    from django.utils import timezone
+    from datetime import timedelta
+    from django.db.models import Count
+
+    city = request.GET.get('city', '').strip()
+
+    if not city:
+        return JsonResponse({'error': 'City not provided'}, status=400)
+
+    try:
+        # Fuzzy city matching: find all DB-stored variants of the requested city.
+        # Handles typos like 'Banglore' vs dropdown 'Bangalore' (SequenceMatcher ≥ 0.85).
+        from services.community_service import resolve_city_variants
+        city_variants = resolve_city_variants(city)
+        if city not in city_variants:
+            city_variants.append(city)
+
+        # Get all children in the matched city variants who have completed reading test
+        children_in_city = Child.objects.filter(
+            parent__city__in=city_variants,
+            reading_test_completed=True
+        )
+
+
+        total_learners = children_in_city.count()
+
+        # Calculate total books read (assessments count)
+        total_assessments = ReadingAssessment.objects.filter(
+            child__in=children_in_city
+        ).count()
+
+        # Active readers this week (assessments in last 7 days)
+        week_ago = timezone.now() - timedelta(days=7)
+        active_this_week = ReadingAssessment.objects.filter(
+            child__in=children_in_city,
+            assessed_at__gte=week_ago
+        ).values('child').distinct().count()
+
+        # Calculate growth percentage (compare this week to previous week)
+        two_weeks_ago = timezone.now() - timedelta(days=14)
+        previous_week_start = two_weeks_ago
+        previous_week_end = week_ago
+
+        assessments_previous_week = ReadingAssessment.objects.filter(
+            child__in=children_in_city,
+            assessed_at__gte=previous_week_start,
+            assessed_at__lt=previous_week_end
+        ).count()
+
+        assessments_current_week = ReadingAssessment.objects.filter(
+            child__in=children_in_city,
+            assessed_at__gte=week_ago
+        ).count()
+
+        growth_percent = 0
+        if assessments_previous_week > 0:
+            growth_percent = int(
+                ((assessments_current_week - assessments_previous_week) / assessments_previous_week) * 100
+            )
+
+        return JsonResponse({
+            'city': city,
+            'total_books': total_assessments,
+            'active_readers': active_this_week,
+            'total_learners': total_learners,
+            'growth_percent': growth_percent,
+        })
+
+    except Exception as e:
+        logger.error(f"Error calculating community stats: {str(e)}")
+        return JsonResponse({
+            'city': city,
+            'total_books': 0,
+            'active_readers': 0,
+            'total_learners': 0,
+            'growth_percent': 0,
+        })
+
+
+@login_required
+def api_community_states(request):
+    """
+    GET /api/community-states/
+    Returns all states and their cities (used for city selection dropdown).
+    """
+    from services.community_service import STATE_TO_CITIES
+
+    try:
+        states = sorted(STATE_TO_CITIES.keys())
+        states_with_cities = {
+            state: STATE_TO_CITIES[state]
+            for state in states
+        }
+
+        return JsonResponse({
+            'states': states,
+            'states_with_cities': states_with_cities,
+        })
+
+    except Exception as e:
+        logger.error(f"Error fetching states: {str(e)}")
+        return JsonResponse({'error': 'Failed to fetch states'}, status=500)

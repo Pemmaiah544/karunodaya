@@ -230,6 +230,15 @@
     </div>
     {% endif %}
 
+    <!-- Address Banner (lazy-loaded for community features) -->
+    <div hx-get="{% url 'portal:address_banner_check' %}"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+    </div>
+
+    <!-- Community Progress Card (shown when address is completed) -->
+    {% include "portal/components/community_progress_card.html" %}
+
     <!-- Learning Progress Section -->
     <div class="mb-8">
         <div class="flex items-center gap-2 mb-4 px-1">
