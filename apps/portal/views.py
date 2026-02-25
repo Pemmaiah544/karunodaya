@@ -444,7 +444,7 @@ class FluencyCheckView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
         lang = self.request.GET.get('lang', 'EN').upper()
         if lang not in ['EN', 'HI', 'KN']:
             lang = 'EN'
-            
+
         import random
         passage_idx = self.request.GET.get('p')
         if passage_idx is not None:
@@ -464,6 +464,16 @@ class FluencyCheckView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
         theme = theme_map.get(interest)
 
         passage = get_passage_for_grade(child.grade, lang=lang, passage_idx=passage_idx, theme=theme)
+
+        # Grade-level average WPM for fallback cursor (real-time highlighting)
+        grade_benchmarks = {
+            'PRE_K': 10, 'KINDERGARTEN': 40,
+            'GRADE_1': 60, 'GRADE_2': 100,
+            'GRADE_3': 115, 'GRADE_4': 130,
+            'GRADE_5': 160, 'GRADE_6': 170,
+            'GRADE_7': 190, 'GRADE_8': 190,
+        }
+        context['grade_avg_wpm'] = grade_benchmarks.get(child.grade, 80)
 
         context['passage'] = passage
         context['current_lang'] = lang
@@ -542,6 +552,25 @@ def fluency_check_save(request, child_id):
     return JsonResponse({'status': 'error'}, status=400)
 
 
+def align_to_passage(passage_words, matched_indices, skipped_indices):
+    """
+    Align matched and skipped passage word indices to their original words.
+    Returns list of dicts: {idx, word, status}
+    status: 'matched' | 'skipped' | 'missed'
+    """
+    matched_set = set(matched_indices)
+    skipped_set = set(skipped_indices)
+    return [
+        {
+            "idx": i,
+            "word": w,
+            "status": "matched" if i in matched_set else
+                      "skipped" if i in skipped_set else "missed"
+        }
+        for i, w in enumerate(passage_words)
+    ]
+
+
 @login_required
 def fluency_check_analyze(request, child_id):
     """Receive recorded audio, transcribe with Whisper, compare to passage, return results."""
@@ -592,8 +621,19 @@ def fluency_check_analyze(request, child_id):
     total_words = comparison['total_words']
     accuracy = comparison['accuracy']
     missed_words = comparison['missed_words']
+    matched_indices = comparison.get('matched_indices', [])
+    skipped_indices = comparison.get('skipped_indices', [])
+    # Use actual spoken word count for WPM — more accurate than matched-words count
+    transcript_word_count = comparison.get('transcript_word_count', words_read)
 
-    wpm = round(words_read / (duration / 60)) if duration > 0 else 0
+    # Build word-level results for real-time highlighting
+    passage_words = passage_text.strip().split()
+    word_results = align_to_passage(passage_words, matched_indices, skipped_indices)
+
+    # WPM = words the child actually spoke / time in minutes
+    # Capped at total_words to avoid inflation when Whisper picks up extra noise/speech
+    spoken_words_for_wpm = min(transcript_word_count, total_words)
+    wpm = round(spoken_words_for_wpm / (duration / 60)) if duration > 0 else 0
 
     # Grade benchmarks (same as fluency_check_save)
     grade_benchmarks = {
@@ -688,6 +728,82 @@ def fluency_check_analyze(request, child_id):
         'gaps': recommendations,
         'missed_words': missed_words,
         'benchmark': {'min': bm[0], 'avg': bm[1], 'max': bm[2]},
+        'word_results': word_results,  # For real-time highlighting reconciliation
+    })
+
+
+@login_required
+def fluency_check_partial_analyze(request, child_id):
+    """
+    Real-time partial audio analysis during reading.
+    Runs Whisper on a sliding window of recent audio chunks and returns newly matched word indices.
+    Accepts an optional 'current_pos' POST param so matching starts from where the child currently is.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+
+    child = get_object_or_404(Child, id=child_id, parent__user=request.user)
+
+    audio_file = request.FILES.get('audio')
+    if not audio_file:
+        return JsonResponse({'status': 'error', 'message': 'No audio file provided'}, status=400)
+
+    if audio_file.size > 10 * 1024 * 1024:
+        return JsonResponse({'status': 'error', 'message': 'Audio file too large (max 10MB)'}, status=400)
+
+    passage_text = request.POST.get('passage_text', '').strip()
+    if not passage_text:
+        return JsonResponse({'status': 'error', 'message': 'No passage text provided'}, status=400)
+
+    language = request.POST.get('language', 'EN').upper()
+
+    # Current word position from the client — start matching from here to avoid
+    # re-matching already-highlighted words at the beginning of the passage.
+    try:
+        client_current_pos = max(0, int(request.POST.get('current_pos', 0)))
+    except (ValueError, TypeError):
+        client_current_pos = 0
+
+    from services.speech_service import _save_uploaded_audio, transcribe, compare_transcript_to_passage, cleanup_audio_files
+
+    audio_path = None
+    try:
+        audio_path = _save_uploaded_audio(audio_file)
+        transcript_text = transcribe(audio_path, language=language)
+    except (ValueError, RuntimeError) as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    except Exception as e:
+        logger.error(f"Unexpected error in partial fluency analysis: {e}")
+        return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred'}, status=500)
+    finally:
+        if audio_path:
+            cleanup_audio_files(audio_path)
+
+    # Slice the passage from client_current_pos so Whisper's window matches the right segment.
+    # Use a small look-back (5 words) so we don't miss words if the cursor is slightly ahead.
+    LOOK_BACK = 5
+    passage_words = passage_text.strip().split()
+    slice_start = max(0, client_current_pos - LOOK_BACK)
+    passage_slice = ' '.join(passage_words[slice_start:])
+
+    # Compare transcript against the passage slice
+    comparison = compare_transcript_to_passage(transcript_text, passage_slice)
+    matched_indices_relative = comparison.get('matched_indices', [])
+    skipped_indices_relative = comparison.get('skipped_indices', [])
+
+    # Offset indices back to absolute passage positions
+    matched_indices = [i + slice_start for i in matched_indices_relative]
+    skipped_indices = [i + slice_start for i in skipped_indices_relative]
+
+    # Build word-level results for highlighting (use full passage word list for display)
+    word_results = align_to_passage(passage_words, matched_indices, skipped_indices)
+
+    return JsonResponse({
+        'status': 'success',
+        'transcript': transcript_text,
+        'matched_indices': matched_indices,
+        'skipped_indices': skipped_indices,
+        'word_results': word_results,
     })
 
 
