@@ -1,21 +1,29 @@
 <!-- Address Banner Fragment (HTMX Lazy-Load version) -->
 {% if not parent_profile.address_completed %}
-<div class="mb-6 relative overflow-hidden rounded-[24px]
+<script>
+(function(){
+    var ts = localStorage.getItem('banner_dismissed_address');
+    if (ts && (Date.now() - parseInt(ts)) < 86400000) {
+        document.currentScript.nextElementSibling.remove();
+    }
+})();
+</script>
+<div id="address-banner-card" class="flex-none w-[80vw] relative overflow-hidden rounded-[20px]
             bg-gradient-to-r from-orange-500 to-orange-600
-            p-8 text-white shadow-xl shadow-orange-100
+            p-5 text-white shadow-lg shadow-orange-100
             animate-in fade-in slide-in-from-top duration-700">
-    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+    <div class="relative z-10 flex flex-col gap-3">
         <div class="flex-1">
-            <div class="inline-block bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest border border-white/30 mb-3">
+            <div class="inline-block bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest border border-white/30 mb-1.5">
                 Community Feature
             </div>
-            <h3 class="text-2xl sm:text-3xl font-black leading-tight mb-2">Connect with Your Community</h3>
-            <p class="text-base text-orange-100 font-medium">See how your child's reading progress compares to peers in your area.</p>
+            <h3 class="text-base font-black leading-tight mb-1">Connect with Your Community</h3>
+            <p class="text-xs text-orange-100">See how your child's reading progress compares to peers in your area.</p>
         </div>
         <button onclick="openAddressModal()"
-                class="w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-orange-600 px-6 py-3 rounded-full font-bold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all whitespace-nowrap">
+                class="self-start flex items-center gap-1.5 bg-white text-orange-600 px-4 py-1.5 rounded-full font-bold text-xs shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all whitespace-nowrap">
             Complete Address
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
         </button>
@@ -26,8 +34,8 @@
     <div class="absolute -left-10 -top-10 w-48 h-48 bg-orange-400/20 rounded-full blur-3xl"></div>
 
     <!-- Dismiss button -->
-    <button onclick="this.closest('.mb-6').remove()"
-            class="absolute top-4 right-4 w-7 h-7 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-full flex items-center justify-center text-[12px] transition-colors z-50">
+    <button onclick="localStorage.setItem('banner_dismissed_address',Date.now());document.getElementById('address-banner-card').remove()"
+            class="absolute top-3 right-3 w-5 h-5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-full flex items-center justify-center text-[9px] transition-colors z-50">
         ✕
     </button>
 </div>

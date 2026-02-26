@@ -1,18 +1,51 @@
 <!-- Address Form Modal Component -->
+<style>
+    @keyframes modalBackdropIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+    @keyframes modalBackdropOut {
+        from { opacity: 1; }
+        to   { opacity: 0; }
+    }
+    @keyframes modalPanelIn {
+        from { opacity: 0; transform: scale(0.95) translateY(10px); }
+        to   { opacity: 1; transform: scale(1)    translateY(0);    }
+    }
+    @keyframes modalPanelOut {
+        from { opacity: 1; transform: scale(1)    translateY(0);    }
+        to   { opacity: 0; transform: scale(0.95) translateY(10px); }
+    }
+    #address-modal:not(.hidden) {
+        animation: modalBackdropIn 0.2s ease forwards;
+    }
+    #address-modal.is-closing {
+        animation: modalBackdropOut 0.15s ease forwards;
+        pointer-events: none;
+    }
+    #address-modal:not(.hidden) .modal-panel {
+        animation: modalPanelIn 0.2s ease forwards;
+    }
+    #address-modal.is-closing .modal-panel {
+        animation: modalPanelOut 0.15s ease forwards;
+    }
+</style>
+
 <div id="address-modal"
-     class="hidden fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
-    <!-- Modal panel (positioned at bottom on mobile, center on desktop) -->
-    <div class="bg-white rounded-t-[24px] sm:rounded-[24px] w-full sm:max-w-md max-h-[90vh] overflow-y-auto relative">
-        <!-- Close button -->
-        <button onclick="closeAddressModal()"
-                class="absolute top-4 right-4 w-8 h-8 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full flex items-center justify-center transition-colors z-10">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+     class="hidden fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4">
+    <!-- Modal panel — always centered -->
+    <div class="modal-panel bg-white rounded-[24px] w-full max-w-md max-h-[90vh] overflow-y-auto relative shadow-2xl">
+
+        <!-- Close button — outside the header so it's never clipped -->
+        <button id="address-modal-close-btn"
+                class="absolute top-3 right-3 w-8 h-8 bg-white hover:bg-gray-100 text-gray-500 rounded-full flex items-center justify-center transition-colors shadow-sm border border-gray-100 z-20">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
         </button>
 
         <!-- Header: Orange gradient -->
-        <div class="relative overflow-hidden rounded-t-[24px] sm:rounded-t-[24px] bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-white">
+        <div class="relative overflow-hidden rounded-t-[24px] bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-white">
             <div class="relative z-10">
                 <span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/10 inline-block">
                     Complete Address
@@ -20,7 +53,6 @@
                 <h2 class="text-2xl font-black mt-2 mb-1">Local Community</h2>
                 <p class="text-sm text-white/90">Complete your address to join your community's reading progress</p>
             </div>
-            <!-- Decorative blobs -->
             <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
             <div class="absolute -left-8 -top-8 w-32 h-32 bg-orange-400/20 rounded-full blur-3xl"></div>
         </div>
@@ -32,7 +64,6 @@
                   hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                   class="space-y-4">
 
-                <!-- Address -->
                 <div>
                     <label for="address" class="block text-sm font-bold text-gray-900 mb-2">Street Address *</label>
                     <textarea name="address" id="address"
@@ -42,52 +73,43 @@
                     <p id="address-error" class="text-red-500 text-xs font-bold mt-1 hidden"></p>
                 </div>
 
-                <!-- City & State (grid) -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label for="city" class="block text-sm font-bold text-gray-900 mb-2">City *</label>
-                        <input type="text" name="city" id="city"
-                               placeholder="e.g., Bangalore"
+                        <input type="text" name="city" id="city" placeholder="e.g., Bangalore"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium">
                         <p id="city-error" class="text-red-500 text-xs font-bold mt-1 hidden"></p>
                     </div>
                     <div>
                         <label for="state" class="block text-sm font-bold text-gray-900 mb-2">State *</label>
-                        <input type="text" name="state" id="state"
-                               placeholder="e.g., Karnataka"
+                        <input type="text" name="state" id="state" placeholder="e.g., Karnataka"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium">
                         <p id="state-error" class="text-red-500 text-xs font-bold mt-1 hidden"></p>
                     </div>
                 </div>
 
-                <!-- Locality & PIN (grid) -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label for="locality" class="block text-sm font-bold text-gray-900 mb-2">Locality *</label>
-                        <input type="text" name="locality" id="locality"
-                               placeholder="e.g., Whitefield"
+                        <input type="text" name="locality" id="locality" placeholder="e.g., Whitefield"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium">
                         <p id="locality-error" class="text-red-500 text-xs font-bold mt-1 hidden"></p>
                     </div>
                     <div>
                         <label for="pincode" class="block text-sm font-bold text-gray-900 mb-2">PIN Code *</label>
-                        <input type="text" name="pincode" id="pincode"
-                               placeholder="e.g., 560066"
+                        <input type="text" name="pincode" id="pincode" placeholder="e.g., 560066"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium"
-                               inputmode="numeric"
-                               maxlength="6">
+                               inputmode="numeric" maxlength="6">
                         <p id="pincode-error" class="text-red-500 text-xs font-bold mt-1 hidden"></p>
                     </div>
                 </div>
 
-                <!-- Submit button -->
                 <button type="submit" id="address-submit-btn"
                         class="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-2xl font-bold text-base shadow-lg hover:shadow-xl active:scale-95 transition-all">
                     Save Address
                 </button>
             </form>
 
-            <!-- Privacy notice -->
             <div class="bg-orange-50 border border-orange-100 rounded-xl p-3 mt-4">
                 <p class="text-xs text-orange-900 font-medium">
                     <span class="font-bold">🔒 Your privacy:</span> Your exact address is not shared. We only use city & locality to show community reading progress.
@@ -101,133 +123,119 @@
 (function() {
     'use strict';
 
-    const modal = document.getElementById('address-modal');
-    const form = document.getElementById('address-form');
-    const submitBtn = document.getElementById('address-submit-btn');
-    const fields = ['address', 'city', 'state', 'locality', 'pincode'];
+    var modal     = document.getElementById('address-modal');
+    var form      = document.getElementById('address-form');
+    var submitBtn = document.getElementById('address-submit-btn');
+    var closeBtn  = document.getElementById('address-modal-close-btn');
+    var fields    = ['address', 'city', 'state', 'locality', 'pincode'];
 
-    // Validation rules
-    const validators = {
-        address: (val) => val.length >= 5 && val.length <= 500 ? null : 'Address must be 5-500 characters',
-        city: (val) => val.length >= 2 && val.length <= 100 ? null : 'City must be 2-100 characters',
-        state: (val) => val.length >= 2 && val.length <= 100 ? null : 'State must be 2-100 characters',
-        locality: (val) => val.length >= 2 && val.length <= 100 ? null : 'Locality must be 2-100 characters',
-        pincode: (val) => /^\d{6}$/.test(val) ? null : 'PIN code must be 6 digits',
+    var validators = {
+        address:  function(v) { return v.length >= 5 && v.length <= 500 ? null : 'Address must be 5-500 characters'; },
+        city:     function(v) { return v.length >= 2 && v.length <= 100 ? null : 'City must be 2-100 characters'; },
+        state:    function(v) { return v.length >= 2 && v.length <= 100 ? null : 'State must be 2-100 characters'; },
+        locality: function(v) { return v.length >= 2 && v.length <= 100 ? null : 'Locality must be 2-100 characters'; },
+        pincode:  function(v) { return /^\d{6}$/.test(v) ? null : 'PIN code must be 6 digits'; }
     };
 
-    // Validate single field
-    function validateField(fieldName) {
-        const field = document.getElementById(fieldName);
-        const errorEl = document.getElementById(fieldName + '-error');
-        const value = field.value.trim();
-
-        const error = validators[fieldName](value);
-
+    function validateField(name) {
+        var field   = document.getElementById(name);
+        var errorEl = document.getElementById(name + '-error');
+        var error   = validators[name](field.value.trim());
         if (error) {
             errorEl.textContent = error;
             errorEl.classList.remove('hidden');
-            field.classList.add('border-red-300', 'focus:ring-red-200');
+            field.classList.add('border-red-300');
             return false;
-        } else {
-            errorEl.classList.add('hidden');
-            field.classList.remove('border-red-300', 'focus:ring-red-200');
-            return true;
         }
+        errorEl.classList.add('hidden');
+        field.classList.remove('border-red-300');
+        return true;
     }
 
-    // Check if all fields are valid
     function isFormValid() {
-        return fields.every(field => validateField(field));
+        return fields.every(function(f) { return validateField(f); });
     }
 
-    // Update button state
     function updateButtonState() {
-        const isValid = isFormValid();
-        submitBtn.disabled = !isValid;
-        submitBtn.classList.toggle('opacity-50', !isValid);
-        submitBtn.classList.toggle('cursor-not-allowed', !isValid);
+        var valid = isFormValid();
+        submitBtn.disabled = !valid;
+        submitBtn.classList.toggle('opacity-50', !valid);
+        submitBtn.classList.toggle('cursor-not-allowed', !valid);
     }
 
-    // Add event listeners for real-time validation
-    fields.forEach(fieldName => {
-        const field = document.getElementById(fieldName);
-        field.addEventListener('blur', () => validateField(fieldName));
-        field.addEventListener('input', () => {
-            validateField(fieldName);
-            updateButtonState();
-        });
+    fields.forEach(function(name) {
+        var field = document.getElementById(name);
+        field.addEventListener('blur',  function() { validateField(name); });
+        field.addEventListener('input', function() { validateField(name); updateButtonState(); });
     });
 
-    // Handle form submission
-    form.addEventListener('htmx:beforeRequest', (e) => {
-        if (!isFormValid()) {
-            e.preventDefault();
-            return false;
-        }
+    form.addEventListener('htmx:beforeRequest', function(e) {
+        if (!isFormValid()) { e.preventDefault(); return; }
         submitBtn.disabled = true;
         submitBtn.textContent = 'Saving…';
     });
 
-    // Handle HTMX response
-    form.addEventListener('htmx:afterRequest', (e) => {
+    form.addEventListener('htmx:afterRequest', function(e) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Save Address';
-
         if (e.detail.successful) {
-            // Form accepted - close modal and reload page to show Community Progress card
-            closeAddressModal();
-            // Reload page after small delay to show success message
-            setTimeout(() => {
-                window.location.reload();
-            }, 800);
+            window.closeAddressModal();
+            setTimeout(function() { window.location.reload(); }, 800);
         } else if (e.detail.xhr.status === 400) {
-            // Validation errors from server
             try {
-                const response = JSON.parse(e.detail.xhr.responseText);
-                if (response.errors) {
-                    fields.forEach(fieldName => {
-                        const errorEl = document.getElementById(fieldName + '-error');
-                        if (response.errors[fieldName]) {
-                            errorEl.textContent = response.errors[fieldName];
-                            errorEl.classList.remove('hidden');
-                        } else {
-                            errorEl.classList.add('hidden');
-                        }
+                var resp = JSON.parse(e.detail.xhr.responseText);
+                if (resp.errors) {
+                    fields.forEach(function(name) {
+                        var el = document.getElementById(name + '-error');
+                        if (resp.errors[name]) { el.textContent = resp.errors[name]; el.classList.remove('hidden'); }
+                        else { el.classList.add('hidden'); }
                     });
                 }
-            } catch (e) {
-                console.error('Error parsing response', e);
-            }
+            } catch (err) { console.error('Error parsing response', err); }
         }
     });
 
-    // Handle HTMX error
-    form.addEventListener('htmx:responseError', (e) => {
+    form.addEventListener('htmx:responseError', function(e) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Save Address';
         console.error('Form error:', e);
     });
 
-    // Global functions to open/close modal
+    // ── Open ──────────────────────────────────────────────────────────────────
     window.openAddressModal = function() {
-        modal.classList.remove('hidden');
-        // Clear form on open
-        fields.forEach(f => {
+        var buddy = document.getElementById('reading-buddy-widget');
+        if (buddy) buddy.classList.add('hidden');
+
+        fields.forEach(function(f) {
             document.getElementById(f).value = '';
             document.getElementById(f + '-error').classList.add('hidden');
+            document.getElementById(f).classList.remove('border-red-300');
         });
         updateButtonState();
+
+        modal.classList.remove('hidden', 'is-closing');
+        document.body.style.overflow = 'hidden';
     };
 
-    window.closeAddressModal = function() {
-        modal.classList.add('hidden');
-    };
+    // ── Close ─────────────────────────────────────────────────────────────────
+    function doClose() {
+        modal.classList.add('is-closing');
+        setTimeout(function() {
+            modal.classList.add('hidden');
+            modal.classList.remove('is-closing');
+            document.body.style.overflow = '';
+            if (typeof checkFluencyNudge === 'function') checkFluencyNudge();
+        }, 150);
+    }
 
-    // Close on backdrop click
+    window.closeAddressModal = doClose;
+
+    // Close button (dedicated listener — no inline onclick needed)
+    closeBtn.addEventListener('click', doClose);
+
+    // Backdrop click
     modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeAddressModal();
-        }
+        if (e.target === modal) doClose();
     });
 })();
 </script>

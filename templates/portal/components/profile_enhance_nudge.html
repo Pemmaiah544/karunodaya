@@ -1,7 +1,15 @@
 {% load static %}
 {% if not enhancement_completed %}
+<script>
+(function(){
+    var ts = localStorage.getItem('banner_dismissed_profile');
+    if (ts && (Date.now() - parseInt(ts)) < 86400000) {
+        document.currentScript.nextElementSibling.remove();
+    }
+})();
+</script>
 <div id="profile-enhance-nudge"
-    class="mb-4 relative overflow-hidden rounded-[20px] bg-gradient-to-r from-teal-500 to-cyan-600 p-5 text-white shadow-lg shadow-teal-100 animate-in fade-in slide-in-from-top duration-700">
+    class="flex-none w-[80vw] relative overflow-hidden rounded-[20px] bg-gradient-to-r from-teal-500 to-cyan-600 p-5 text-white shadow-lg shadow-teal-100 animate-in fade-in slide-in-from-top duration-700">
     <div class="relative z-10 flex items-center justify-between gap-4">
         <div class="flex-1 min-w-0">
             <span class="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest border border-white/10">
@@ -24,7 +32,7 @@
     <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
     <div class="absolute -left-6 -top-6 w-24 h-24 bg-teal-400/20 rounded-full blur-2xl"></div>
     <!-- Dismiss -->
-    <button onclick="document.getElementById('profile-enhance-nudge').remove()"
+    <button onclick="localStorage.setItem('banner_dismissed_profile',Date.now());document.getElementById('profile-enhance-nudge').remove()"
         class="absolute top-3 right-3 w-5 h-5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-full flex items-center justify-center text-[9px] transition-colors z-50"
         aria-label="Dismiss">
         ✕
