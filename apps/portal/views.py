@@ -1494,8 +1494,39 @@ class NotificationsView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateVie
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        parent = self.request.user.parent_profile
+
         # Mark as seen for this session
         self.request.session['notifications_seen'] = True
+
+        # Get reading test notifications (existing)
+        context['pending_test_children_list'] = parent.children.filter(reading_test_completed=False)
+
+        # Get reading reminder notifications (NEW)
+        from apps.notifications.models import NotificationLog
+        from django.utils import timezone
+
+        # Get recent sent notifications (last 30 days)
+        thirty_days_ago = timezone.localdate() - timezone.timedelta(days=30)
+        all_reminders = NotificationLog.objects.filter(
+            parent=parent,
+            scheduled_date__gte=thirty_days_ago,
+            status='SENT'
+        ).order_by('-sent_at')
+
+        # Get today's notifications
+        today = timezone.localdate()
+        today_reminders = all_reminders.filter(scheduled_date=today)
+
+        # If no today's reminders, show recent ones (for better display)
+        if not today_reminders.exists():
+            context['today_reminders'] = all_reminders[:5]
+        else:
+            context['today_reminders'] = today_reminders
+
+        context['recent_reminders'] = all_reminders[:20]
+        context['reminders_count'] = all_reminders.count()
+
         return context
 
 
@@ -2383,3 +2414,77 @@ def api_community_states(request):
     except Exception as e:
         logger.error(f"Error fetching states: {str(e)}")
         return JsonResponse({'error': 'Failed to fetch states'}, status=500)
+
+
+@login_required
+def api_reading_reminders(request):
+    """
+    GET /api/reading-reminders/
+    Returns unread/recent reading reminder notifications for the logged-in parent.
+    Used for in-app notification badge and notifications page.
+    """
+    from apps.notifications.models import NotificationLog
+    from django.utils import timezone
+
+    try:
+        parent = request.user.parent_profile
+        today = timezone.localdate()
+
+        # Get today's notifications
+        today_reminders = NotificationLog.objects.filter(
+            parent=parent,
+            scheduled_date=today,
+            status='SENT'
+        ).order_by('-sent_at').values('notification_type', 'sent_at')
+
+        # Count by type
+        weekday_count = today_reminders.filter(notification_type='WEEKDAY_REMINDER').count()
+        weekend_count = today_reminders.filter(notification_type='WEEKEND_REMINDER').count()
+        total_unread = weekday_count + weekend_count
+
+        return JsonResponse({
+            'total': total_unread,
+            'weekday_count': weekday_count,
+            'weekend_count': weekend_count,
+            'today_date': str(today),
+            'messages': [
+                f"📚 {weekday_count} weekday reading reminders sent today" if weekday_count else None,
+                f"🌟 {weekend_count} weekend reading reminders sent today" if weekend_count else None,
+            ]
+        })
+
+    except Exception as e:
+        logger.error(f"Error fetching reading reminders: {str(e)}")
+        return JsonResponse({'error': 'Failed to fetch reminders', 'total': 0}, status=500)
+
+
+@login_required
+def update_notification_preferences(request):
+    """
+    HTMX-compatible view to update a parent's notification time and preferences.
+    GET: Returns the form fragment.
+    POST: Saves and returns success confirmation fragment.
+    """
+    from apps.notifications.forms import NotificationPreferenceForm
+    from apps.profiles.models import ParentProfile, ParentProfileExtra
+
+    parent = get_object_or_404(ParentProfile, user=request.user)
+    extra, _ = ParentProfileExtra.objects.get_or_create(parent=parent)
+
+    if request.method == 'POST':
+        form = NotificationPreferenceForm(request.POST, instance=extra)
+        if form.is_valid():
+            form.save()
+            if request.headers.get('HX-Request'):
+                return render(request, 'partials/notification_success.html', {
+                    'extra': extra
+                })
+            messages.success(request, 'Notification preferences updated.')
+            return redirect('portal:profile')
+    else:
+        form = NotificationPreferenceForm(instance=extra)
+
+    return render(request, 'partials/notification_form.html', {
+        'form': form,
+        'extra': extra,
+    })

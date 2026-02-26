@@ -10,6 +10,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('payments/', include('apps.payments.urls')),
     path('feedback/', include('apps.feedback.urls')),
+    path('notifications/', include('apps.notifications.urls')),
     path('', include('apps.portal.urls')),
 ]
 

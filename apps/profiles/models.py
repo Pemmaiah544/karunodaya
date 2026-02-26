@@ -371,6 +371,22 @@ class ParentProfileExtra(models.Model):
         help_text="Whether the parent has completed the enhanced profile form"
     )
 
+    # Notification Scheduling
+    notification_time = models.TimeField(
+        null=True,
+        blank=True,
+        help_text="Exact time (HH:MM) for weekday reading reminders"
+    )
+    timezone = models.CharField(
+        max_length=50,
+        default='Asia/Kolkata',
+        help_text="Timezone for notification schedule (e.g. Asia/Kolkata)"
+    )
+    notifications_enabled = models.BooleanField(
+        default=True,
+        help_text="Whether this parent wants reading reminder emails"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

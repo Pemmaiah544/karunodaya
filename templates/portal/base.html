@@ -109,7 +109,8 @@
     {% if messages %}
     <div class="fixed top-4 right-4 z-50 space-y-2">
         {% for message in messages %}
-        <div class="bg-white border-l-4 {% if message.tags == 'error' %}border-red-500 text-red-700{% elif message.tags == 'success' %}border-green-500 text-green-700{% else %}border-blue-500 text-blue-700{% endif %} p-4 rounded shadow-lg flex items-start max-w-sm animate-fade-in-down" role="alert">
+        <div class="bg-white border-l-4 {% if message.tags == 'error' %}border-red-500 text-red-700{% elif message.tags == 'success' %}border-green-500 text-green-700{% else %}border-blue-500 text-blue-700{% endif %} p-4 rounded shadow-lg flex items-start max-w-sm animate-fade-in-down"
+            role="alert">
             <div class="flex-1">
                 <p class="font-bold text-sm capitalize">{{ message.tags }}</p>
                 <p class="text-sm">{{ message }}</p>
@@ -182,7 +183,8 @@
                         <a href="{% url 'feedback:app_feedback' %}"
                             class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors">
                             <svg class="w-5 h-5 mr-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                <path
+                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
                                 </path>
                             </svg>
                             Give Feedback
@@ -287,17 +289,17 @@
         document.addEventListener('DOMContentLoaded', () => {
             const btn = document.getElementById('settings-btn');
             const dropdown = document.getElementById('settings-dropdown');
-            
+
             console.log('Settings button found:', !!btn);
             console.log('Settings dropdown found:', !!dropdown);
-            
+
             if (btn && dropdown) {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     console.log('Settings button clicked');
                     dropdown.classList.toggle('hidden');
                 });
-                
+
                 document.addEventListener('click', (e) => {
                     if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
                         dropdown.classList.add('hidden');
@@ -311,7 +313,7 @@
                     const fallbackDropdown = document.getElementById('settings-dropdown');
                     console.log('Fallback - Settings button found:', !!fallbackBtn);
                     console.log('Fallback - Settings dropdown found:', !!fallbackDropdown);
-                    
+
                     if (fallbackBtn && fallbackDropdown) {
                         fallbackBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
@@ -324,6 +326,45 @@
         });
     </script>
     {% block extra_scripts %}{% endblock %}
+
+    <!-- Notification Toast System -->
+    {% include 'partials/notification_toast.html' %}
+
+    <!-- Notification Polling (Real-time notifications) -->
+    {% if user.is_authenticated %}
+    <script>
+        // Poll for new notifications every 30 seconds
+        let lastNotificationCount = 0;
+
+        function checkForNewNotifications() {
+            fetch('/api/reading-reminders/')
+                .then(r => r.json())
+                .then(data => {
+                    const newCount = data.total || 0;
+                    if (newCount > lastNotificationCount) {
+                        // New notifications arrived — show a toast
+                        const msg = (data.messages && data.messages[0]) ? data.messages[0] : 'New reading reminder';
+                        if (window.NotificationToast) {
+                            window.NotificationToast.info(msg, 6000);
+                        }
+
+                        // Update notification badge count in the header bell
+                        const badges = document.querySelectorAll('[data-notification-badge]');
+                        badges.forEach(badge => {
+                            badge.textContent = newCount;
+                            badge.style.display = newCount > 0 ? 'flex' : 'none';
+                        });
+                    }
+                    lastNotificationCount = newCount;
+                })
+                .catch(err => console.log('Notification poll error:', err));
+        }
+
+        // Check immediately on page load, then every 30 seconds
+        checkForNewNotifications();
+        setInterval(checkForNewNotifications, 30000);
+    </script>
+    {% endif %}
 
     <!-- Address Modal (globally available) -->
     {% include "portal/components/address_modal.html" %}

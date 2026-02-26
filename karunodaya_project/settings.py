@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     # Third-party apps
     'django_htmx',
     'debug_toolbar',
+    'django_q',
 
     # Local apps
     'apps.profiles',
@@ -71,6 +72,7 @@ INSTALLED_APPS = [
     'apps.portal',
     'apps.core',  # Enhanced table system
     'apps.feedback',
+    'apps.notifications',
 ]
 
 MIDDLEWARE = [
@@ -209,6 +211,25 @@ EMAIL_TIMEOUT = 10
 
 # Site Configuration
 SITE_ID = 1
+
+
+# Django-Q2 Task Queue Configuration
+Q_CLUSTER = {
+    'name': 'karunodaya',
+    'workers': config('Q_WORKERS', default=2, cast=int),
+    'recycle': 500,
+    'timeout': config('Q_TASK_TIMEOUT', default=60, cast=int),
+    'retry': config('Q_TASK_RETRY', default=120, cast=int),
+    'max_attempts': config('Q_MAX_ATTEMPTS', default=3, cast=int),
+    'orm': 'default',   # Uses existing PostgreSQL DB as broker
+    'label': 'Django Q',
+    'catch_up': False,  # Don't fire missed schedules on restart
+}
+
+# Notification Scheduling Configuration
+WEEKEND_NOTIFICATION_INTERVAL_HOURS = config('WEEKEND_NOTIFICATION_INTERVAL_HOURS', default=3, cast=int)
+NOTIFICATION_WINDOW_MINUTES = config('NOTIFICATION_WINDOW_MINUTES', default=5, cast=int)
+DEFAULT_NOTIFICATION_TIMEZONE = config('DEFAULT_NOTIFICATION_TIMEZONE', default='Asia/Kolkata')
 
 
 # Debug Toolbar Configuration (for development)

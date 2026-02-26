@@ -1,0 +1,85 @@
+<!-- Notification Toast Container -->
+<div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
+    <!-- Toasts will be inserted here via JavaScript -->
+</div>
+
+<style>
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+
+    .notification-toast {
+        animation: slideIn 0.3s ease-out;
+        pointer-events: auto;
+    }
+
+    .notification-toast.removing {
+        animation: slideOut 0.3s ease-out forwards;
+    }
+</style>
+
+<script>
+    // Notification Toast System
+    window.NotificationToast = {
+        show: function(message, type = 'success', duration = 5000) {
+            const container = document.getElementById('notification-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ️';
+
+            toast.className = `notification-toast ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3`;
+            toast.innerHTML = `
+                <span class="text-xl">${icon}</span>
+                <span class="font-medium">${message}</span>
+                <button onclick="this.parentElement.classList.add('removing'); setTimeout(() => this.parentElement.remove(), 300);"
+                        class="ml-auto text-white hover:opacity-75">✕</button>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.classList.add('removing');
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, duration);
+        },
+
+        success: function(message, duration) {
+            this.show(message, 'success', duration);
+        },
+
+        error: function(message, duration) {
+            this.show(message, 'error', duration);
+        },
+
+        info: function(message, duration) {
+            this.show(message, 'info', duration);
+        }
+    };
+
+    // Global function to trigger notification toast
+    function showNotificationToast(title, message, type = 'success') {
+        window.NotificationToast.show(`📚 ${title}: ${message}`, type, 6000);
+    }
+</script>

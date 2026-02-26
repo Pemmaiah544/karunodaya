@@ -1,0 +1,59 @@
+{% load static %}
+
+<form method="POST" hx-post="{% url 'portal:notification_preferences' %}">
+    {% csrf_token %}
+    <div class="space-y-6">
+        <div>
+            <label for="{{ form.notifications_enabled.id_for_label }}" class="flex items-center space-x-3 cursor-pointer">
+                {{ form.notifications_enabled }}
+                <span class="text-gray-700">{{ form.notifications_enabled.label }}</span>
+            </label>
+            {% if form.notifications_enabled.help_text %}
+            <p class="text-xs text-gray-500 mt-1">{{ form.notifications_enabled.help_text|safe }}</p>
+            {% endif %}
+        </div>
+
+        <div>
+            <label for="{{ form.notification_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                {{ form.notification_time.label }}
+            </label>
+            {{ form.notification_time }}
+            {% if form.notification_time.help_text %}
+            <p class="text-xs text-gray-500 mt-1">{{ form.notification_time.help_text|safe }}</p>
+            {% endif %}
+            {% if form.notification_time.errors %}
+            <ul class="text-sm text-red-600 mt-1">
+                {% for error in form.notification_time.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div>
+            <label for="{{ form.timezone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                {{ form.timezone.label }}
+            </label>
+            {{ form.timezone }}
+            {% if form.timezone.help_text %}
+            <p class="text-xs text-gray-500 mt-1">{{ form.timezone.help_text|safe }}</p>
+            {% endif %}
+            {% if form.timezone.errors %}
+            <ul class="text-sm text-red-600 mt-1">
+                {% for error in form.timezone.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="pt-4">
+            <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-6 rounded-lg transition">
+                Save Preferences
+            </button>
+            <button type="button" class="ml-2 text-gray-600 hover:text-gray-700" onclick="history.back()">
+                Cancel
+            </button>
+        </div>
+    </div>
+</form>

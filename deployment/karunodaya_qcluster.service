@@ -1,0 +1,20 @@
+[Unit]
+Description=Karunodaya Django Q Cluster (task worker)
+After=network.target karunodaya.service
+Requires=karunodaya.service
+
+[Service]
+Type=simple
+User=karunodaya
+Group=www-data
+WorkingDirectory=/home/karunodaya/app
+Environment="PATH=/home/karunodaya/app/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=karunodaya_project.settings_production"
+ExecStart=/home/karunodaya/app/venv/bin/python manage.py qcluster
+Restart=on-failure
+RestartSec=5s
+StandardOutput=append:/var/log/karunodaya/qcluster.log
+StandardError=append:/var/log/karunodaya/qcluster.log
+
+[Install]
+WantedBy=multi-user.target

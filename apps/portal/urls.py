@@ -69,6 +69,7 @@ urlpatterns = [
     # Profile
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('profile/update-name/', views.update_profile_name, name='update_profile_name'),
+    path('profile/notification-preferences/', views.update_notification_preferences, name='notification_preferences'),
     path('profile/child/<int:child_id>/edit/', views.edit_child, name='edit_child'),
     path('profile/child/<int:child_id>/update/', views.update_child, name='update_child'),
     path('profile/child/add/', views.AddChildView.as_view(), name='add_child'),
@@ -106,6 +107,7 @@ urlpatterns = [
     path('api/cities-by-state/', views.api_cities_by_state, name='api_cities_by_state'),
     path('api/community-stats/', views.api_community_stats, name='api_community_stats'),
     path('api/community-states/', views.api_community_states, name='api_community_states'),
+    path('api/reading-reminders/', views.api_reading_reminders, name='api_reading_reminders'),
     path('community-progress/', views.community_progress_page, name='community_progress_page'),
     path('address-banner/', views.address_banner_check, name='address_banner_check'),
 
