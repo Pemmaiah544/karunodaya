@@ -11,6 +11,22 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _send_order_push(order, event_type: str):
+    """Best-effort push for an order event. Never raises."""
+    try:
+        from apps.notifications.firebase_service import FirebaseNotificationService
+        if FirebaseNotificationService.is_ready():
+            result = FirebaseNotificationService.send_order_push(order, event_type)
+            logger.info(
+                f"Order push ({event_type}) for Order #{order.id}: "
+                f"success={result.get('success_count', 0)}, failed={result.get('failure_count', 0)}"
+            )
+        else:
+            logger.debug(f"Firebase not initialised — skipping push for Order #{order.id}")
+    except Exception as e:
+        logger.warning(f"Push notification failed for Order #{order.id}: {e}")
+
+
 def send_order_confirmation_email(order):
     """
     Send order confirmation email when order is placed.
@@ -55,6 +71,7 @@ def send_order_confirmation_email(order):
         email.send()
         
         logger.info(f"Order confirmation email sent to {recipient_email} for Order #{order.id}")
+        _send_order_push(order, 'confirmed')
         return True
         
     except Exception as e:
@@ -101,6 +118,7 @@ def send_order_dispatched_email(order):
         email.send()
         
         logger.info(f"Order dispatched email sent to {recipient_email} for Order #{order.id}")
+        _send_order_push(order, 'dispatched')
         return True
         
     except Exception as e:
@@ -147,6 +165,7 @@ def send_order_delivered_email(order):
         email.send()
         
         logger.info(f"Order delivered email sent to {recipient_email} for Order #{order.id}")
+        _send_order_push(order, 'delivered')
         return True
         
     except Exception as e:
@@ -193,6 +212,7 @@ def send_order_out_for_delivery_email(order):
         email.send()
         
         logger.info(f"Out for delivery email sent to {recipient_email} for Order #{order.id}")
+        _send_order_push(order, 'out_for_delivery')
         return True
         
     except Exception as e:
