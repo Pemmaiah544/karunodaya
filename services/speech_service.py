@@ -141,8 +141,9 @@ def transcribe(audio_file_path, language='EN'):
         result = pipe(
             {"raw": audio_data, "sampling_rate": sample_rate},
             generate_kwargs=generate_kwargs,
-            chunk_length_s=30,
-            batch_size=1,
+            chunk_length_s=15,      # Smaller chunks → faster first results
+            stride_length_s=3,      # Overlap prevents words at chunk boundaries from being dropped
+            batch_size=4,           # Process chunks in parallel (faster on multi-core CPU)
         )
 
         transcript = result.get("text", "").strip()

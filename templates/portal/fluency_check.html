@@ -1231,7 +1231,18 @@
                 }
 
                 var mimeType = mediaRecorder.mimeType || 'audio/webm';
-                var audioBlob = new Blob(audioChunks, { type: mimeType });
+
+                // Tail-audio optimisation: if streaming already matched words and reading
+                // lasted >15 s, send only the last 12 chunks (~12 s) so Whisper only needs
+                // to process the tail of the passage.  Pass confirmed streaming matches so
+                // the server can merge rather than re-process the whole recording.
+                var knownMatched = Object.keys(rtPreviousMatchedSet)
+                    .map(Number)
+                    .filter(function (k) { return rtPreviousMatchedSet[k]; });
+                var useTailMode = knownMatched.length > 0 && duration > 15 && audioChunks.length > 12;
+
+                var chunksToSend = useTailMode ? audioChunks.slice(-12) : audioChunks;
+                var audioBlob = new Blob(chunksToSend, { type: mimeType });
 
                 if (audioBlob.size < 1000) {
                     alert('Recording appears to be empty. Please try again.');
@@ -1239,7 +1250,11 @@
                     return;
                 }
 
-                sendAudioToServer(audioBlob, duration);
+                if (useTailMode) {
+                    sendAudioToServer(audioBlob, duration, knownMatched, rtCurrentPos);
+                } else {
+                    sendAudioToServer(audioBlob, duration, null, 0);
+                }
             };
 
             mediaRecorder.stop();
@@ -1266,7 +1281,7 @@
             }, 2000);
         }
 
-        function sendAudioToServer(audioBlob, duration) {
+        function sendAudioToServer(audioBlob, duration, knownMatchedIndices, passageOffset) {
             showAnalyzing();
 
             var ext = 'webm';
@@ -1280,8 +1295,14 @@
             formData.append('language', config.lang);
             formData.append('csrfmiddlewaretoken', config.csrfToken);
 
+            // Tail-audio mode: pass streaming matches so server can merge without full re-analysis
+            if (knownMatchedIndices && knownMatchedIndices.length > 0) {
+                formData.append('known_matched_indices', JSON.stringify(knownMatchedIndices));
+                formData.append('passage_offset', passageOffset || 0);
+            }
+
             var controller = new AbortController();
-            var timeoutId = setTimeout(function () { controller.abort(); }, 120000);
+            var timeoutId = setTimeout(function () { controller.abort(); }, 25000);
 
             fetch(config.analyzeUrl, {
                 method: 'POST',

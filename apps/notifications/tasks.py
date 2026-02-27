@@ -11,6 +11,7 @@ from django.db import IntegrityError
 from apps.profiles.models import ParentProfile, ParentProfileExtra
 from apps.notifications.models import NotificationLog
 from services.notification_service import send_reading_reminder_email
+from apps.notifications.firebase_service import FirebaseNotificationService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,13 @@ def _try_send(parent, notification_type, scheduled_date, slot_key):
                 error_message='send_reading_reminder_email returned False'
             )
             return 'failed'
+
+        # Also fire push notification (fire-and-forget; failures don't affect email status)
+        try:
+            FirebaseNotificationService.send_reading_reminder_push(parent)
+        except Exception as push_err:
+            logger.warning(f"Push notification failed for parent {parent.id}: {push_err}")
+
         return 'sent'
     except Exception as e:
         NotificationLog.objects.filter(pk=log.pk).update(

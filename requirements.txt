@@ -31,6 +31,10 @@ django-q2==1.7.3
 # Production server
 gunicorn==22.0.0
 
+# Firebase Cloud Messaging (server-side push notifications)
+firebase-admin>=6.5.0
+
+
 # Speech Recognition (Whisper)
 transformers>=4.37.0
 imageio-ffmpeg>=0.6.0

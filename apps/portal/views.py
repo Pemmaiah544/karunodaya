@@ -600,6 +600,20 @@ def fluency_check_analyze(request, child_id):
 
     language = request.POST.get('language', 'EN').upper()
 
+    # Optional: streaming matches already confirmed by real-time partial analysis
+    known_matched_json = request.POST.get('known_matched_indices', '')
+    try:
+        passage_offset = int(request.POST.get('passage_offset', 0) or 0)
+    except (ValueError, TypeError):
+        passage_offset = 0
+
+    known_matched = []
+    if known_matched_json:
+        try:
+            known_matched = [int(i) for i in json.loads(known_matched_json)]
+        except (ValueError, TypeError, json.JSONDecodeError):
+            known_matched = []
+
     from services.speech_service import (
         _save_uploaded_audio, transcribe, compare_transcript_to_passage, cleanup_audio_files
     )
@@ -617,23 +631,46 @@ def fluency_check_analyze(request, child_id):
         if audio_path:
             cleanup_audio_files(audio_path)
 
-    comparison = compare_transcript_to_passage(transcript_text, passage_text)
-    words_read = comparison['words_read']
-    total_words = comparison['total_words']
-    accuracy = comparison['accuracy']
-    missed_words = comparison['missed_words']
-    matched_indices = comparison.get('matched_indices', [])
-    skipped_indices = comparison.get('skipped_indices', [])
-    # Use actual spoken word count for WPM — more accurate than matched-words count
-    transcript_word_count = comparison.get('transcript_word_count', words_read)
-
-    # Build word-level results for real-time highlighting
     passage_words = passage_text.strip().split()
+
+    if known_matched and passage_offset > 0:
+        # Tail-audio mode: the client sent only the last ~12s of audio and provided
+        # known_matched_indices from real-time streaming.  We run Whisper on the tail
+        # only (from passage_offset onward) and merge with the confirmed streaming matches.
+        tail_passage = ' '.join(passage_words[passage_offset:])
+        tail_comparison = compare_transcript_to_passage(transcript_text, tail_passage)
+        # Re-base tail indices to absolute passage positions
+        tail_matched = set(passage_offset + i for i in tail_comparison.get('matched_indices', []))
+        tail_skipped = set(passage_offset + i for i in tail_comparison.get('skipped_indices', []))
+        # Merge: streaming matches take priority; tail fills in the rest
+        all_matched = set(known_matched) | tail_matched
+        all_skipped = tail_skipped - all_matched
+        matched_indices = sorted(all_matched)
+        skipped_indices = sorted(all_skipped)
+        words_read = len(all_matched)
+        total_words = len(passage_words)
+        accuracy = min(round((words_read / total_words) * 100), 100) if total_words > 0 else 0
+        # Missed = skipped words that fall within the read region
+        read_up_to = max(all_matched, default=-1)
+        missed_words = [passage_words[i] for i in sorted(all_skipped) if i <= read_up_to]
+        # WPM uses confirmed matched count — most accurate in merged mode
+        spoken_words_for_wpm = min(words_read, total_words)
+    else:
+        # Full-audio mode: Whisper ran on the entire recording
+        comparison = compare_transcript_to_passage(transcript_text, passage_text)
+        words_read = comparison['words_read']
+        total_words = comparison['total_words']
+        accuracy = comparison['accuracy']
+        missed_words = comparison['missed_words']
+        matched_indices = comparison.get('matched_indices', [])
+        skipped_indices = comparison.get('skipped_indices', [])
+        transcript_word_count = comparison.get('transcript_word_count', words_read)
+        spoken_words_for_wpm = min(transcript_word_count, total_words)
+
+    # Build word-level results for real-time highlighting reconciliation
     word_results = align_to_passage(passage_words, matched_indices, skipped_indices)
 
-    # WPM = words the child actually spoke / time in minutes
-    # Capped at total_words to avoid inflation when Whisper picks up extra noise/speech
-    spoken_words_for_wpm = min(transcript_word_count, total_words)
+    # WPM = words spoken / time in minutes
     wpm = round(spoken_words_for_wpm / (duration / 60)) if duration > 0 else 0
 
     # Grade benchmarks (same as fluency_check_save)
@@ -2488,3 +2525,29 @@ def update_notification_preferences(request):
         'form': form,
         'extra': extra,
     })
+
+
+def firebase_messaging_sw(request):
+    """
+    Serve the Firebase Messaging service worker from the root path.
+    Browsers require the SW to be served from a path whose directory is at
+    or above the scope (/). Since our static files live under /static/, we
+    expose the file via this view at /firebase-messaging-sw.js and set the
+    Service-Worker-Allowed header to grant the full-origin scope.
+    """
+    import os
+    from django.templatetags.static import static
+
+    sw_path = os.path.join(settings.BASE_DIR, 'static', 'js', 'firebase-messaging-sw.js')
+
+    try:
+        with open(sw_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except FileNotFoundError:
+        return HttpResponse('// Service worker not found', content_type='application/javascript', status=404)
+
+    response = HttpResponse(content, content_type='application/javascript; charset=utf-8')
+    # Allow the SW to control the entire origin (required for FCM)
+    response['Service-Worker-Allowed'] = '/'
+    response['Cache-Control'] = 'no-cache'
+    return response

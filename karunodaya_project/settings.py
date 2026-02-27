@@ -37,6 +37,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.ngrok-free.app',
     'https://*.trycloudflare.com',
     'https://*.app.github.dev',
+    'https://*.devtunnels.ms',
     'http://*.127.0.0.1',
 ]
 
@@ -230,6 +231,29 @@ Q_CLUSTER = {
 WEEKEND_NOTIFICATION_INTERVAL_HOURS = config('WEEKEND_NOTIFICATION_INTERVAL_HOURS', default=3, cast=int)
 NOTIFICATION_WINDOW_MINUTES = config('NOTIFICATION_WINDOW_MINUTES', default=5, cast=int)
 DEFAULT_NOTIFICATION_TIMEZONE = config('DEFAULT_NOTIFICATION_TIMEZONE', default='Asia/Kolkata')
+
+
+# ─── Firebase / FCM Push Notifications ───────────────────────────────────────
+# VAPID public key: used by the browser (JS SDK) to subscribe for web push.
+FIREBASE_VAPID_KEY = config(
+    'FIREBASE_VAPID_KEY',
+    default='BIfUz2nuc43kkETbISqSeipbFdZ8dmrO2dsVuylKrIhAjL0tbRj8rSRRP37yK8ifdYk_L85YXcHN4N1PGDdFKpA'
+)
+
+# Optional: path to Google service-account JSON for server-side firebase-admin SDK.
+# If set, the backend can send push to Android/iOS in addition to web.
+FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='')
+
+# Firebase project config for the JS SDK (injected into templates).
+# Fill in from your Firebase console → Project settings → Your apps → Web app.
+FIREBASE_WEB_CONFIG = {
+    'apiKey':            config('FIREBASE_API_KEY',            default=''),
+    'authDomain':        config('FIREBASE_AUTH_DOMAIN',        default=''),
+    'projectId':         config('FIREBASE_PROJECT_ID',         default=''),
+    'storageBucket':     config('FIREBASE_STORAGE_BUCKET',     default=''),
+    'messagingSenderId': config('FIREBASE_MESSAGING_SENDER_ID', default=''),
+    'appId':             config('FIREBASE_APP_ID',             default=''),
+}
 
 
 # Debug Toolbar Configuration (for development)

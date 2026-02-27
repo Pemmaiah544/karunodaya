@@ -112,4 +112,7 @@ urlpatterns = [
     path('address-banner/', views.address_banner_check, name='address_banner_check'),
 
     path('support/', views.SupportView.as_view(), name='support'),
+
+    # Firebase Service Worker — must be served from root scope for push to work
+    path('firebase-messaging-sw.js', views.firebase_messaging_sw, name='firebase_sw'),
 ]

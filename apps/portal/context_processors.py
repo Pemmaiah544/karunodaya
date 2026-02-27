@@ -1,5 +1,7 @@
 from apps.profiles.models import Child
 from django.utils import timezone
+from django.conf import settings
+
 
 def reading_notifications(request):
     """
@@ -35,6 +37,8 @@ def reading_notifications(request):
                 'pending_test_children_list': pending_test_children,
                 'reading_reminders_today': reading_reminders_today,
                 'total_notifications': total_notifications,
+                # Firebase config is always included (see firebase_context below)
+                **_firebase_context(),
             }
 
         return {
@@ -42,6 +46,16 @@ def reading_notifications(request):
             'pending_test_children_list': pending_test_children,
             'reading_reminders_today': reading_reminders_today,
             'total_notifications': total_notifications,
+            **_firebase_context(),
         }
     except Exception:
         return {}
+
+
+def _firebase_context():
+    """Return Firebase config dict for template rendering."""
+    return {
+        'firebase_config': getattr(settings, 'FIREBASE_WEB_CONFIG', {}),
+        'firebase_vapid_key': getattr(settings, 'FIREBASE_VAPID_KEY', ''),
+    }
+

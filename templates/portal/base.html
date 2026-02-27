@@ -327,6 +327,45 @@
     </script>
     {% block extra_scripts %}{% endblock %}
 
+    {% if user.is_authenticated %}
+    <!-- ═══════════════════════════════════════════════════════════
+         Firebase Cloud Messaging — Web Push Notifications
+         The config below is rendered server-side so no secrets are
+         hard-coded in the static JS files.
+    ═══════════════════════════════════════════════════════════ -->
+    <!-- Firebase JS SDK (compat mode — works with both SW and main thread) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
+
+    <script>
+        // Server-rendered Firebase project config + VAPID key
+        window.KARUNODAYA_FIREBASE_CONFIG = {
+            firebaseConfig: {
+                apiKey: "{{ firebase_config.apiKey }}",
+                authDomain: "{{ firebase_config.authDomain }}",
+                projectId: "{{ firebase_config.projectId }}",
+                storageBucket: "{{ firebase_config.storageBucket }}",
+                messagingSenderId: "{{ firebase_config.messagingSenderId }}",
+                appId: "{{ firebase_config.appId }}"
+            },
+            vapidKey: "{{ firebase_vapid_key }}"
+        };
+    </script>
+
+    <!-- Firebase push client — skip on Android WebView (uses native FCM instead) -->
+    {% if firebase_config.projectId %}
+    <script>
+        // Only load web push if NOT running inside the Karunodaya Android APK
+        if (!navigator.userAgent.includes('KarunodayaApp')) {
+            var s = document.createElement('script');
+            s.src = "{% static 'js/firebase-push.js' %}";
+            s.defer = true;
+            document.head.appendChild(s);
+        }
+    </script>
+    {% endif %}
+    {% endif %}
+
     <!-- Notification Toast System -->
     {% include 'partials/notification_toast.html' %}
 

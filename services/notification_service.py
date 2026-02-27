@@ -65,11 +65,39 @@ def send_reading_reminder_email(parent, notification_type):
             f"Reading reminder ({notification_type}) sent to {recipient_email} "
             f"for parent {parent.id}"
         )
+
+        # ── Also send a push notification (best-effort) ──────────────────
+        _send_push_reminder(parent)
+
         return True
 
     except Exception as e:
         logger.error(f"Failed to send reading reminder to parent {parent.id}: {e}")
         return False
+
+
+def _send_push_reminder(parent):
+    """
+    Fire a push notification to all of the parent's registered devices.
+    This is best-effort: any failure is logged but never raises.
+    """
+    try:
+        from apps.notifications.firebase_service import FirebaseNotificationService
+        if FirebaseNotificationService.is_ready():
+            result = FirebaseNotificationService.send_reading_reminder_push(parent)
+            logger.info(
+                f"Push reminder sent for parent {parent.id}: "
+                f"success={result.get('success_count', 0)}, "
+                f"failed={result.get('failure_count', 0)}"
+            )
+        else:
+            logger.debug(
+                f"Firebase not initialised — skipping push for parent {parent.id}"
+            )
+    except Exception as e:
+        logger.warning(f"Push notification failed for parent {parent.id}: {e}")
+
+
 
 
 def send_reading_reminder_with_log(parent, notification_type, slot_key=None):

@@ -252,7 +252,7 @@ class FirebaseNotificationService:
         result = cls.send_to_multiple(
             device_tokens=device_tokens,
             title='📚 Reading Reminder',
-            body=f"Time for {child_names}'s reading session!",
+            body=f"It's time for {child_names} to read.",
             data={
                 'type': 'reading_reminder',
                 'parent_id': str(parent.id),
