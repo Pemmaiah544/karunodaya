@@ -1,0 +1,659 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+    &rsaquo; <a href="{% url 'admin:catalog_publisher_changelist' %}">Publishers</a>
+    &rsaquo; {{ publisher.name }}
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* ── Reset & Base ─────────────────────────────────────────────────────────── */
+    .ap-wrap {
+        padding: 32px 40px 64px;
+        max-width: 1280px;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    /* ── Page Header ───────────────────────────────────────────────────────────── */
+    .ap-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 32px;
+        gap: 16px;
+    }
+
+    .ap-page-title {
+        font-size: 26px;
+        font-weight: 800;
+        color: #111827;
+        margin: 0 0 6px;
+        line-height: 1.2;
+    }
+
+    .ap-page-subtitle {
+        font-size: 14px;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    .ap-header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    /* ── Buttons ───────────────────────────────────────────────────────────────── */
+    .ap-btn-cancel {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 22px;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 8px;
+        background: #fff;
+        color: #374151;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+    }
+
+    .ap-btn-cancel:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+        color: #111827;
+    }
+
+    .ap-btn-delete {
+        padding: 10px 22px;
+        border: 1.5px solid #fee2e2;
+        border-radius: 8px;
+        background: #fff;
+        color: #dc2626;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .ap-btn-delete:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+    }
+
+    .ap-btn-edit {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 22px;
+        background: #fff;
+        color: #374151;
+        border: 1.5px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .ap-btn-edit:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+    }
+
+    .ap-btn-save {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 22px;
+        background: #fb923c;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(251, 146, 60, 0.35);
+        transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .ap-btn-save:hover:not(:disabled) {
+        background: #ea580c;
+        box-shadow: 0 4px 14px rgba(251, 146, 60, 0.45);
+    }
+
+    /* ── Card ─────────────────────────────────────────────────────────────────── */
+    .ap-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        margin-bottom: 28px;
+    }
+
+    .ap-card-header {
+        display: flex;
+        align-items: center;
+        padding: 20px 24px;
+        background: #fff;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .ap-card-header-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #fff7ed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+    }
+
+    .ap-card-header-icon svg {
+        width: 14px;
+        height: 14px;
+        fill: none;
+        stroke: #fb923c;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .ap-card-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .ap-metadata-row {
+        display: flex;
+        gap: 32px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #f3f4f6;
+    }
+
+    .ap-meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .ap-meta-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .ap-meta-val {
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    .ap-card-body {
+        padding: 32px 24px;
+    }
+
+    /* ── Form Fields ───────────────────────────────────────────────────────────── */
+    .ap-row {
+        margin-bottom: 24px;
+    }
+
+    .ap-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+
+    .ap-field label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .ap-field .read-val {
+        font-size: 15px;
+        color: #111827;
+        padding: 4px 0;
+        min-height: 24px;
+        word-break: break-all;
+    }
+
+    .ap-field input,
+    .ap-field textarea {
+        display: none;
+        width: 100%;
+        padding: 12px 16px;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 14px;
+        color: #1f2937;
+        box-sizing: border-box;
+        font-family: inherit;
+        background: #fff;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .ap-field input:focus,
+    .ap-field textarea:focus {
+        outline: none;
+        border-color: #fb923c;
+        box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.12);
+    }
+
+    /* ── Prefix Input ────────────────────────────────────────────────────────── */
+    .ap-input-prefix-wrap {
+        position: relative;
+        display: none;
+        align-items: center;
+    }
+
+    .edit-mode .ap-input-prefix-wrap {
+        display: flex;
+    }
+
+    .ap-input-prefix {
+        position: absolute;
+        left: 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #6b7280;
+        pointer-events: none;
+        border-right: 1.5px solid #e5e7eb;
+        padding-right: 10px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    .ap-input-prefix-wrap input {
+        display: block !important;
+        padding-left: 64px !important;
+    }
+
+    .ap-field .ap-err {
+        color: #ef4444;
+        font-size: 12px;
+        margin-top: 6px;
+        display: none;
+    }
+
+    .ap-field .ap-err.visible {
+        display: block;
+    }
+
+    .ap-field textarea {
+        resize: vertical;
+        min-height: 120px;
+        line-height: 1.6;
+    }
+
+    /* ── Edit State ────────────────────────────────────────────────────────────── */
+    .edit-mode .read-val {
+        display: none;
+    }
+
+    .edit-mode input,
+    .edit-mode textarea {
+        display: block;
+    }
+
+    .edit-mode .ap-btn-save {
+        display: flex;
+    }
+
+    .edit-mode .ap-btn-edit {
+        display: none;
+    }
+
+    /* ── Toast ────────────────────────────────────────────────────────────────── */
+    #apToastContainer {
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        pointer-events: none;
+    }
+
+    .ap-toast {
+        padding: 14px 20px;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        animation: apToastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        max-width: 400px;
+        pointer-events: auto;
+    }
+
+    .ap-toast.success {
+        background: #10b981;
+    }
+
+    .ap-toast.error {
+        background: #ef4444;
+    }
+
+    @keyframes apToastIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes apToastOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .ap-wrap {
+            padding: 24px 20px;
+        }
+
+        .ap-page-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 20px;
+        }
+
+        .ap-header-actions {
+            flex-direction: column;
+        }
+
+        .ap-grid-2 {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="apToastContainer"></div>
+
+<div class="ap-wrap" id="apDetailWrap">
+    {# ── Page Header ── #}
+    <div class="ap-page-header">
+        <div>
+            <h1 class="ap-page-title" id="apPageTitleText">{{ publisher.name }}</h1>
+            <p class="ap-page-subtitle">Publisher records and contact coordinates.</p>
+        </div>
+        <div class="ap-header-actions">
+            <a href="{% url 'admin:catalog_publisher_changelist' %}" class="ap-btn-cancel" id="apBtnCancel">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Back
+            </a>
+
+            {% if has_delete_permission %}
+            <a href="{% url 'admin:catalog_publisher_delete' object_id %}" class="ap-btn-delete" id="apBtnDelete">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+                Delete
+            </a>
+            {% endif %}
+
+            <button type="button" class="ap-btn-edit" id="apBtnEdit" onclick="apToggleEdit(true)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit Publisher
+            </button>
+
+            <button type="button" class="ap-btn-save" id="apBtnSave" onclick="apSubmit()">
+                <span id="apBtnText">Save Changes</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="apForm" novalidate>
+        {% csrf_token %}
+
+        <div class="ap-card">
+            <div class="ap-card-header">
+                <div class="ap-card-header-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                </div>
+                <span class="ap-card-title">Publisher Information</span>
+            </div>
+
+            <div class="ap-card-body">
+                <div class="ap-row">
+                    <div class="ap-grid-2">
+                        <div class="ap-field">
+                            <label for="id_name">Publisher Name</label>
+                            <div class="read-val" id="read_name">{{ publisher.name }}</div>
+                            <input type="text" id="id_name" name="name" value="{{ publisher.name }}" autocomplete="off">
+                            <div class="ap-err" id="apErr_name"></div>
+                        </div>
+                        <div class="ap-field">
+                            <label for="id_email">Email Address</label>
+                            <div class="read-val" id="read_email">{{ publisher.email }}</div>
+                            <input type="email" id="id_email" name="email" value="{{ publisher.email }}"
+                                autocomplete="off">
+                            <div class="ap-err" id="apErr_email"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ap-row">
+                    <div class="ap-field" style="max-width: 50%;">
+                        <label for="id_phone">Phone Number</label>
+                        <div class="read-val" id="read_phone">{{ publisher.phone }}</div>
+                        <div class="ap-input-prefix-wrap">
+                            <span class="ap-input-prefix">+91</span>
+                            <input type="tel" id="id_phone" name="phone" value="{{ display_phone }}" autocomplete="off">
+                        </div>
+                        <div class="ap-err" id="apErr_phone"></div>
+                    </div>
+                </div>
+
+                <div class="ap-row">
+                    <div class="ap-field">
+                        <label for="id_address">Office Address</label>
+                        <div class="read-val" id="read_address" style="white-space: pre-wrap;">{{ publisher.address }}
+                        </div>
+                        <textarea id="id_address" name="address">{{ publisher.address }}</textarea>
+                        <div class="ap-err" id="apErr_address"></div>
+                    </div>
+                </div>
+
+                <div class="ap-metadata-row">
+                    <div class="ap-meta-item">
+                        <span class="ap-meta-label">Created At</span>
+                        <span class="ap-meta-val">{{ publisher.created_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    <div class="ap-meta-item">
+                        <span class="ap-meta-label">Last Updated</span>
+                        <span class="ap-meta-val" id="read_updated_at">{{ publisher.updated_at|date:"M d, Y H:i"}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    (function () {
+        'use strict';
+
+        let isEditMode = false;
+
+        window.apToggleEdit = function (edit) {
+            isEditMode = edit;
+            const wrap = document.getElementById('apDetailWrap');
+            const cancelBtn = document.getElementById('apBtnCancel');
+            const deleteBtn = document.getElementById('apBtnDelete');
+
+            if (isEditMode) {
+                wrap.classList.add('edit-mode');
+                cancelBtn.textContent = 'Discard';
+                if (deleteBtn) deleteBtn.style.display = 'none';
+                cancelBtn.onclick = (e) => {
+                    e.preventDefault();
+                    apToggleEdit(false);
+                };
+            } else {
+                wrap.classList.remove('edit-mode');
+                cancelBtn.textContent = 'Back';
+                if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+                cancelBtn.onclick = null;
+                // Reset form values to original
+                document.getElementById('id_name').value = document.getElementById('read_name').textContent;
+                document.getElementById('id_email').value = document.getElementById('read_email').textContent;
+                document.getElementById('id_phone').value = document.getElementById('read_phone').textContent.replace('+91 ', '').replace('+91', '');
+                document.getElementById('id_address').value = document.getElementById('read_address').textContent;
+
+                // Clear errors
+                ['name', 'email', 'phone', 'address'].forEach(f => apSetFieldError(f, ''));
+            }
+        };
+
+        function apSetFieldError(field, message) {
+            var errEl = document.getElementById('apErr_' + field);
+            var inpEl = document.getElementById('id_' + field);
+            if (errEl) {
+                errEl.textContent = message;
+                errEl.classList.toggle('visible', !!message);
+            }
+            if (inpEl) inpEl.classList.toggle('field-error', !!message);
+        }
+
+        function apToast(message, type) {
+            var container = document.getElementById('apToastContainer');
+            var toast = document.createElement('div');
+            toast.className = 'ap-toast ' + (type || 'success');
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(function () {
+                toast.style.animation = 'apToastOut 0.3s ease forwards';
+                setTimeout(function () { toast.remove(); }, 320);
+            }, 4500);
+        }
+
+        window.apSubmit = async function () {
+            ['name', 'email', 'phone', 'address'].forEach(function (f) {
+                apSetFieldError(f, '');
+            });
+
+            var btn = document.getElementById('apBtnSave');
+            var btnText = document.getElementById('apBtnText');
+            btn.disabled = true;
+            btnText.textContent = 'Saving...';
+
+            var formData = new FormData(document.getElementById('apForm'));
+            var phone = formData.get('phone');
+            if (phone && !phone.startsWith('+91')) {
+                formData.set('phone', '+91 ' + phone);
+            }
+
+            var hasError = false;
+
+            if (!formData.get('name')) { apSetFieldError('name', 'Name is required.'); hasError = true; }
+            if (!formData.get('email')) { apSetFieldError('email', 'Email is required.'); hasError = true; }
+            if (!formData.get('phone')) { apSetFieldError('phone', 'Phone is required.'); hasError = true; }
+            if (!formData.get('address')) { apSetFieldError('address', 'Address is required.'); hasError = true; }
+
+            if (hasError) {
+                btn.disabled = false;
+                btnText.textContent = 'Save Changes';
+                return;
+            }
+
+            try {
+                var csrfToken = formData.get('csrfmiddlewaretoken');
+                var response = await fetch('../update-publisher/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken },
+                    body: formData,
+                });
+                var data = await response.json();
+
+                if (data.success) {
+                    apToast('Publisher updated successfully!', 'success');
+
+                    // Update read values
+                    document.getElementById('read_name').textContent = formData.get('name');
+                    document.getElementById('read_email').textContent = formData.get('email');
+                    document.getElementById('read_phone').textContent = formData.get('phone');
+                    document.getElementById('read_address').textContent = formData.get('address');
+                    document.getElementById('apPageTitleText').textContent = formData.get('name');
+
+                    if (data.data.updated_at) {
+                        document.getElementById('read_updated_at').textContent = data.data.updated_at;
+                    }
+
+                    setTimeout(() => {
+                        apToggleEdit(false);
+                        btn.disabled = false;
+                        btnText.textContent = 'Save Changes';
+                    }, 800);
+                } else {
+                    if (data.errors) {
+                        Object.entries(data.errors).forEach(function ([field, msg]) {
+                            apSetFieldError(field, msg);
+                        });
+                    }
+                    apToast(data.error || 'Please fix the errors and try again.', 'error');
+                    btn.disabled = false;
+                    btnText.textContent = 'Save Changes';
+                }
+            } catch (err) {
+                apToast('Network error. Please retry.', 'error');
+                btn.disabled = false;
+                btnText.textContent = 'Save Changes';
+            }
+        };
+    }());
+</script>
+{% endblock %}

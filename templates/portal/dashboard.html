@@ -693,6 +693,7 @@
 </div>
 {% endblock %}
 
+{% block extra_scripts %}
 <script>
     function openEditChildModal(childId, childName, childGrade, childWPM, childAccuracy) {
         document.getElementById('edit-child-id').value = childId;
@@ -718,3 +719,4 @@
         }
     });
 </script>
+{% endblock %}

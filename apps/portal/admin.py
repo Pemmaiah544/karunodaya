@@ -1,18 +1,22 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from apps.core.admin_mixins import AdminPaginationMixin
-from .models import Complaint
+from apps.core.admin_mixins import AdminPaginationMixin, SectionPermissionMixin
+from .models import Complaint, ReadingPassage
 
 
 @admin.register(Complaint)
-class ComplaintAdmin(AdminPaginationMixin, ModelAdmin):
+class ComplaintAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
+    admin_section = 'portal'
     list_display = ['subject_link', 'parent', 'category', 'status', 'created_at']
     list_filter = ['status', 'category', 'created_at']
     search_fields = ['subject', 'description', 'parent__user__username', 'order__id']
     readonly_fields = ['created_at', 'updated_at']
-    
+
     # Enhanced change list template
     change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    # Custom detail view
+    change_form_template = 'admin/portal/complaint/change_form.html'
 
     def subject_link(self, obj):
         from django.urls import reverse
@@ -25,13 +29,55 @@ class ComplaintAdmin(AdminPaginationMixin, ModelAdmin):
         )
     subject_link.short_description = 'Subject'
     subject_link.admin_order_field = 'subject'
-    
+
     fieldsets = (
         (None, {
             'fields': ('parent', 'order', 'category', 'status')
         }),
         ('Complaint Details', {
             'fields': ('subject', 'description')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def response_change(self, request, obj):
+        """Handle status-only update from the custom detail view."""
+        if '_cd_status_update' in request.POST:
+            new_status = request.POST.get('status')
+            if new_status and new_status in dict(Complaint.STATUS_CHOICES):
+                obj.status = new_status
+                obj.save(update_fields=['status', 'updated_at'])
+                from django.contrib import messages
+                messages.success(request, f'Status updated to "{obj.get_status_display()}" successfully.')
+                from django.http import HttpResponseRedirect
+                from django.urls import reverse
+                return HttpResponseRedirect(
+                    reverse('admin:portal_complaint_change', args=[obj.pk])
+                )
+        return super().response_change(request, obj)
+
+
+
+@admin.register(ReadingPassage)
+class ReadingPassageAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
+    admin_section = 'portal'
+    list_display = ['title', 'language', 'grade', 'theme', 'word_count', 'is_active']
+    list_filter = ['language', 'grade', 'theme', 'is_active']
+    search_fields = ['title', 'text']
+    readonly_fields = ['word_count', 'created_at', 'updated_at']
+    list_editable = ['is_active']
+
+    change_list_template = 'admin/catalog/enhanced_book_clean.html'
+
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'language', 'grade', 'theme', 'is_active')
+        }),
+        ('Passage Content', {
+            'fields': ('text', 'word_count')
         }),
         ('Metadata', {
             'fields': ('created_at', 'updated_at'),

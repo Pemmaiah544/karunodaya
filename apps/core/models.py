@@ -4,6 +4,69 @@ from django.utils.text import slugify
 import json
 
 
+# ── Super Admin RBAC ──────────────────────────────────────────────────────────
+
+ADMIN_SECTIONS = [
+    'catalog', 'inventory', 'orders',
+    'payments', 'profiles', 'portal', 'users', 'config',
+]
+
+SECTION_ACTIONS = ['view', 'add', 'change', 'delete']
+
+
+class AdminRole(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    permissions = models.JSONField(default=dict)
+    # Structure: { "catalog": ["view", "add"], "orders": ["view", "change"] }
+    # Sections absent from the map = no access at all
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name='created_roles'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def can_access(self, section: str) -> bool:
+        """Returns True if this role has any permissions in the given section."""
+        return section in self.permissions and bool(self.permissions[section])
+
+    def can_do(self, section: str, action: str) -> bool:
+        """Returns True if this role can perform the action in the given section."""
+        return action in self.permissions.get(section, [])
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Admin Role"
+        verbose_name_plural = "Admin Roles"
+
+
+class AdminProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin_profile')
+    is_super_admin = models.BooleanField(default=False)
+    role = models.ForeignKey(
+        AdminRole, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    # role is null only for Super Admins — regular admins must have a role
+    created_by = models.ForeignKey(
+        User, null=True, blank=True, related_name='created_admins', on_delete=models.SET_NULL
+    )
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        tag = 'Super Admin' if self.is_super_admin else str(self.role)
+        return f"{self.user.email} ({tag})"
+
+    class Meta:
+        verbose_name = "Admin User"
+        verbose_name_plural = "Admin Users"
+
+
+# ── Table Configuration ───────────────────────────────────────────────────────
+
 class TableConfiguration(models.Model):
     """Store table configurations for reuse across the admin interface"""
     
