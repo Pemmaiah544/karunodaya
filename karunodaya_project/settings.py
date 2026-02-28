@@ -31,6 +31,14 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 # Allow all hosts in development for tunnel access
 ALLOWED_HOSTS = ['*']
 
+# Security settings — safe defaults for dev, set to True in production via env vars
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
+SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=False, cast=bool)
+SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=False, cast=bool)
+
 # Trust all origins in development for tunnel/mobile access
 CSRF_TRUSTED_ORIGINS = [
     'https://*.github.dev',

@@ -17,17 +17,14 @@ class CommunityProgressAPITestCase(TestCase):
         """Set up test data and client"""
         self.client = Client()
 
-        # Create user and parent profile
+        # Create user and parent profile with completed address (city + pincode)
         self.user = User.objects.create_user(username='testuser', password='testpass123')
         self.parent = ParentProfile.objects.create(
             user=self.user,
             phone_number='9876543210',
             city='Bangalore',
-            locality='Whitefield',
             state='Karnataka',
             pincode='560066',
-            address_completed=True,
-            address_verified_at='2026-02-25T10:30:00Z',
         )
 
         # Create child
@@ -35,7 +32,6 @@ class CommunityProgressAPITestCase(TestCase):
             parent=self.parent,
             name='Test Child',
             age=8,
-            location_consented=True,
         )
 
     def test_api_address_status_unauthenticated(self):
@@ -53,7 +49,6 @@ class CommunityProgressAPITestCase(TestCase):
 
         self.assertTrue(data['is_completed'])
         self.assertEqual(data['city'], 'Bangalore')
-        self.assertEqual(data['locality'], 'Whitefield')
         self.assertEqual(data['pincode'], '560066')
 
     def test_api_user_address_post_valid(self):
@@ -78,12 +73,10 @@ class CommunityProgressAPITestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertTrue(data['success'])
-        self.assertTrue(data['address_completed'])
 
-        # Verify in DB
+        # Verify city saved in DB
         new_parent.refresh_from_db()
         self.assertEqual(new_parent.city, 'Mumbai')
-        self.assertEqual(new_parent.locality, 'Fort')
 
     def test_api_user_address_post_invalid_pincode(self):
         """Invalid PIN code should return 400"""
@@ -121,7 +114,7 @@ class CommunityProgressAPITestCase(TestCase):
 
     def test_api_community_progress_without_address(self):
         """No address should return 400"""
-        # Create user without address
+        # Create user without city/pincode (incomplete address)
         user2 = User.objects.create_user(username='noaddress', password='pass123')
         ParentProfile.objects.create(
             user=user2,
@@ -179,7 +172,7 @@ class CommunityProgressAPITestCase(TestCase):
         self.assertIn('BEGINNER', data['level_distribution'])
 
     def test_address_banner_check_completed(self):
-        """Completed address should return empty"""
+        """Completed address (city + pincode set) should return empty"""
         self.client.login(username='testuser', password='testpass123')
         response = self.client.get(reverse('portal:address_banner_check'))
 
@@ -188,12 +181,11 @@ class CommunityProgressAPITestCase(TestCase):
         self.assertEqual(response.content.strip(), b'')
 
     def test_address_banner_check_incomplete(self):
-        """Incomplete address should return banner"""
+        """Incomplete address (no city/pincode) should return banner"""
         user2 = User.objects.create_user(username='noaddress', password='pass123')
         ParentProfile.objects.create(
             user=user2,
             phone_number='9876543212',
-            address_completed=False,
         )
 
         self.client.login(username='noaddress', password='pass123')
@@ -209,7 +201,6 @@ class CommunityProgressAPITestCase(TestCase):
         ParentProfile.objects.create(
             user=user2,
             phone_number='9876543212',
-            address_completed=False,
         )
 
         self.client.login(username='noaddress', password='pass123')
@@ -224,7 +215,7 @@ class CommunityProgressAPITestCase(TestCase):
         response = self.client.get(reverse('portal:community_progress_page'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Community Reading Progress', response.content)
+        self.assertIn(b'Kids Reading Spotlight', response.content)
 
     def test_api_user_address_get_not_allowed(self):
         """GET request to address save endpoint should fail"""

@@ -718,39 +718,33 @@
             </form>
         </div>
     </div>
+
+    <script>
+        function openEditChildModal(childId, childName, childGrade, childWPM, childAccuracy) {
+            document.getElementById('edit-child-id').value = childId;
+            document.getElementById('edit-child-name').value = childName;
+            document.getElementById('edit-child-grade').value = childGrade;
+            document.getElementById('edit-child-wpm').value = childWPM;
+            document.getElementById('edit-child-accuracy').value = childAccuracy;
+
+            document.getElementById('edit-child-form').action = `/profile/child/${childId}/update/`;
+
+            const buddy = document.getElementById('reading-buddy-widget');
+            if (buddy) buddy.classList.add('hidden');
+
+            document.getElementById('edit-child-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeEditChildModal() {
+            document.getElementById('edit-child-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+            if (typeof checkFluencyNudge === 'function') checkFluencyNudge();
+        }
+
+        document.getElementById('edit-child-modal').addEventListener('click', function (e) {
+            if (e.target === this) closeEditChildModal();
+        });
+    </script>
 </div>
 {% endblock %}
-
-<script>
-    function openEditChildModal(childId, childName, childGrade, childWPM, childAccuracy) {
-        document.getElementById('edit-child-id').value = childId;
-        document.getElementById('edit-child-name').value = childName;
-        document.getElementById('edit-child-grade').value = childGrade;
-        document.getElementById('edit-child-wpm').value = childWPM;
-        document.getElementById('edit-child-accuracy').value = childAccuracy;
-
-        // Set the form action to update the specific child
-        document.getElementById('edit-child-form').action = `/profile/child/${childId}/update/`;
-
-        // Hide floating widget while modal is open
-        const buddy = document.getElementById('reading-buddy-widget');
-        if (buddy) buddy.classList.add('hidden');
-
-        document.getElementById('edit-child-modal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeEditChildModal() {
-        document.getElementById('edit-child-modal').classList.add('hidden');
-        document.body.style.overflow = '';
-        // Restore buddy widget if applicable
-        if (typeof checkFluencyNudge === 'function') checkFluencyNudge();
-    }
-
-    // Close modal when clicking outside
-    document.getElementById('edit-child-modal').addEventListener('click', function (e) {
-        if (e.target === this) {
-            closeEditChildModal();
-        }
-    });
-</script>

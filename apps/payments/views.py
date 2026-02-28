@@ -10,10 +10,14 @@ import hmac
 import hashlib
 import json
 
+import logging
+
 from apps.orders.models import Order, SubscriptionCycle
 from apps.payments.models import Transaction
 from services.curation import assign_subscription_books
 from services.email_service import send_order_confirmation_email
+
+logger = logging.getLogger(__name__)
 
 
 # Initialize Razorpay client
@@ -134,9 +138,9 @@ def payment_callback(request):
                         success, message, assigned_copies = assign_subscription_books(subscription_cycle)
                         if not success:
                             # Log the issue but don't fail the payment
-                            print(f"Book assignment failed: {message}")
+                            logger.warning(f"Book assignment failed: {message}")
                     except SubscriptionCycle.DoesNotExist:
-                        print(f"SubscriptionCycle not found for order {order.id}")
+                        logger.warning(f"SubscriptionCycle not found for order {order.id}")
 
             # Send confirmation email
             send_order_confirmation_email(order)
@@ -283,7 +287,7 @@ def razorpay_webhook(request):
         return JsonResponse({'status': 'success'})
 
     except Exception as e:
-        print(f"Webhook error: {str(e)}")
+        logger.error(f"Webhook error: {str(e)}")
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 
@@ -305,7 +309,7 @@ def verify_razorpay_signature(order_id, payment_id, signature):
         # Compare signatures
         return hmac.compare_digest(signature, expected_signature)
     except Exception as e:
-        print(f"Signature verification error: {str(e)}")
+        logger.error(f"Signature verification error: {str(e)}")
         return False
 
 
@@ -345,7 +349,7 @@ def handle_payment_captured(payment_entity):
                         except SubscriptionCycle.DoesNotExist:
                             pass
     except Exception as e:
-        print(f"Error handling payment captured: {str(e)}")
+        logger.error(f"Error handling payment captured: {str(e)}")
 
 
 def handle_payment_failed(payment_entity):
@@ -368,4 +372,4 @@ def handle_payment_failed(payment_entity):
             transaction.provider_response = payment_entity
             transaction.save()
     except Exception as e:
-        print(f"Error handling payment failed: {str(e)}")
+        logger.error(f"Error handling payment failed: {str(e)}")

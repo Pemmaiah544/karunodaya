@@ -3,10 +3,14 @@ Django signal handlers for portal app.
 Automatically maintains CommunityProgress aggregates when ReadingAssessment changes.
 """
 
+import logging
+
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from apps.profiles.models import ReadingAssessment
 from services.community_service import CommunityProgressService
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=ReadingAssessment)
@@ -57,10 +61,7 @@ def on_reading_assessment_saved(sender, instance, created, **kwargs):
         )
 
     except Exception as e:
-        print(f"Error in on_reading_assessment_saved signal: {str(e)}")
-        # Don't let signal errors crash the application
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error in on_reading_assessment_saved signal: {str(e)}", exc_info=True)
 
 
 @receiver(post_delete, sender=ReadingAssessment)
@@ -93,6 +94,4 @@ def on_reading_assessment_deleted(sender, instance, **kwargs):
         )
 
     except Exception as e:
-        print(f"Error in on_reading_assessment_deleted signal: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error in on_reading_assessment_deleted signal: {str(e)}", exc_info=True)

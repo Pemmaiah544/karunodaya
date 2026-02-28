@@ -93,9 +93,7 @@ class CommunityProgressServiceTestCase(TestCase):
             user=self.user1,
             phone_number='9876543210',
             city='Bangalore',
-            locality='Whitefield',
             pincode='560066',
-            address_completed=True,
         )
 
         self.user2 = User.objects.create_user(username='parent2', password='test123')
@@ -103,9 +101,7 @@ class CommunityProgressServiceTestCase(TestCase):
             user=self.user2,
             phone_number='9876543211',
             city='Bangalore',
-            locality='Whitefield',
             pincode='560066',
-            address_completed=True,
         )
 
         # Create children
@@ -113,14 +109,12 @@ class CommunityProgressServiceTestCase(TestCase):
             parent=self.parent1,
             name='Child 1',
             age=8,
-            location_consented=True,
         )
 
         self.child2 = Child.objects.create(
             parent=self.parent2,
             name='Child 2',
             age=7,
-            location_consented=True,
         )
 
     def test_get_community_progress_no_data(self):
@@ -174,9 +168,9 @@ class CommunityProgressServiceTestCase(TestCase):
         self.assertIn('Bangalore', cities)
 
     def test_get_locality_suggestions(self):
-        """Should return list of localities for a city"""
+        """Locality suggestions returns empty list (locality is form-only, not stored in profile)"""
         localities = CommunityProgressService.get_locality_suggestions('Bangalore', 10)
-        self.assertIn('Whitefield', localities)
+        self.assertEqual(localities, [])
 
     def test_update_community_progress_for_location(self):
         """Should create/update CommunityProgress records"""
@@ -212,19 +206,14 @@ class CommunityProgressServiceTestCase(TestCase):
         self.assertAlmostEqual(progress.avg_wpm, 85.0, places=1)
         self.assertAlmostEqual(progress.avg_accuracy, 86.75, places=1)
 
-    def test_update_community_progress_respects_consent(self):
-        """Should only include consented children"""
-        # First child is consented, create assessment
+    def test_update_community_progress_all_children_included(self):
+        """All children with assessments in the city should be included"""
         ReadingAssessment.objects.create(
             child=self.child1,
             wpm=80,
             accuracy=85.5,
             level='BEGINNER',
         )
-
-        # Second child not consented
-        self.child2.location_consented = False
-        self.child2.save()
 
         ReadingAssessment.objects.create(
             child=self.child2,
@@ -233,12 +222,10 @@ class CommunityProgressServiceTestCase(TestCase):
             level='BEGINNER',
         )
 
-        # Update community progress
         CommunityProgressService.update_community_progress_for_location(
             'Bangalore', 'Whitefield'
         )
 
-        # Should only count child1
         progress = CommunityProgress.objects.filter(
             city='Bangalore',
             locality='Whitefield',
@@ -246,5 +233,5 @@ class CommunityProgressServiceTestCase(TestCase):
         ).first()
 
         self.assertIsNotNone(progress)
-        self.assertEqual(progress.child_count, 1)
-        self.assertAlmostEqual(progress.avg_wpm, 80.0, places=1)
+        self.assertEqual(progress.child_count, 2)
+        self.assertAlmostEqual(progress.avg_wpm, 85.0, places=1)
