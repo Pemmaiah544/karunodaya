@@ -69,7 +69,7 @@
 }
 
 #content {
-    background-color: #f9fafb !important;
+    background-color: #f9fafb;
 }
 
 @media (max-width: 768px) {
@@ -83,13 +83,11 @@
 /* Unified Container Styling (Tables & Forms) */
 .results,
 fieldset,
-.module,
 .unfold-table-container,
 div[class*="unfold-card"] {
     border-radius: 12px !important;
     border: 1px solid #e2e8f0 !important;
     background: white !important;
-    overflow: hidden !important;
     margin-bottom: 24px !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
 }

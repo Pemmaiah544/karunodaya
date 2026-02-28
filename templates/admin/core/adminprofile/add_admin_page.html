@@ -1,0 +1,1234 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}Add New Admin | {{ site_title|default:"Admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+    &rsaquo; <a href="{% url 'admin:core_adminprofile_changelist' %}">Admin Users</a>
+    &rsaquo; Add New Admin
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* ── Reset & Base ─────────────────────────────────────────────────────────── */
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    /* ── Page Container ────────────────────────────────────────────────────────── */
+    .aap-wrap {
+        padding: 32px 40px 64px;
+        max-width: 1280px;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    /* ── Page Header ───────────────────────────────────────────────────────────── */
+    .aap-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 32px;
+        gap: 16px;
+    }
+
+    .aap-page-title {
+        font-size: 26px;
+        font-weight: 800;
+        color: #111827;
+        margin: 0 0 6px;
+        line-height: 1.2;
+    }
+
+    .aap-page-subtitle {
+        font-size: 14px;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    .aap-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: #fff;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        text-decoration: none;
+        transition: background 0.15s, border-color 0.15s;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .aap-back-link:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+        color: #111827;
+    }
+
+    .aap-back-link svg {
+        width: 14px;
+        height: 14px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    /* ── Credentials Success Box ───────────────────────────────────────────────── */
+    #aapCredBox {
+        display: none;
+        background: #f0fdf4;
+        border: 1.5px solid #86efac;
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 28px;
+    }
+
+    .aap-cred-heading {
+        font-weight: 700;
+        font-size: 15px;
+        color: #166534;
+        margin: 0 0 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .aap-cred-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .aap-cred-item {
+        background: #fff;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        padding: 10px 14px;
+    }
+
+    .aap-cred-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 4px;
+    }
+
+    .aap-cred-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .aap-cred-val {
+        font-family: ui-monospace, SFMono-Regular, monospace;
+        font-size: 14px;
+        color: #1f2937;
+        background: #fff;
+        padding: 3px 9px;
+        border-radius: 5px;
+        border: 1px solid #d1d5db;
+        flex: 1;
+        word-break: break-all;
+    }
+
+    .aap-copy-btn {
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        border: 1px solid #d1d5db;
+        border-radius: 5px;
+        background: #fff;
+        color: #374151;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s;
+    }
+
+    .aap-copy-btn:hover {
+        background: #f3f4f6;
+    }
+
+    /* ── Two-Column Layout ─────────────────────────────────────────────────────── */
+    .aap-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        align-items: start;
+        margin-bottom: 28px;
+    }
+
+    /* ── Cards ─────────────────────────────────────────────────────────────────── */
+    .aap-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    .aap-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 22px;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .aap-card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .aap-card-header-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #fff7ed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .aap-card-header-icon svg {
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: #ea580c;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .aap-card-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #111827;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .aap-card-body {
+        padding: 24px 22px;
+    }
+
+    /* ── Form Fields ───────────────────────────────────────────────────────────── */
+    .aap-row {
+        margin-bottom: 18px;
+    }
+
+    .aap-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .aap-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .aap-field label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 6px;
+    }
+
+    .aap-field label span.req {
+        color: #ef4444;
+        margin-left: 2px;
+        font-size: 12px;
+    }
+
+    .aap-field input[type="text"],
+    .aap-field input[type="email"],
+    .aap-field input[type="password"],
+    .aap-field input[type="tel"],
+    .aap-field textarea {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1.5px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #1f2937;
+        box-sizing: border-box;
+        font-family: inherit;
+        background: #fff;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .aap-field input:focus,
+    .aap-field textarea:focus {
+        outline: none;
+        border-color: #fb923c;
+        box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.12);
+    }
+
+    .aap-field input.field-error,
+    .aap-field textarea.field-error {
+        border-color: #ef4444;
+    }
+
+    .aap-field .aap-err {
+        color: #ef4444;
+        font-size: 12px;
+        margin-top: 4px;
+        display: none;
+    }
+
+    .aap-field .aap-err.visible {
+        display: block;
+    }
+
+    .aap-field .aap-hint {
+        font-size: 11px;
+        color: #9ca3af;
+        margin-top: 4px;
+        display: block;
+        line-height: 1.4;
+    }
+
+    .aap-field textarea {
+        resize: vertical;
+        min-height: 72px;
+        line-height: 1.5;
+    }
+
+    /* ── Password Wrapper (eye toggle) ────────────────────────────────────────── */
+    .aap-pwd-wrap {
+        position: relative;
+    }
+
+    .aap-pwd-wrap input {
+        padding-right: 38px;
+    }
+
+    .aap-pwd-eye {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        color: #9ca3af;
+        display: flex;
+        align-items: center;
+    }
+
+    .aap-pwd-eye:hover {
+        color: #6b7280;
+    }
+
+    .aap-pwd-eye svg {
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    /* ── Account Active Row ─────────────────────────────────────────────────── */
+    .aap-active-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 14px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 14px;
+    }
+
+    .aap-active-text-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .aap-active-text-desc {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 2px;
+    }
+
+    /* ── Credentials box ────────────────────────────────────────────────────── */
+    #aapCredBox {
+        display: none;
+        background: #f0fdf4;
+        border: 1.5px solid #86efac;
+        border-radius: 9px;
+        padding: 14px 16px;
+        margin-bottom: 16px;
+    }
+
+    .aa-cred-heading {
+        font-weight: 700;
+        font-size: 13px;
+        color: #166534;
+        margin-bottom: 10px;
+    }
+
+    .aa-cred-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+
+    .aa-cred-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #374151;
+        min-width: 70px;
+    }
+
+    .aa-cred-val {
+        font-family: ui-monospace, SFMono-Regular, monospace;
+        font-size: 13px;
+        color: #1f2937;
+        background: #fff;
+        padding: 3px 9px;
+        border-radius: 5px;
+        border: 1px solid #d1d5db;
+        flex: 1;
+        word-break: break-all;
+    }
+
+    .aa-copy-btn {
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        border: 1px solid #d1d5db;
+        border-radius: 5px;
+        background: #fff;
+        color: #374151;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s;
+    }
+
+    .aa-copy-btn:hover {
+        background: #f3f4f6;
+    }
+
+    /* ── Permissions Card ───────────────────────────────────────────────────── */
+    .aap-perm-card {
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        margin-bottom: 16px;
+    }
+
+    .aap-perm-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 13px 16px;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .aap-perm-card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .aap-perm-card-header-left svg {
+        width: 16px;
+        height: 16px;
+        color: #6b7280;
+        flex-shrink: 0;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .aap-perm-card-header-left span {
+        font-size: 12px;
+        font-weight: 700;
+        color: #374151;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .aap-perm-enable-all {
+        font-size: 12px;
+        font-weight: 600;
+        color: #fb923c;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+    }
+
+    .aap-perm-enable-all:hover {
+        text-decoration: underline;
+    }
+
+    .aap-perm-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 13px 16px;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background 0.12s;
+    }
+
+    .aap-perm-row:last-child {
+        border-bottom: none;
+    }
+
+    .aap-perm-row:hover {
+        background: #fafafa;
+    }
+
+    .aap-perm-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: #fb923c;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .aap-perm-icon svg {
+        width: 18px;
+        height: 18px;
+        fill: none;
+        stroke: #fff;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 2;
+    }
+
+    .aap-perm-row-label {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 500;
+        color: #1f2937;
+    }
+
+    /* ── iOS Toggle ─────────────────────────────────────────────────────────── */
+    .aap-toggle-wrap {
+        position: relative;
+        display: inline-block;
+        width: 46px;
+        height: 26px;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    .aap-toggle-wrap input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+    }
+
+    .aap-toggle-slider {
+        position: absolute;
+        inset: 0;
+        background: #d1d5db;
+        border-radius: 26px;
+        transition: background 0.25s;
+    }
+
+    .aap-toggle-slider::before {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        left: 3px;
+        top: 3px;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        transition: transform 0.25s;
+    }
+
+    .aap-toggle-wrap input:checked+.aap-toggle-slider {
+        background: #fb923c;
+    }
+
+    .aap-toggle-wrap input:checked+.aap-toggle-slider::before {
+        transform: translateX(20px);
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────────────────── */
+    .aap-footer {
+        padding: 16px 20px 20px;
+        background: #f3f4f6;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .aap-btn-cancel {
+        padding: 10px 22px;
+        border: 1.5px solid #d1d5db;
+        border-radius: 8px;
+        background: #fff;
+        color: #374151;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .aap-btn-cancel:hover {
+        background: #f3f4f6;
+    }
+
+    .aap-btn-create {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 22px;
+        background: #fb923c;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(251, 146, 60, 0.35);
+        transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .aap-btn-create:hover:not(:disabled) {
+        background: #ea580c;
+        box-shadow: 0 4px 14px rgba(251, 146, 60, 0.45);
+    }
+
+    .aap-btn-create:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    .aap-btn-create.success-state {
+        background: #10b981;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+    }
+
+    .aap-btn-create>svg {
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: #fff;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 2;
+    }
+
+    /* ── Toast ───────────────────────────────────────────────────────────────── */
+    #aapToastContainer {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+    }
+
+    .aap-toast {
+        padding: 13px 18px;
+        border-radius: 9px;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 600;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        animation: aapToastIn 0.3s ease;
+        max-width: 360px;
+        pointer-events: auto;
+    }
+
+    .aap-toast.success {
+        background: #059669;
+    }
+
+    .aap-toast.error {
+        background: #dc2626;
+    }
+
+    .aap-toast.info {
+        background: #0284c7;
+    }
+
+    @keyframes aapToastIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes aapToastOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+
+    /* ── Divider inside card body ───────────────────────────────────────────── */
+    .aap-divider {
+        height: 1px;
+        background: #f3f4f6;
+        margin: 20px 0;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — Tablet ≤ 1024px
+   ══════════════════════════════════════════════════════════════════════════════ */
+    @media (max-width: 1024px) {
+        .aap-wrap {
+            padding: 24px 24px 48px;
+        }
+
+        .aap-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile ≤ 768px
+   ══════════════════════════════════════════════════════════════════════════════ */
+    @media (max-width: 768px) {
+        .aap-wrap {
+            padding: 16px 12px 48px;
+        }
+
+        /* Header */
+        .aap-page-header {
+            flex-direction: column-reverse;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .aap-page-title {
+            font-size: 20px;
+        }
+
+        .aap-back-link {
+            align-self: flex-start;
+        }
+
+        /* Credential box */
+        .aap-cred-grid {
+            grid-template-columns: 1fr;
+        }
+
+        /* Cards */
+        .aap-card-header {
+            padding: 12px 14px;
+        }
+
+        .aap-card-body {
+            padding: 16px;
+        }
+
+        /* Form grids → single column */
+        .aap-grid-2 {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        /* Active toggle row */
+        .aap-active-row {
+            padding: 10px 12px;
+        }
+
+        /* Footer: stack buttons */
+        .aap-footer {
+            flex-direction: column-reverse;
+            align-items: stretch;
+            gap: 10px;
+            padding: 12px;
+        }
+
+        .aap-btn-cancel,
+        .aap-btn-create {
+            justify-content: center;
+            padding: 12px;
+        }
+
+        /* Permissions: allow horizontal scroll */
+        .aap-perm-card {
+            overflow-x: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="aapToastContainer"></div>
+
+<div class="aap-wrap">
+
+    {# ── Page Header ── #}
+    <div class="aap-page-header">
+        <div>
+            <h1 class="aap-page-title">Add New Admin</h1>
+            <p class="aap-page-subtitle">Set up a new administrative account with specific roles and access permissions.
+            </p>
+        </div>
+        <a href="{% url 'admin:core_adminprofile_changelist' %}" class="aap-back-link">
+            <svg viewBox="0 0 24 24">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Admin Users
+        </a>
+    </div>
+
+    <form id="aaForm" novalidate>
+        {% csrf_token %}
+
+        {# ── Credentials box – shown after successful creation ── #}
+        <div id="aapCredBox">
+            <div class="aap-cred-heading">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Admin created! Credentials have been emailed. Here is the backup copy:
+            </div>
+            <div class="aap-cred-grid">
+                <div class="aap-cred-item">
+                    <div class="aap-cred-label">Email Address</div>
+                    <div class="aap-cred-row">
+                        <span class="aap-cred-val" id="aapCred_email"></span>
+                        <button type="button" class="aap-copy-btn"
+                            onclick="aaCopyText('aapCred_email', this)">Copy</button>
+                    </div>
+                </div>
+                <div class="aap-cred-item">
+                    <div class="aap-cred-label">Password</div>
+                    <div class="aap-cred-row">
+                        <span class="aap-cred-val" id="aapCred_password"></span>
+                        <button type="button" class="aap-copy-btn"
+                            onclick="aaCopyText('aapCred_password', this)">Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ── Two-column layout ── #}
+        <div class="aap-layout">
+
+            {# ── LEFT: Admin Information ── #}
+            <div class="aap-card">
+                <div class="aap-card-header">
+                    <div class="aap-card-header-left">
+                        <div class="aap-card-header-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                        </div>
+                        <span class="aap-card-title">Admin Information</span>
+                    </div>
+                </div>
+                <div class="aap-card-body">
+
+                    <div class="aap-row">
+                        <div class="aap-grid-2">
+                            <div class="aap-field">
+                                <label for="aa_first_name">First Name <span class="req">*</span></label>
+                                <input type="text" id="aa_first_name" name="first_name" placeholder="e.g. Jane"
+                                    autocomplete="off">
+                                <div class="aap-err" id="aaErr_first_name"></div>
+                            </div>
+                            <div class="aap-field">
+                                <label for="aa_last_name">Last Name <span
+                                        style="font-weight:400;color:#9ca3af;">(optional)</span></label>
+                                <input type="text" id="aa_last_name" name="last_name" placeholder="e.g. Smith"
+                                    autocomplete="off">
+                                <div class="aap-err" id="aaErr_last_name"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aap-row">
+                        <div class="aap-grid-2">
+                            <div class="aap-field">
+                                <label for="aa_email">Email Address <span class="req">*</span></label>
+                                <input type="email" id="aa_email" name="email" placeholder="jane.smith@ngo-org.com"
+                                    autocomplete="off">
+                                <div class="aap-err" id="aaErr_email"></div>
+                            </div>
+                            <div class="aap-field">
+                                <label for="aa_phone_number">Phone Number <span class="req">*</span></label>
+                                <input type="tel" id="aa_phone_number" name="phone_number"
+                                    placeholder="e.g. +91 98765 43210" autocomplete="off">
+                                <div class="aap-err" id="aaErr_phone_number"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aap-row">
+                        <div class="aap-grid-2">
+                            <div class="aap-field">
+                                <label for="aa_password">Password</label>
+                                <div class="aap-pwd-wrap">
+                                    <input type="password" id="aa_password" name="password"
+                                        placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+                                        autocomplete="new-password">
+                                    <button type="button" class="aap-pwd-eye" onclick="aaPwdEye('aa_password', this)"
+                                        tabindex="-1">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                            <circle cx="12" cy="12" r="3" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <span class="aap-hint">Leave empty to auto-generate a secure password.</span>
+                                <div class="aap-err" id="aaErr_password"></div>
+                            </div>
+                            <div class="aap-field">
+                                <label for="aa_confirm_password">Confirm Password</label>
+                                <div class="aap-pwd-wrap">
+                                    <input type="password" id="aa_confirm_password"
+                                        placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+                                        autocomplete="new-password">
+                                    <button type="button" class="aap-pwd-eye"
+                                        onclick="aaPwdEye('aa_confirm_password', this)" tabindex="-1">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                            <circle cx="12" cy="12" r="3" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="aap-err" id="aaErr_confirm_password"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aap-divider"></div>
+
+                    <div class="aap-row">
+                        <div class="aap-active-row">
+                            <label class="aap-toggle-wrap">
+                                <input type="checkbox" id="aa_is_active" name="is_active" value="on" checked>
+                                <span class="aap-toggle-slider"></span>
+                            </label>
+                            <div>
+                                <div class="aap-active-text-title">Account Active</div>
+                                <div class="aap-active-text-desc">Allow this admin to log in immediately after creation.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aap-row">
+                        <div class="aap-field">
+                            <label for="aa_notes">Internal Notes <span
+                                    style="font-weight:400;color:#9ca3af;">(optional)</span></label>
+                            <textarea id="aa_notes" name="notes"
+                                placeholder="Add any relevant details about this admin's role..."></textarea>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            {# ── RIGHT: Permissions & Access ── #}
+            <div class="aap-perm-card">
+                <div class="aap-perm-card-header">
+                    <div class="aap-perm-card-header-left">
+                        <svg viewBox="0 0 24 24">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0110 0v4"></path>
+                        </svg>
+                        <span>Permissions &amp; Access</span>
+                    </div>
+                    <button type="button" class="aap-perm-enable-all" id="aaBtnEnableAll"
+                        onclick="aaToggleAll(this)">Enable All</button>
+                </div>
+
+                {% for section, label in admin_sections_with_labels %}
+                <div class="aap-perm-row" id="aaRow_{{ section }}">
+
+                    <div class="aap-perm-icon">
+                        {% if section == 'catalog' %}
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        {% elif section == 'inventory' %}
+                        <svg viewBox="0 0 24 24">
+                            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        {% elif section == 'orders' %}
+                        <svg viewBox="0 0 24 24">
+                            <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        {% elif section == 'payments' %}
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        {% elif section == 'profiles' %}
+                        <svg viewBox="0 0 24 24">
+                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                            <path d="M16 3.13a4 4 0 010 7.75" />
+                        </svg>
+                        {% elif section == 'portal' %}
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {% elif section == 'users' %}
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        {% elif section == 'config' %}
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        {% else %}
+                        <svg viewBox="0 0 24 24">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {% endif %}
+                    </div>
+
+                    <span class="aap-perm-row-label">{{ label }} Access</span>
+
+                    {# Section-level toggle — ON grants all 4 actions #}
+                    <label class="aap-toggle-wrap">
+                        <input type="checkbox" id="aaToggle_{{ section }}" data-section="{{ section }}"
+                            onchange="aaOnSectionToggle('{{ section }}', this)">
+                        <span class="aap-toggle-slider"></span>
+                    </label>
+
+                    {# Hidden checkboxes synced by JS for backend compatibility #}
+                    {% for action in section_actions %}
+                    <input type="checkbox" name="{{ section }}__{{ action }}" id="aaPerm_{{ section }}_{{ action }}"
+                        style="display:none" class="aa-perm-hidden">
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>{# end .aap-layout #}
+
+        {# ── Footer ── #}
+        <div class="aap-footer">
+            <a href="{% url 'admin:core_adminprofile_changelist' %}" class="aap-btn-cancel" id="aaBtnCancel">Cancel</a>
+            <button type="button" class="aap-btn-create" id="aaBtnCreate" onclick="aaSubmit()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                <span id="aaBtnText">Save Admin User</span>
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    (function () {
+        'use strict';
+
+    const SECTIONS = {{ admin_sections_json|safe }};
+    const ACTIONS  = {{ section_actions_json|safe }};
+    let allEnabled = false;
+
+    /* ── Password eye toggle ────────────────────────────────────────────── */
+    window.aaPwdEye = function (inputId, btn) {
+        var inp = document.getElementById(inputId);
+        var svg = btn.querySelector('svg');
+        var isText = inp.type === 'text';
+        inp.type = isText ? 'password' : 'text';
+        if (isText) {
+            svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+        } else {
+            svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+        }
+    };
+
+    /* ── Section toggle ─────────────────────────────────────────────────── */
+    window.aaOnSectionToggle = function (section, checkbox) {
+        ACTIONS.forEach(function (action) {
+            var hidden = document.getElementById('aaPerm_' + section + '_' + action);
+            if (hidden) hidden.checked = checkbox.checked;
+        });
+    };
+
+    /* ── Enable / Disable All ───────────────────────────────────────────── */
+    window.aaToggleAll = function (btn) {
+        allEnabled = !allEnabled;
+        btn.textContent = allEnabled ? 'Disable All' : 'Enable All';
+        SECTIONS.forEach(function (section) {
+            var toggle = document.getElementById('aaToggle_' + section);
+            if (toggle) {
+                toggle.checked = allEnabled;
+                aaOnSectionToggle(section, toggle);
+            }
+        });
+    };
+
+    /* ── Field error helpers ────────────────────────────────────────────── */
+    function aaSetFieldError(field, message) {
+        var errEl = document.getElementById('aaErr_' + field);
+        var inpEl = document.getElementById('aa_' + field);
+        if (errEl) {
+            errEl.textContent = message;
+            errEl.classList.toggle('visible', !!message);
+        }
+        if (inpEl) inpEl.classList.toggle('field-error', !!message);
+    }
+
+    /* ── Toast ──────────────────────────────────────────────────────────── */
+    function aaToast(message, type) {
+        var container = document.getElementById('aapToastContainer');
+        var toast = document.createElement('div');
+        toast.className = 'aap-toast ' + (type || 'success');
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(function () {
+            toast.style.animation = 'aapToastOut 0.3s ease forwards';
+            setTimeout(function () { toast.remove(); }, 320);
+        }, 4500);
+    }
+
+    /* ── Copy ───────────────────────────────────────────────────────────── */
+    window.aaCopyText = function (elementId, btn) {
+        var text = document.getElementById(elementId).textContent;
+        navigator.clipboard.writeText(text).then(function () {
+            var prev = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(function () { btn.textContent = prev; }, 1500);
+        });
+    };
+
+    /* ── Submit ──────────────────────────────────────────────────────────── */
+    window.aaSubmit = async function () {
+        ['first_name', 'last_name', 'email', 'phone_number', 'password', 'confirm_password'].forEach(function (f) {
+            aaSetFieldError(f, '');
+        });
+
+        var btn = document.getElementById('aaBtnCreate');
+        var btnText = document.getElementById('aaBtnText');
+        btn.disabled = true;
+        if (btnText) btnText.textContent = 'Saving\u2026';
+
+        var formData = new FormData(document.getElementById('aaForm'));
+        var pwd = document.getElementById('aa_password').value;
+        var confirm = document.getElementById('aa_confirm_password').value;
+
+        var hasError = false;
+        if (!formData.get('first_name')) {
+            aaSetFieldError('first_name', 'First name is required.'); hasError = true;
+        }
+
+        if (!formData.get('email')) {
+            aaSetFieldError('email', 'Email address is required.'); hasError = true;
+        }
+        if (!formData.get('phone_number')) {
+            aaSetFieldError('phone_number', 'Phone number is required.'); hasError = true;
+        }
+        if (pwd || confirm) {
+            if (pwd.length < 8) {
+                aaSetFieldError('password', 'Password must be at least 8 characters.'); hasError = true;
+            } else if (pwd !== confirm) {
+                aaSetFieldError('confirm_password', 'Passwords do not match.'); hasError = true;
+            }
+        }
+
+        if (hasError) {
+            btn.disabled = false;
+            if (btnText) btnText.textContent = 'Save Admin User';
+            return;
+        }
+
+        try {
+            var csrfToken = formData.get('csrfmiddlewaretoken');
+            var response = await fetch('../create-admin/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData,
+            });
+            var data = await response.json();
+
+            if (data.success) {
+                document.getElementById('aapCred_email').textContent = data.data.email;
+                document.getElementById('aapCred_password').textContent = data.data.password;
+                document.getElementById('aapCredBox').style.display = 'block';
+                document.getElementById('aapCredBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                btn.classList.add('success-state');
+                if (btnText) btnText.textContent = 'Done \u2713';
+                document.getElementById('aaBtnCancel').textContent = 'Back to Admin Users';
+
+                if (data.email_sent) {
+                    aaToast('Admin "' + data.data.name + '" created. Welcome email sent!', 'success');
+                } else {
+                    aaToast('Admin "' + data.data.name + '" created. (Email could not be sent \u2014 share credentials manually.)', 'info');
+                }
+
+                setTimeout(function () { window.location.href = '{% url "admin:core_adminprofile_changelist" %}'; }, 4000);
+            } else {
+                if (data.errors) {
+                    Object.entries(data.errors).forEach(function ([field, msg]) {
+                        aaSetFieldError(field, msg);
+                    });
+                }
+                aaToast(data.error || 'Please fix the errors and try again.', 'error');
+                btn.disabled = false;
+                if (btnText) btnText.textContent = 'Save Admin User';
+            }
+        } catch (err) {
+            aaToast('Network error. Please check your connection and retry.', 'error');
+            btn.disabled = false;
+            if (btnText) btnText.textContent = 'Save Admin User';
+        }
+    };
+
+}());
+</script>
+{% endblock %}

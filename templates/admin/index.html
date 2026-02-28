@@ -349,7 +349,7 @@
     <!-- Stats Section -->
     <div class="metrics-grid">
         <!-- Active Subscriptions -->
-        <a href="{% url 'admin:orders_subscriptioncycle_changelist' %}" class="metric-card" style="text-decoration: none; color: inherit; display: block;">
+        <div class="metric-card">
             <div class="metric-header">
                 <div class="metric-icon-wrapper" style="background: #FFF7ED;">
                     <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -365,11 +365,28 @@
             {% if stats.overdue_subscriptions > 0 %}
             <div class="mt-2 text-xs text-red-600 font-medium">⚠️ {{ stats.overdue_subscriptions }} Overdue</div>
             {% endif %}
-        </a>
+        </div>
 
+        <!-- Total Revenue -->
+        <div class="metric-card">
+            <div class="metric-header">
+                <div class="metric-icon-wrapper" style="background: #FFF7ED;">
+                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="metric-trend trend-up">+4.5%</div>
+            </div>
+            <div class="metric-label">Total Revenue</div>
+            <div class="metric-value">₹{{ stats.total_revenue|floatformat:0 }}</div>
+            <div class="mt-2 text-xs text-gray-400 font-medium">This month: ₹{{ stats.monthly_revenue|floatformat:0 }}
+            </div>
+        </div>
 
         <!-- Books Out -->
-        <a href="{% url 'admin:inventory_physicalcopy_changelist' %}" class="metric-card" style="text-decoration: none; color: inherit; display: block;">
+        <div class="metric-card">
             <div class="metric-header">
                 <div class="metric-icon-wrapper" style="background: #FFF7ED;">
                     <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -383,26 +400,27 @@
             <div class="metric-label">Books Out</div>
             <div class="metric-value">{{ stats.books_out }}</div>
             <div class="mt-2 text-xs text-gray-400 font-medium">{{ stats.available_copies }} Available</div>
-        </a>
+        </div>
 
-        <!-- Complaints -->
-        <a href="{% url 'admin:portal_complaint_changelist' %}" class="metric-card critical" style="text-decoration: none; color: inherit; display: block;">
+        <!-- Low Inventory -->
+        <div class="metric-card critical">
             <div class="metric-header">
                 <div class="metric-icon-wrapper" style="background: #FEF2F2;">
                     <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
                         </path>
                     </svg>
                 </div>
-                <div class="metric-trend trend-up">New</div>
+                <div class="metric-trend trend-down">Critical</div>
             </div>
-            <div class="metric-label">Complaints</div>
-            <div class="metric-value">{{ stats.complaints_count|default:0 }}</div>
-            {% if stats.pending_complaints > 0 %}
-            <div class="mt-2 text-xs text-red-600 font-medium">⚠️ {{ stats.pending_complaints }} Pending</div>
+            <div class="metric-label">Low Inventory</div>
+            <div class="metric-value">{{ stats.low_inventory_count }} Items</div>
+            {% if stats.critical_inventory_count > 0 %}
+            <div class="mt-2 text-xs text-red-600 font-medium">🚨 {{ stats.critical_inventory_count }} Critical Items
+            </div>
             {% endif %}
-        </a>
+        </div>
     </div>
 
     <!-- Main Content Grid -->
@@ -435,10 +453,10 @@
                             <td>
                                 <div class="user-info">
                                     <div class="user-avatar">
-                                        {% if order.parent.user.first_name %}{{ order.parent.user.first_name|first }}{{ order.parent.user.last_name|first }}{% else %}
-                                        {{ order.parent.user.username|slice:":2"|upper }}{% endif %}
+          				{% if order.parent.user.first_name %}{{ order.parent.user.first_name|first }}{{ order.parent.user.last_name|first }}{% else %} {{ order.parent.user.username|slice:":2"|upper }}{% endif %}
                                     </div>
-                                    <div class="font-semibold text-gray-900">{{ order.parent.user.get_full_name|default:order.parent.user.username }}</div>
+                                    <div class="font-semibold text-gray-900">{{
+                                        order.parent.user.get_full_name|default:order.parent.user.username }}</div>
                                 </div>
                             </td>
                             <td>
@@ -511,6 +529,21 @@
                         Inventory is healthy.
                     </div>
                     {% endif %}
+                </div>
+            </div>
+
+            <!-- Quarterly Drive Section -->
+            <div class="quarterly-drive-card">
+                <h3>Quarterly Drive</h3>
+                <p>Goal: ₹1,00,000 for the new community library wing.</p>
+                <div class="progress-bar-container bg-white" style="background: rgba(255,255,255,0.5);">
+                    <div class="progress-bar" style="width: 65%; background: #F97316;"></div>
+                </div>
+                <div class="flex justify-between items-center mt-2"
+                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                    <span class="text-xs font-bold"
+                        style="font-size: 0.75rem; font-weight: 700; color: #9A3412;">65%</span>
+                    <span class="text-xs" style="font-size: 0.75rem; color: #B45309;">₹65,000 raised</span>
                 </div>
             </div>
         </div>

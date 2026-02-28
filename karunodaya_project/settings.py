@@ -96,6 +96,9 @@ MIDDLEWARE = [
     # Third-party middleware
     'django_htmx.middleware.HtmxMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+
+    # Super Admin guard
+    'apps.core.middleware.AdminAccessMiddleware',
 ]
 
 ROOT_URLCONF = 'karunodaya_project.urls'
@@ -197,6 +200,10 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
 
+AUTHENTICATION_BACKENDS = [
+    'apps.core.backends.CaseInsensitiveModelBackend',
+]
+
 
 # Razorpay Configuration
 RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
@@ -270,6 +277,33 @@ INTERNAL_IPS = []
 
 from django.templatetags.static import static
 
+
+# ── Super Admin sidebar permission helpers ────────────────────────────────────
+
+def make_section_permission(section):
+    """Returns a permission-check function for a given section."""
+    def check(request):
+        try:
+            profile = request.user.admin_profile
+            if profile.is_super_admin:
+                return True
+            return (
+                profile.is_active
+                and profile.role is not None
+                and profile.role.can_access(section)
+            )
+        except Exception:
+            return request.user.is_superuser
+    return check
+
+
+def is_super_admin(request):
+    try:
+        return request.user.admin_profile.is_super_admin
+    except Exception:
+        return request.user.is_superuser
+
+
 # Django Unfold Admin Configuration
 UNFOLD = {
     "SITE_TITLE": "Karunodaya Admin",
@@ -321,81 +355,102 @@ UNFOLD = {
             },
             {
                 "title": _("Authentication"),
+                "permission": make_section_permission('users'),
                 "items": [
                     {
                         "title": _("Users"),
                         "icon": "person",
                         "link": reverse_lazy("admin:auth_user_changelist"),
+                        "permission": make_section_permission('users'),
                     },
                 ],
             },
             {
                 "title": _("Catalog"),
+                "icon": "book",
+                "permission": make_section_permission('catalog'),
                 "items": [
                     {
                         "title": _("Books"),
                         "icon": "book",
                         "link": reverse_lazy("admin:catalog_book_changelist"),
+                        "permission": make_section_permission('catalog'),
                     },
                     {
                         "title": _("Publishers"),
                         "icon": "business",
                         "link": reverse_lazy("admin:catalog_publisher_changelist"),
+                        "permission": make_section_permission('catalog'),
                     },
                 ],
             },
             {
                 "title": _("Inventory"),
+                "icon": "inventory",
+                "permission": make_section_permission('inventory'),
                 "items": [
                     {
                         "title": _("Inventory Logs"),
                         "icon": "history",
                         "link": reverse_lazy("admin:inventory_inventorylog_changelist"),
+                        "permission": make_section_permission('inventory'),
                     },
                     {
                         "title": _("Physical Copies"),
                         "icon": "content_copy",
                         "link": reverse_lazy("admin:inventory_physicalcopy_changelist"),
+                        "permission": make_section_permission('inventory'),
                     },
                 ],
             },
             {
                 "title": _("Orders"),
+                "icon": "shopping_cart",
+                "permission": make_section_permission('orders'),
                 "items": [
                     {
                         "title": _("Orders"),
                         "icon": "shopping_cart",
                         "link": reverse_lazy("admin:orders_order_changelist"),
+                        "permission": make_section_permission('orders'),
                     },
                     {
                         "title": _("Subscription Cycles"),
                         "icon": "sync",
                         "link": reverse_lazy("admin:orders_subscriptioncycle_changelist"),
+                        "permission": make_section_permission('orders'),
                     },
                     {
                         "title": _("Subscription Plans"),
                         "icon": "card_membership",
                         "link": reverse_lazy("admin:orders_subscriptionplan_changelist"),
+                        "permission": make_section_permission('orders'),
                     },
                 ],
             },
             {
                 "title": _("Payments"),
+                "icon": "payments",
+                "permission": make_section_permission('payments'),
                 "items": [
                     {
                         "title": _("Transactions"),
                         "icon": "payments",
                         "link": reverse_lazy("admin:payments_transaction_changelist"),
+                        "permission": make_section_permission('payments'),
                     },
                 ],
             },
             {
                 "title": _("Portal"),
+                "icon": "report_problem",
+                "permission": make_section_permission('portal'),
                 "items": [
                     {
                         "title": _("Complaints"),
                         "icon": "report_problem",
                         "link": reverse_lazy("admin:portal_complaint_changelist"),
+                        "permission": make_section_permission('portal'),
                     },
                     {
                         "title": _("App Feedback"),
@@ -411,26 +466,52 @@ UNFOLD = {
             },
             {
                 "title": _("Profiles"),
+                "icon": "account_box",
+                "permission": make_section_permission('profiles'),
                 "items": [
                     {
                         "title": _("Children"),
                         "icon": "child_care",
                         "link": reverse_lazy("admin:profiles_child_changelist"),
+                        "permission": make_section_permission('profiles'),
                     },
                     {
                         "title": _("Parent Profiles"),
                         "icon": "account_box",
                         "link": reverse_lazy("admin:profiles_parentprofile_changelist"),
+                        "permission": make_section_permission('profiles'),
                     },
                 ],
             },
             {
                 "title": _("Configuration"),
+                "icon": "settings",
+                "permission": make_section_permission('config'),
                 "items": [
                     {
                         "title": _("Sites"),
                         "icon": "public",
                         "link": reverse_lazy("admin:sites_site_changelist"),
+                        "permission": make_section_permission('config'),
+                    },
+                ],
+            },
+            {
+                "title": _("Super Admin"),
+                "icon": "shield_person",
+                "permission": is_super_admin,
+                "items": [
+                    {
+                        "title": _("Admin Roles"),
+                        "icon": "badge",
+                        "link": reverse_lazy("admin:core_adminrole_changelist"),
+                        "permission": is_super_admin,
+                    },
+                    {
+                        "title": _("Admin Users"),
+                        "icon": "manage_accounts",
+                        "link": reverse_lazy("admin:core_adminprofile_changelist"),
+                        "permission": is_super_admin,
                     },
                 ],
             },
@@ -496,6 +577,9 @@ def dashboard_callback(request, context):
     # Recent Orders
     recent_orders = Order.objects.select_related('parent__user').order_by('-created_at')[:5]
 
+    # Recent Complaints
+    recent_complaints = Complaint.objects.select_related('parent__user').order_by('-created_at')[:5]
+
     # Complaints
     complaints_count = Complaint.objects.count()
     pending_complaints = Complaint.objects.filter(status='PENDING').count()
@@ -516,5 +600,6 @@ def dashboard_callback(request, context):
 
     context['recent_orders'] = recent_orders
     context['low_stock_books'] = low_stock_books[:5]
+    context['recent_complaints'] = recent_complaints
 
     return context

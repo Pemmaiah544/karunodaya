@@ -4,8 +4,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django import forms
 from unfold.admin import ModelAdmin, TabularInline
-from apps.core.admin_mixins import AdminPaginationMixin
-from .models import ParentProfile, Child, ChildProfileExtra, ParentProfileExtra, ReadingAssessment
+from apps.core.admin_mixins import AdminPaginationMixin, SectionPermissionMixin
+from .models import ParentProfile, Child
 
 
 # Custom User Admin to override the default Django User admin
@@ -21,7 +21,8 @@ class MyUserCreationForm(UserCreationForm):
             })
 
 @admin.register(User)
-class UserAdmin(AdminPaginationMixin, DefaultUserAdmin, ModelAdmin):
+class UserAdmin(SectionPermissionMixin, AdminPaginationMixin, DefaultUserAdmin, ModelAdmin):
+    admin_section = 'users'
     add_form = MyUserCreationForm
     add_form_template = 'admin/auth/user/add_form.html'
     
@@ -122,7 +123,8 @@ class ReadingAssessmentInline(TabularInline):
 
 
 @admin.register(ParentProfile)
-class ParentProfileAdmin(AdminPaginationMixin, ModelAdmin):
+class ParentProfileAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
+    admin_section = 'profiles'
     list_display = ('first_name_link', 'user__last_name', 'phone_number', 'user__email', 'is_staff_status', 'city', 'created_at')
     list_filter = ('city', 'state', 'created_at', 'user__is_staff')
     search_fields = ('user__first_name', 'user__last_name', 'user__email', 'phone_number')
@@ -165,7 +167,8 @@ class ParentProfileAdmin(AdminPaginationMixin, ModelAdmin):
 
 
 @admin.register(Child)
-class ChildAdmin(AdminPaginationMixin, ModelAdmin):
+class ChildAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
+    admin_section = 'profiles'
     list_display = ('name_link', 'parent', 'age', 'grade', 'reading_difficulty_level', 'created_at')
     list_filter = ('grade', 'reading_difficulty_level', 'age')
     search_fields = ('name', 'parent__user__username')

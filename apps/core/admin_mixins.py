@@ -1,5 +1,56 @@
 from django.contrib import admin
 
+
+class SectionPermissionMixin:
+    admin_section: str = None  # MUST be set on every subclass
+
+    def _get_profile(self, request):
+        try:
+            return request.user.admin_profile
+        except Exception:
+            return None
+
+    def _is_super(self, request):
+        profile = self._get_profile(request)
+        return (profile and profile.is_super_admin) or request.user.is_superuser
+
+    def _get_role(self, request):
+        profile = self._get_profile(request)
+        if not profile or not profile.is_active:
+            return None
+        return profile.role
+
+    def has_module_perms(self, request, app_label=None):
+        if self._is_super(request):
+            return True
+        role = self._get_role(request)
+        return bool(role and role.can_access(self.admin_section))
+
+    def has_view_permission(self, request, obj=None):
+        if self._is_super(request):
+            return True
+        role = self._get_role(request)
+        return bool(role and role.can_do(self.admin_section, 'view'))
+
+    def has_add_permission(self, request):
+        if self._is_super(request):
+            return True
+        role = self._get_role(request)
+        return bool(role and role.can_do(self.admin_section, 'add'))
+
+    def has_change_permission(self, request, obj=None):
+        if self._is_super(request):
+            return True
+        role = self._get_role(request)
+        return bool(role and role.can_do(self.admin_section, 'change'))
+
+    def has_delete_permission(self, request, obj=None):
+        if self._is_super(request):
+            return True
+        role = self._get_role(request)
+        return bool(role and role.can_do(self.admin_section, 'delete'))
+
+
 class AdminPaginationMixin:
     """
     Mixin to provide enhanced pagination with per-page selection.

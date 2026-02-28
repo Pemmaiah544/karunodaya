@@ -1,0 +1,552 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}Add New Publisher | {{ site_title|default:"Admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+    &rsaquo; <a href="{% url 'admin:catalog_publisher_changelist' %}">Publishers</a>
+    &rsaquo; Add New Publisher
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* ── Reset & Base ─────────────────────────────────────────────────────────── */
+    .ap-wrap {
+        padding: 32px 40px 64px;
+        max-width: 1280px;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    /* ── Page Header ───────────────────────────────────────────────────────────── */
+    .ap-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 32px;
+        gap: 16px;
+    }
+
+    .ap-page-title {
+        font-size: 26px;
+        font-weight: 800;
+        color: #111827;
+        margin: 0 0 6px;
+        line-height: 1.2;
+    }
+
+    .ap-page-subtitle {
+        font-size: 14px;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    .ap-header-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    /* ── Buttons ───────────────────────────────────────────────────────────────── */
+    .ap-btn-cancel {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 22px;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 8px;
+        background: #fff;
+        color: #374151;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+    }
+
+    .ap-btn-cancel:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+        color: #111827;
+    }
+
+    .ap-btn-save {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 22px;
+        background: #fb923c;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(251, 146, 60, 0.35);
+        transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .ap-btn-save:hover:not(:disabled) {
+        background: #ea580c;
+        box-shadow: 0 4px 14px rgba(251, 146, 60, 0.45);
+    }
+
+    .ap-btn-save:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    /* ── Card ─────────────────────────────────────────────────────────────────── */
+    .ap-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        margin-bottom: 28px;
+    }
+
+    .ap-card-header {
+        display: flex;
+        align-items: center;
+        padding: 20px 24px;
+        background: #fff;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .ap-card-header-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #fff7ed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+    }
+
+    .ap-card-header-icon svg {
+        width: 14px;
+        height: 14px;
+        fill: none;
+        stroke: #fb923c;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .ap-card-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .ap-card-body {
+        padding: 32px 24px;
+    }
+
+    /* ── Form Fields ───────────────────────────────────────────────────────────── */
+    .ap-row {
+        margin-bottom: 24px;
+    }
+
+    .ap-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+
+    .ap-field label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .ap-field label span.hint {
+        font-weight: 400;
+        color: #9ca3af;
+        margin-left: 4px;
+    }
+
+    .ap-field input[type="text"],
+    .ap-field input[type="email"],
+    .ap-field input[type="tel"],
+    .ap-field textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 14px;
+        color: #1f2937;
+        box-sizing: border-box;
+        font-family: inherit;
+        background: #fff;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .ap-field input::placeholder,
+    .ap-field textarea::placeholder {
+        color: #9ca3af;
+    }
+
+    .ap-field input:focus,
+    .ap-field textarea:focus {
+        outline: none;
+        border-color: #fb923c;
+        box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.12);
+    }
+
+    /* ── Prefix Input ────────────────────────────────────────────────────────── */
+    .ap-input-prefix-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .ap-input-prefix {
+        position: absolute;
+        left: 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #6b7280;
+        pointer-events: none;
+        border-right: 1.5px solid #e5e7eb;
+        padding-right: 10px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    .ap-input-prefix-wrap input {
+        padding-left: 64px !important;
+    }
+
+    .ap-field input.field-error,
+    .ap-field textarea.field-error {
+        border-color: #ef4444;
+    }
+
+    .ap-field .ap-err {
+        color: #ef4444;
+        font-size: 12px;
+        margin-top: 6px;
+        display: none;
+    }
+
+    .ap-field .ap-err.visible {
+        display: block;
+    }
+
+    .ap-field textarea {
+        resize: vertical;
+        min-height: 120px;
+        line-height: 1.6;
+    }
+
+    /* ── Card Footer ──────────────────────────────────────────────────────────── */
+    .ap-card-footer {
+        padding: 20px 24px;
+        border-top: 1px solid #f3f4f6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #fafafa;
+    }
+
+    .ap-req-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fb923c;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .ap-secure-info {
+        font-size: 12px;
+        color: #9ca3af;
+    }
+
+    /* ── Toast ───────────────────────────────────────────────────────────────── */
+    #apToastContainer {
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        pointer-events: none;
+    }
+
+    .ap-toast {
+        padding: 14px 20px;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        animation: apToastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        max-width: 400px;
+        pointer-events: auto;
+    }
+
+    .ap-toast.success {
+        background: #10b981;
+    }
+
+    .ap-toast.error {
+        background: #ef4444;
+    }
+
+    .ap-toast.info {
+        background: #3b82f6;
+    }
+
+    @keyframes apToastIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes apToastOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .ap-wrap {
+            padding: 24px 20px;
+        }
+
+        .ap-page-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 20px;
+        }
+
+        .ap-header-actions {
+            flex-direction: column-reverse;
+        }
+
+        .ap-grid-2 {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .ap-card-footer {
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="apToastContainer"></div>
+
+<div class="ap-wrap">
+    {# ── Page Header ── #}
+    <div class="ap-page-header">
+        <div>
+            <h1 class="ap-page-title">Add New Publisher</h1>
+            <p class="ap-page-subtitle">Register a new publishing entity in the database.</p>
+        </div>
+        <div class="ap-header-actions">
+            <a href="{% url 'admin:catalog_publisher_changelist' %}" class="ap-btn-cancel">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Back
+            </a>
+            <button type="button" class="ap-btn-save" id="apBtnSave" onclick="apSubmit()">
+                <span id="apBtnText">Save Publisher</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="apForm" novalidate>
+        {% csrf_token %}
+
+        <div class="ap-card">
+            <div class="ap-card-header">
+                <div class="ap-card-header-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                </div>
+                <span class="ap-card-title">Publisher Information</span>
+            </div>
+
+            <div class="ap-card-body">
+                <div class="ap-row">
+                    <div class="ap-grid-2">
+                        <div class="ap-field">
+                            <label for="id_name">Publisher Name <span class="hint">(Legal Entity or Contact
+                                    Name)</span></label>
+                            <input type="text" id="id_name" name="name"
+                                placeholder="Enter legal name or primary contact..." autocomplete="off">
+                            <div class="ap-err" id="apErr_name"></div>
+                        </div>
+                        <div class="ap-field">
+                            <label for="id_email">Email Address</label>
+                            <input type="email" id="id_email" name="email" placeholder="example@domain.org"
+                                autocomplete="off">
+                            <div class="ap-err" id="apErr_email"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ap-row">
+                    <div class="ap-field" style="max-width: 50%;">
+                        <label for="id_phone">Phone Number</label>
+                        <div class="ap-input-prefix-wrap">
+                            <span class="ap-input-prefix">+91</span>
+                            <input type="tel" id="id_phone" name="phone" placeholder="98765 43210" autocomplete="off">
+                        </div>
+                        <div class="ap-err" id="apErr_phone"></div>
+                    </div>
+                </div>
+
+                <div class="ap-row">
+                    <div class="ap-field">
+                        <label for="id_address">Office Address</label>
+                        <textarea id="id_address" name="address"
+                            placeholder="Enter the full street address, suite, city, state, and zip code..."></textarea>
+                        <div class="ap-err" id="apErr_address"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ap-card-footer">
+
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    (function () {
+        'use strict';
+
+        function apSetFieldError(field, message) {
+            var errEl = document.getElementById('apErr_' + field);
+            var inpEl = document.getElementById('id_' + field);
+            if (errEl) {
+                errEl.textContent = message;
+                errEl.classList.toggle('visible', !!message);
+            }
+            if (inpEl) inpEl.classList.toggle('field-error', !!message);
+        }
+
+        function apToast(message, type) {
+            var container = document.getElementById('apToastContainer');
+            var toast = document.createElement('div');
+            toast.className = 'ap-toast ' + (type || 'success');
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(function () {
+                toast.style.animation = 'apToastOut 0.3s ease forwards';
+                setTimeout(function () { toast.remove(); }, 320);
+            }, 4500);
+        }
+
+        window.apSubmit = async function () {
+            ['name', 'email', 'phone', 'address'].forEach(function (f) {
+                apSetFieldError(f, '');
+            });
+
+            var btn = document.getElementById('apBtnSave');
+            var btnText = document.getElementById('apBtnText');
+            btn.disabled = true;
+            btnText.textContent = 'Saving...';
+
+            var formData = new FormData(document.getElementById('apForm'));
+            var phone = formData.get('phone');
+            if (phone && !phone.startsWith('+91')) {
+                formData.set('phone', '+91 ' + phone);
+            }
+
+            var hasError = false;
+
+            if (!formData.get('name')) {
+                apSetFieldError('name', 'Publisher name is required.');
+                hasError = true;
+            }
+            if (!formData.get('email')) {
+                apSetFieldError('email', 'Email address is required.');
+                hasError = true;
+            }
+            if (!formData.get('phone')) {
+                apSetFieldError('phone', 'Phone number is required.');
+                hasError = true;
+            }
+            if (!formData.get('address')) {
+                apSetFieldError('address', 'Office address is required.');
+                hasError = true;
+            }
+
+            if (hasError) {
+                btn.disabled = false;
+                btnText.textContent = 'Save Publisher';
+                return;
+            }
+
+            try {
+                var csrfToken = formData.get('csrfmiddlewaretoken');
+                var response = await fetch('../create-publisher/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken },
+                    body: formData,
+                });
+                var data = await response.json();
+
+                if (data.success) {
+                    apToast('Publisher "' + data.data.name + '" created successfully!', 'success');
+                    btnText.textContent = 'Saved ✓';
+                    setTimeout(function () {
+                        window.location.href = '{% url "admin:catalog_publisher_changelist" %}';
+                    }, 1500);
+                } else {
+                    if (data.errors) {
+                        Object.entries(data.errors).forEach(function ([field, msg]) {
+                            apSetFieldError(field, msg);
+                        });
+                    }
+                    apToast(data.error || 'Please fix the errors and try again.', 'error');
+                    btn.disabled = false;
+                    btnText.textContent = 'Save Publisher';
+                }
+            } catch (err) {
+                apToast('Network error. Please check your connection and retry.', 'error');
+                btn.disabled = false;
+                btnText.textContent = 'Save Publisher';
+            }
+        };
+    }());
+</script>
+{% endblock %}

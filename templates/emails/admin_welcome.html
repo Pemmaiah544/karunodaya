@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Karunodaya Admin Account</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6;
+      font-family: ui-sans-serif, system-ui, -apple-system, Arial, sans-serif;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .email-wrap {
+      max-width: 600px;
+      margin: 32px auto;
+      padding: 0 16px 32px;
+    }
+
+    /* ── Header ── */
+    .email-header {
+      background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+      border-radius: 14px 14px 0 0;
+      padding: 36px 40px 32px;
+      text-align: center;
+    }
+
+    .email-logo {
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.5px;
+      margin: 0 0 4px;
+    }
+
+    .email-logo-sub {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.75);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .email-header-icon {
+      width: 64px;
+      height: 64px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      margin: 24px auto 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .email-header-icon svg {
+      width: 32px;
+      height: 32px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ── Body ── */
+    .email-body {
+      background: #fff;
+      padding: 36px 40px;
+      border-left: 1px solid #e5e7eb;
+      border-right: 1px solid #e5e7eb;
+    }
+
+    .email-greeting {
+      font-size: 22px;
+      font-weight: 800;
+      color: #111827;
+      margin: 0 0 8px;
+    }
+
+    .email-intro {
+      font-size: 15px;
+      color: #6b7280;
+      line-height: 1.6;
+      margin: 0 0 28px;
+    }
+
+    /* ── Credentials box ── */
+    .cred-box {
+      background: #fff7ed;
+      border: 1.5px solid #fed7aa;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+
+    .cred-box-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #9a3412;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 0 0 16px;
+    }
+
+    .cred-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .cred-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .cred-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #fb923c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .cred-icon svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .cred-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .cred-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #9a3412;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 2px;
+    }
+
+    .cred-value {
+      font-family: ui-monospace, SFMono-Regular, "Courier New", monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1f2937;
+      word-break: break-all;
+    }
+
+    /* ── Permissions summary ── */
+    .perms-section {
+      margin-bottom: 28px;
+    }
+
+    .perms-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 12px;
+    }
+
+    .perms-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .perm-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+
+    .perm-chip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #fb923c;
+      flex-shrink: 0;
+    }
+
+    .perm-chip-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    /* ── CTA Button ── */
+    .cta-wrap {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      padding: 14px 36px;
+      background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      box-shadow: 0 4px 14px rgba(251, 146, 60, 0.4);
+    }
+
+    /* ── Security notice ── */
+    .security-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 28px;
+    }
+
+    .security-box p {
+      font-size: 13px;
+      color: #991b1b;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .security-box strong {
+      font-weight: 700;
+    }
+
+    /* ── Footer ── */
+    .email-footer {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-top: none;
+      border-radius: 0 0 14px 14px;
+      padding: 24px 40px;
+      text-align: center;
+    }
+
+    .email-footer p {
+      font-size: 12px;
+      color: #9ca3af;
+      margin: 0 0 4px;
+      line-height: 1.5;
+    }
+
+    .email-footer a {
+      color: #fb923c;
+      text-decoration: none;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 480px) {
+      .email-body {
+        padding: 24px 20px;
+      }
+
+      .email-header {
+        padding: 28px 20px 24px;
+      }
+
+      .email-footer {
+        padding: 20px;
+      }
+
+      .cred-box {
+        padding: 18px;
+      }
+
+      .perms-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="email-wrap">
+
+    <!-- Header -->
+    <div class="email-header">
+      <p class="email-logo">Karunodaya</p>
+      <p class="email-logo-sub">Admin Panel</p>
+      <div class="email-header-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="email-body">
+      <h1 class="email-greeting">Welcome, {{ first_name }}!</h1>
+      <p class="email-intro">
+        Your Karunodaya admin account has been created by <strong>{{ created_by }}</strong>.
+        You can now log in to the admin panel using the credentials below.
+      </p>
+
+      <!-- Credentials -->
+      <div class="cred-box">
+        <p class="cred-box-title">Your Login Credentials</p>
+
+        <div class="cred-row">
+          <div class="cred-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+          </div>
+          <div class="cred-info">
+            <div class="cred-label">Email / Username</div>
+            <div class="cred-value">{{ email }}</div>
+          </div>
+        </div>
+
+        <div class="cred-row">
+          <div class="cred-icon">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0110 0v4" />
+            </svg>
+          </div>
+          <div class="cred-info">
+            <div class="cred-label">Password</div>
+            <div class="cred-value">{{ password }}</div>
+          </div>
+        </div>
+
+        {% if phone_number %}
+        <div class="cred-row">
+          <div class="cred-icon">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.72A2 2 0 012 .82h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
+            </svg>
+          </div>
+          <div class="cred-info">
+            <div class="cred-label">Phone Number</div>
+            <div class="cred-value">{{ phone_number }}</div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Permissions summary -->
+      {% if granted_sections %}
+      <div class="perms-section">
+        <p class="perms-title">Your Access Permissions</p>
+        <div class="perms-grid">
+          {% for section_label in granted_sections %}
+          <div class="perm-chip">
+            <div class="perm-chip-dot"></div>
+            <span class="perm-chip-label">{{ section_label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- CTA -->
+      <div class="cta-wrap">
+        <a href="{{ admin_url }}" class="cta-btn">Login to Admin Panel &rarr;</a>
+      </div>
+
+      <!-- Security notice -->
+      <div class="security-box">
+        <p>
+          <strong>Security reminder:</strong> Please change your password immediately after your first login.
+          Do not share these credentials with anyone. If you did not expect this email, contact your administrator.
+        </p>
+      </div>
+
+      <p style="font-size:13px;color:#9ca3af;margin:0;">
+        Need help? Reach out to your super admin or reply to this email.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="email-footer">
+      <p>This is an automated message from <strong>Karunodaya Admin</strong>.</p>
+      <p>Please do not reply directly to this email.</p>
+      <p style="margin-top:8px;">
+        &copy; {{ year }} Karunodaya &mdash; Empowering children through books.
+      </p>
+    </div>
+
+  </div>
+</body>
+
+</html>

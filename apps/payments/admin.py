@@ -1,11 +1,12 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from apps.core.admin_mixins import AdminPaginationMixin
+from apps.core.admin_mixins import AdminPaginationMixin, SectionPermissionMixin
 from .models import Transaction
 
 
 @admin.register(Transaction)
-class TransactionAdmin(AdminPaginationMixin, ModelAdmin):
+class TransactionAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
+    admin_section = 'payments'
     list_display = ('transaction_id_link', 'get_order_number', 'get_parent_name', 'get_order_type', 'amount', 'status', 'created_at')
     list_filter = ('status', 'created_at')
     search_fields = (
