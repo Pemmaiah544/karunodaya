@@ -53,6 +53,7 @@ urlpatterns = [
     path('fluency-check/<int:child_id>/', views.FluencyCheckView.as_view(), name='fluency_check'),
     path('fluency-check/<int:child_id>/save/', views.fluency_check_save, name='fluency_check_save'),
     path('fluency-check/<int:child_id>/analyze/', views.fluency_check_analyze, name='fluency_check_analyze'),
+    path('fluency-check/<int:child_id>/partial-analyze/', views.fluency_check_partial_analyze, name='fluency_check_partial_analyze'),
     path('dismiss-language-banner/<int:child_id>/', views.dismiss_language_banner, name='dismiss_language_banner'),
     path('curated-box/<int:child_id>/', views.CuratedBoxView.as_view(), name='curated_box'),
 
@@ -68,10 +69,16 @@ urlpatterns = [
     # Profile
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('profile/update-name/', views.update_profile_name, name='update_profile_name'),
+    path('profile/notification-preferences/', views.update_notification_preferences, name='notification_preferences'),
     path('profile/child/<int:child_id>/edit/', views.edit_child, name='edit_child'),
     path('profile/child/<int:child_id>/update/', views.update_child, name='update_child'),
     path('profile/child/add/', views.AddChildView.as_view(), name='add_child'),
     path('profile/child/<int:child_id>/toggle/', views.toggle_child_status, name='toggle_child'),
+
+    # Profile Enhancement Flow (post-onboarding)
+    path('profile-enhance/parent/', views.profile_enhance_parent, name='profile_enhance_parent'),
+    path('profile-enhance/child/<int:child_id>/', views.profile_enhance_child, name='profile_enhance_child'),
+    path('profile-enhance/check/', views.profile_enhance_check, name='profile_enhance_check'),
 
     # Subscriptions
     path('plans/', views.PlansView.as_view(), name='plans'),
@@ -91,6 +98,21 @@ urlpatterns = [
     
     # Delivery Address
     path('update-delivery-address/', views.UpdateDeliveryAddressView.as_view(), name='update_delivery_address'),
-    
+
+    # Community Progress Feature
+    path('api/address-status/', views.api_address_status, name='api_address_status'),
+    path('api/user/address/', views.api_user_address, name='api_user_address'),
+    path('api/community-progress/', views.api_community_progress, name='api_community_progress'),
+    path('api/young-readers/', views.api_young_readers, name='api_young_readers'),
+    path('api/cities-by-state/', views.api_cities_by_state, name='api_cities_by_state'),
+    path('api/community-stats/', views.api_community_stats, name='api_community_stats'),
+    path('api/community-states/', views.api_community_states, name='api_community_states'),
+    path('api/reading-reminders/', views.api_reading_reminders, name='api_reading_reminders'),
+    path('community-progress/', views.community_progress_page, name='community_progress_page'),
+    path('address-banner/', views.address_banner_check, name='address_banner_check'),
+
     path('support/', views.SupportView.as_view(), name='support'),
+
+    # Firebase Service Worker — must be served from root scope for push to work
+    path('firebase-messaging-sw.js', views.firebase_messaging_sw, name='firebase_sw'),
 ]

@@ -1,0 +1,519 @@
+{% extends "portal/base.html" %}
+{% load static %}
+
+{% block title %}Kids Reading Spotlight - Karunodaya{% endblock %}
+
+{% block extra_head %}
+<style>
+    .stat-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 16px;
+        text-align: left;
+        min-height: 110px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+        font-size: 18px;
+    }
+
+    .stat-icon-books {
+        background-color: #f0fdf4;
+    }
+
+    .stat-icon-active {
+        background-color: #fff7ed;
+    }
+
+    .stat-value-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 900;
+        color: #1f2937;
+        margin: 8px 0;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-subtext {
+        font-size: 13px;
+        color: #6b7280;
+        margin-top: 6px;
+    }
+
+    .stat-skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        height: 28px;
+        border-radius: 4px;
+        margin: 8px 0;
+    }
+
+    @keyframes loading {
+        0% {
+            background-position: 200% 0;
+        }
+
+        100% {
+            background-position: -200% 0;
+        }
+    }
+
+    .progress-label {
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    .badge-top {
+        background-color: #dbeafe;
+        color: #0284c7;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 12px;
+        display: inline-block;
+    }
+
+    .badge-active {
+        background-color: #fed7aa;
+        color: #ea580c;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 12px;
+        display: inline-block;
+    }
+
+    .reader-card {
+        animation: slideUp 0.4s ease-out backwards;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .reader-card:nth-child(1) {
+        animation-delay: 0.05s;
+    }
+
+    .reader-card:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+
+    .reader-card:nth-child(3) {
+        animation-delay: 0.15s;
+    }
+
+    .reader-card:nth-child(4) {
+        animation-delay: 0.2s;
+    }
+
+    .reader-card:nth-child(5) {
+        animation-delay: 0.25s;
+    }
+
+    .reader-card:nth-child(n+6) {
+        animation-delay: 0.3s;
+    }
+
+    .progress-bar-bg {
+        background-color: #e5e7eb;
+        height: 6px;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        background-color: #fb923c;
+        transition: width 0.3s ease;
+    }
+
+    .increase-badge {
+        background-color: #dcfce7;
+        color: #16a34a;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+        display: inline-block;
+        margin-left: 8px;
+    }
+
+    .city-select-wrapper {
+        position: relative;
+    }
+
+    .city-select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+    }
+
+    .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 3px solid rgba(251, 146, 60, 0.1);
+        border-radius: 50%;
+        border-top-color: #fb923c;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .error-alert {
+        background-color: #fee2e2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-bottom: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 space-y-6">
+    <!-- Header -->
+    <div class="max-w-4xl mx-auto w-full">
+        <h1 class="text-3xl font-black text-gray-900 mb-1">Kids Reading Spotlight</h1>
+        <p class="text-gray-600 font-medium">Reading progress of young learners around you</p>
+    </div>
+
+    <!-- Error Alert -->
+    <div id="error-alert" class="max-w-4xl mx-auto w-full hidden">
+        <div class="error-alert" id="error-message"></div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="max-w-4xl mx-auto w-full grid grid-cols-2 gap-3">
+        <!-- Total Books Card -->
+        <div class="stat-card">
+            <div>
+                <div class="stat-icon stat-icon-books">📚</div>
+                <div class="stat-label"
+                    style="font-size:11px; color:#9ca3af; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px;">
+                    Total Books</div>
+                <div class="stat-value-row" id="total-books-value">
+                    <div class="stat-skeleton" style="width:60px;"></div>
+                </div>
+            </div>
+            <div class="stat-subtext" style="font-size:12px; color:#6b7280; margin-top:6px;">Read in <span
+                    id="stats-location">your area</span></div>
+        </div>
+
+        <!-- Active Now Card -->
+        <div class="stat-card">
+            <div>
+                <div class="stat-icon stat-icon-active">👥</div>
+                <div class="stat-label"
+                    style="font-size:11px; color:#9ca3af; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px;">
+                    Active Now</div>
+                <div class="stat-value-row" id="active-readers-value">
+                    <div class="stat-skeleton" style="width:48px;"></div>
+                </div>
+            </div>
+            <div class="stat-subtext" style="font-size:12px; color:#6b7280; margin-top:6px;">Readers<br><span
+                    style="font-size:11px; color:#9ca3af;">This week</span></div>
+        </div>
+    </div>
+
+    <!-- City Selection Card -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 max-w-4xl mx-auto w-full">
+        <h3 class="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
+            <span class="text-xl">📍</span>
+            Choose Your City
+        </h3>
+
+        <div class="space-y-4">
+            <!-- City Dropdown -->
+            <div class="city-select-wrapper">
+                <label class="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">City *</label>
+                <select id="filter-city"
+                    class="city-select w-full px-4 py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium bg-white text-base">
+                    <option value="">-- Select City --</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Readers Section -->
+    <div id="readers-section" class="hidden space-y-4 max-w-4xl mx-auto w-full">
+        <!-- Readers Header -->
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-gray-900">
+                Readers in <span id="city-display" class="text-orange-600">—</span>
+            </h3>
+            <span id="active-count" class="text-sm font-semibold text-orange-600">
+                0 Active
+            </span>
+        </div>
+
+        <!-- Reader Cards Grid -->
+        <div id="readers-grid" class="space-y-3">
+            <!-- Reader cards will be populated here -->
+        </div>
+    </div>
+
+    <!-- Privacy Notice -->
+    <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 max-w-4xl mx-auto w-full">
+        <p class="text-xs text-orange-900 font-medium">
+            <span class="font-bold">🔒 Privacy First:</span> Only anonymized community data is shown. Names are
+            anonymized (first name + initial only).
+        </p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state"
+        class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 sm:p-8 text-center border border-gray-100 max-w-4xl mx-auto w-full">
+        <div class="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center">
+            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z">
+                </path>
+            </svg>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-1">No Readers Found</h3>
+        <p class="text-sm text-gray-600 mb-4">Select a city to view the reading spotlight</p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="hidden bg-gray-100 rounded-2xl p-6 sm:p-8 text-center max-w-4xl mx-auto w-full">
+        <div class="inline-block">
+            <div class="spinner"></div>
+        </div>
+        <p class="text-sm text-gray-600 mt-3 font-medium">Loading reading spotlight...</p>
+    </div>
+</div>
+
+<script>
+    (function () {
+        'use strict';
+
+        // Injected by Django view — real cities from DB (deduplicated, cleaned)
+        const DB_CITIES = {{ db_cities|safe }};
+        // Parent's stored city (as-is from DB, e.g. 'Banglore')
+        const parentCity = '{{ parent_city }}';
+
+        const citySelect = document.getElementById('filter-city');
+        const readersSection = document.getElementById('readers-section');
+        const emptyState = document.getElementById('empty-state');
+        const loadingState = document.getElementById('loading-state');
+        const cityDisplay = document.getElementById('city-display');
+        const activeCount = document.getElementById('active-count');
+        const readersGrid = document.getElementById('readers-grid');
+        const statsLocation = document.getElementById('stats-location');
+        const totalBooksValue = document.getElementById('total-books-value');
+        const activeReadersValue = document.getElementById('active-readers-value');
+        const errorAlert = document.getElementById('error-alert');
+        const errorMessage = document.getElementById('error-message');
+
+        // ─── Populate dropdown from real DB cities ───────────────────────────────
+        function populateCities() {
+            citySelect.innerHTML = '<option value="">-- Select City --</option>';
+
+            let cities = DB_CITIES && DB_CITIES.length > 0 ? DB_CITIES : [];
+
+            // Fallback if DB is empty
+            if (cities.length === 0) {
+                cities = ['Bangalore', 'Mumbai', 'Delhi', 'Chennai', 'Hyderabad',
+                    'Pune', 'Kolkata', 'Ahmedabad', 'Mysore', 'Coimbatore'];
+            }
+
+            cities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                // Pre-select the parent's stored city (exact match)
+                if (parentCity && city === parentCity) {
+                    option.selected = true;
+                }
+                citySelect.appendChild(option);
+            });
+        }
+
+        // ─── Load Stats ───────────────────────────────────────────────────────────
+        async function loadStats(city) {
+            if (!city) return;
+
+            totalBooksValue.innerHTML = '<div class="stat-skeleton" style="width:60px;"></div>';
+            activeReadersValue.innerHTML = '<div class="stat-skeleton" style="width:48px;"></div>';
+
+            try {
+                const response = await fetch(
+                    `{% url "portal:api_community_stats" %}?city=${encodeURIComponent(city)}`
+                );
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                const growthBadge = data.growth_percent
+                    ? `<span class="increase-badge">${data.growth_percent > 0 ? '+' : ''}${data.growth_percent}%</span>`
+                    : '';
+
+                totalBooksValue.innerHTML = `<span class="stat-value">${data.total_books || 0}</span>${growthBadge}`;
+                activeReadersValue.innerHTML = `<span class="stat-value">${data.active_readers || 0}</span>`;
+                statsLocation.textContent = city;
+
+            } catch (error) {
+                totalBooksValue.innerHTML = '<span class="stat-value" style="color:#9ca3af;">0</span>';
+                activeReadersValue.innerHTML = '<span class="stat-value" style="color:#9ca3af;">0</span>';
+            }
+        }
+
+        // ─── Build a reader card element ──────────────────────────────────────────
+        function buildReaderCard(reader) {
+            const card = document.createElement('div');
+            card.className = 'reader-card bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow';
+            const badgeClass = reader.is_top_reader ? 'badge-top' : 'badge-active';
+            const badgeText = reader.is_top_reader ? '⭐ Top Reader' : '✓ Active';
+            card.innerHTML = `
+                <div class="flex items-start gap-3 mb-3">
+                    <div class="w-12 h-12 rounded-full" style="background:linear-gradient(135deg,${reader.avatar_color},${reader.avatar_color}80);display:flex;align-items:center;justify-content:center;font-weight:bold;color:white;font-size:14px;flex-shrink:0;">
+                        ${reader.initial}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-gray-900 text-sm">${reader.display_name}</h4>
+                        <p class="text-xs text-gray-500">${reader.grade} · ${reader.level_badge}</p>
+                    </div>
+                    <span class="${badgeClass}">${badgeText}</span>
+                </div>
+                <div class="text-xs text-gray-600 mb-2">${reader.assessment_count} Book${reader.assessment_count !== 1 ? 's' : ''} Read</div>
+                <div class="flex items-center justify-between mb-2">
+                    <span class="progress-label">${reader.progress_percent}% of Goal</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width:${reader.progress_percent}%;"></div>
+                </div>`;
+            return card;
+        }
+
+        // ─── Load Readers ─────────────────────────────────────────────────────────
+        async function loadReaders(city) {
+            if (!city) {
+                emptyState.classList.remove('hidden');
+                readersSection.classList.add('hidden');
+                return;
+            }
+
+            loadingState.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            readersSection.classList.add('hidden');
+            hideError();
+
+            try {
+                const response = await fetch(
+                    `{% url "portal:api_young_readers" %}?city=${encodeURIComponent(city)}`
+                );
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                loadingState.classList.add('hidden');
+
+                if (data.error || data.total_active === 0) {
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+
+                cityDisplay.textContent = data.city;
+                activeCount.textContent = `${data.total_active} Active`;
+                statsLocation.textContent = data.city;
+
+                readersGrid.innerHTML = '';
+                const initial = data.readers.slice(0, 4);
+                const rest = data.readers.slice(4);
+
+                initial.forEach(r => readersGrid.appendChild(buildReaderCard(r)));
+
+                if (rest.length > 0) {
+                    const btn = document.createElement('button');
+                    btn.className = 'w-full bg-orange-50 hover:bg-orange-100 text-orange-600 py-3 rounded-xl font-semibold text-sm border border-orange-200 transition-all mt-2';
+                    btn.textContent = `View All ${data.total_active} Readers`;
+                    btn.onclick = function () {
+                        rest.forEach(r => readersGrid.insertBefore(buildReaderCard(r), btn));
+                        btn.remove();
+                    };
+                    readersGrid.appendChild(btn);
+                }
+
+                readersSection.classList.remove('hidden');
+
+            } catch (error) {
+                loadingState.classList.add('hidden');
+                showError('Error loading reading spotlight. Please try again.');
+                emptyState.classList.remove('hidden');
+            }
+        }
+
+        // ─── Event Listeners ──────────────────────────────────────────────────────
+        citySelect.addEventListener('change', async function () {
+            const city = this.value.trim();
+            if (city) {
+                hideError();
+                await loadStats(city);
+                await loadReaders(city);
+            } else {
+                emptyState.classList.remove('hidden');
+                readersSection.classList.add('hidden');
+            }
+        });
+
+        function showError(msg) { errorMessage.textContent = msg; errorAlert.classList.remove('hidden'); }
+        function hideError() { errorAlert.classList.add('hidden'); }
+
+        // ─── Initialize ───────────────────────────────────────────────────────────
+        // 1. Fill dropdown from DB cities (synchronous, no fetch needed)
+        populateCities();
+
+        // 2. Auto-load data for parent's stored city
+        if (parentCity) {
+            statsLocation.textContent = parentCity;
+            loadStats(parentCity);
+            loadReaders(parentCity);
+        }
+    })();
+</script>
+{% endblock %}

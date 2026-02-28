@@ -9,10 +9,11 @@ from django.http import HttpResponse, JsonResponse
 from django.db.models import Q
 import re
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
-from apps.profiles.models import ParentProfile, Child
+from apps.profiles.models import ParentProfile, Child, ChildProfileExtra, ParentProfileExtra, ReadingAssessment
 from apps.catalog.models import Book
 from apps.orders.models import Order, SubscriptionCycle, SubscriptionPlan
 from django.contrib import messages
@@ -444,7 +445,7 @@ class FluencyCheckView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
         lang = self.request.GET.get('lang', 'EN').upper()
         if lang not in ['EN', 'HI', 'KN']:
             lang = 'EN'
-            
+
         import random
         passage_idx = self.request.GET.get('p')
         if passage_idx is not None:
@@ -464,6 +465,16 @@ class FluencyCheckView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
         theme = theme_map.get(interest)
 
         passage = get_passage_for_grade(child.grade, lang=lang, passage_idx=passage_idx, theme=theme)
+
+        # Grade-level average WPM for fallback cursor (real-time highlighting)
+        grade_benchmarks = {
+            'PRE_K': 10, 'KINDERGARTEN': 40,
+            'GRADE_1': 60, 'GRADE_2': 100,
+            'GRADE_3': 115, 'GRADE_4': 130,
+            'GRADE_5': 160, 'GRADE_6': 170,
+            'GRADE_7': 190, 'GRADE_8': 190,
+        }
+        context['grade_avg_wpm'] = grade_benchmarks.get(child.grade, 80)
 
         context['passage'] = passage
         context['current_lang'] = lang
@@ -520,7 +531,19 @@ def fluency_check_save(request, child_id):
                 child.reading_difficulty_level = 'ADVANCED'
             
             child.save()
-            
+
+            # Save historical assessment record
+            ReadingAssessment.objects.create(
+                child=child,
+                passage=None,
+                wpm=child.reading_wpm,
+                accuracy=child.reading_accuracy if child.reading_accuracy else 0.0,
+                level=child.reading_difficulty_level,
+                strengths=child.reading_strengths or '',
+                gaps=child.reading_gaps or '',
+                language='EN',
+            )
+
             return JsonResponse({
                 'status': 'success',
                 'wpm': child.reading_wpm,
@@ -528,6 +551,25 @@ def fluency_check_save(request, child_id):
             })
             
     return JsonResponse({'status': 'error'}, status=400)
+
+
+def align_to_passage(passage_words, matched_indices, skipped_indices):
+    """
+    Align matched and skipped passage word indices to their original words.
+    Returns list of dicts: {idx, word, status}
+    status: 'matched' | 'skipped' | 'missed'
+    """
+    matched_set = set(matched_indices)
+    skipped_set = set(skipped_indices)
+    return [
+        {
+            "idx": i,
+            "word": w,
+            "status": "matched" if i in matched_set else
+                      "skipped" if i in skipped_set else "missed"
+        }
+        for i, w in enumerate(passage_words)
+    ]
 
 
 @login_required
@@ -558,6 +600,20 @@ def fluency_check_analyze(request, child_id):
 
     language = request.POST.get('language', 'EN').upper()
 
+    # Optional: streaming matches already confirmed by real-time partial analysis
+    known_matched_json = request.POST.get('known_matched_indices', '')
+    try:
+        passage_offset = int(request.POST.get('passage_offset', 0) or 0)
+    except (ValueError, TypeError):
+        passage_offset = 0
+
+    known_matched = []
+    if known_matched_json:
+        try:
+            known_matched = [int(i) for i in json.loads(known_matched_json)]
+        except (ValueError, TypeError, json.JSONDecodeError):
+            known_matched = []
+
     from services.speech_service import (
         _save_uploaded_audio, transcribe, compare_transcript_to_passage, cleanup_audio_files
     )
@@ -575,13 +631,47 @@ def fluency_check_analyze(request, child_id):
         if audio_path:
             cleanup_audio_files(audio_path)
 
-    comparison = compare_transcript_to_passage(transcript_text, passage_text)
-    words_read = comparison['words_read']
-    total_words = comparison['total_words']
-    accuracy = comparison['accuracy']
-    missed_words = comparison['missed_words']
+    passage_words = passage_text.strip().split()
 
-    wpm = round(words_read / (duration / 60)) if duration > 0 else 0
+    if known_matched and passage_offset > 0:
+        # Tail-audio mode: the client sent only the last ~12s of audio and provided
+        # known_matched_indices from real-time streaming.  We run Whisper on the tail
+        # only (from passage_offset onward) and merge with the confirmed streaming matches.
+        tail_passage = ' '.join(passage_words[passage_offset:])
+        tail_comparison = compare_transcript_to_passage(transcript_text, tail_passage)
+        # Re-base tail indices to absolute passage positions
+        tail_matched = set(passage_offset + i for i in tail_comparison.get('matched_indices', []))
+        tail_skipped = set(passage_offset + i for i in tail_comparison.get('skipped_indices', []))
+        # Merge: streaming matches take priority; tail fills in the rest
+        all_matched = set(known_matched) | tail_matched
+        all_skipped = tail_skipped - all_matched
+        matched_indices = sorted(all_matched)
+        skipped_indices = sorted(all_skipped)
+        words_read = len(all_matched)
+        total_words = len(passage_words)
+        accuracy = min(round((words_read / total_words) * 100), 100) if total_words > 0 else 0
+        # Missed = skipped words that fall within the read region
+        read_up_to = max(all_matched, default=-1)
+        missed_words = [passage_words[i] for i in sorted(all_skipped) if i <= read_up_to]
+        # WPM uses confirmed matched count — most accurate in merged mode
+        spoken_words_for_wpm = min(words_read, total_words)
+    else:
+        # Full-audio mode: Whisper ran on the entire recording
+        comparison = compare_transcript_to_passage(transcript_text, passage_text)
+        words_read = comparison['words_read']
+        total_words = comparison['total_words']
+        accuracy = comparison['accuracy']
+        missed_words = comparison['missed_words']
+        matched_indices = comparison.get('matched_indices', [])
+        skipped_indices = comparison.get('skipped_indices', [])
+        transcript_word_count = comparison.get('transcript_word_count', words_read)
+        spoken_words_for_wpm = min(transcript_word_count, total_words)
+
+    # Build word-level results for real-time highlighting reconciliation
+    word_results = align_to_passage(passage_words, matched_indices, skipped_indices)
+
+    # WPM = words spoken / time in minutes
+    wpm = round(spoken_words_for_wpm / (duration / 60)) if duration > 0 else 0
 
     # Grade benchmarks (same as fluency_check_save)
     grade_benchmarks = {
@@ -651,6 +741,18 @@ def fluency_check_analyze(request, child_id):
         child.reading_difficulty_level = 'ADVANCED'
     child.save()
 
+    # Save historical assessment record
+    ReadingAssessment.objects.create(
+        child=child,
+        passage=None,
+        wpm=wpm,
+        accuracy=float(accuracy),
+        level=child.reading_difficulty_level,
+        strengths=', '.join(strengths),
+        gaps='. '.join(recommendations),
+        language=language,
+    )
+
     return JsonResponse({
         'status': 'success',
         'wpm': wpm,
@@ -664,6 +766,82 @@ def fluency_check_analyze(request, child_id):
         'gaps': recommendations,
         'missed_words': missed_words,
         'benchmark': {'min': bm[0], 'avg': bm[1], 'max': bm[2]},
+        'word_results': word_results,  # For real-time highlighting reconciliation
+    })
+
+
+@login_required
+def fluency_check_partial_analyze(request, child_id):
+    """
+    Real-time partial audio analysis during reading.
+    Runs Whisper on a sliding window of recent audio chunks and returns newly matched word indices.
+    Accepts an optional 'current_pos' POST param so matching starts from where the child currently is.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+
+    child = get_object_or_404(Child, id=child_id, parent__user=request.user)
+
+    audio_file = request.FILES.get('audio')
+    if not audio_file:
+        return JsonResponse({'status': 'error', 'message': 'No audio file provided'}, status=400)
+
+    if audio_file.size > 10 * 1024 * 1024:
+        return JsonResponse({'status': 'error', 'message': 'Audio file too large (max 10MB)'}, status=400)
+
+    passage_text = request.POST.get('passage_text', '').strip()
+    if not passage_text:
+        return JsonResponse({'status': 'error', 'message': 'No passage text provided'}, status=400)
+
+    language = request.POST.get('language', 'EN').upper()
+
+    # Current word position from the client — start matching from here to avoid
+    # re-matching already-highlighted words at the beginning of the passage.
+    try:
+        client_current_pos = max(0, int(request.POST.get('current_pos', 0)))
+    except (ValueError, TypeError):
+        client_current_pos = 0
+
+    from services.speech_service import _save_uploaded_audio, transcribe, compare_transcript_to_passage, cleanup_audio_files
+
+    audio_path = None
+    try:
+        audio_path = _save_uploaded_audio(audio_file)
+        transcript_text = transcribe(audio_path, language=language)
+    except (ValueError, RuntimeError) as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    except Exception as e:
+        logger.error(f"Unexpected error in partial fluency analysis: {e}")
+        return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred'}, status=500)
+    finally:
+        if audio_path:
+            cleanup_audio_files(audio_path)
+
+    # Slice the passage from client_current_pos so Whisper's window matches the right segment.
+    # Use a small look-back (5 words) so we don't miss words if the cursor is slightly ahead.
+    LOOK_BACK = 5
+    passage_words = passage_text.strip().split()
+    slice_start = max(0, client_current_pos - LOOK_BACK)
+    passage_slice = ' '.join(passage_words[slice_start:])
+
+    # Compare transcript against the passage slice
+    comparison = compare_transcript_to_passage(transcript_text, passage_slice)
+    matched_indices_relative = comparison.get('matched_indices', [])
+    skipped_indices_relative = comparison.get('skipped_indices', [])
+
+    # Offset indices back to absolute passage positions
+    matched_indices = [i + slice_start for i in matched_indices_relative]
+    skipped_indices = [i + slice_start for i in skipped_indices_relative]
+
+    # Build word-level results for highlighting (use full passage word list for display)
+    word_results = align_to_passage(passage_words, matched_indices, skipped_indices)
+
+    return JsonResponse({
+        'status': 'success',
+        'transcript': transcript_text,
+        'matched_indices': matched_indices,
+        'skipped_indices': skipped_indices,
+        'word_results': word_results,
     })
 
 
@@ -1250,7 +1428,13 @@ class SubscribeView(LoginRequiredMixin, TemplateView):
             
         # Check if address is complete
         context['address_complete'] = is_address_complete(self.request.user.parent_profile)
-        
+
+        # Soft gate: nudge parents to complete enhanced profile for better curation
+        try:
+            context['profile_enhancement_pending'] = not self.request.user.parent_profile.extra_profile.profile_completed
+        except (ParentProfile.DoesNotExist, ParentProfileExtra.DoesNotExist, AttributeError):
+            context['profile_enhancement_pending'] = True
+
         return context
 
     def post(self, request, child_id=None):
@@ -1347,8 +1531,39 @@ class NotificationsView(LoginRequiredMixin, OnboardingRequiredMixin, TemplateVie
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        parent = self.request.user.parent_profile
+
         # Mark as seen for this session
         self.request.session['notifications_seen'] = True
+
+        # Get reading test notifications (existing)
+        context['pending_test_children_list'] = parent.children.filter(reading_test_completed=False)
+
+        # Get reading reminder notifications (NEW)
+        from apps.notifications.models import NotificationLog
+        from django.utils import timezone
+
+        # Get recent sent notifications (last 30 days)
+        thirty_days_ago = timezone.localdate() - timezone.timedelta(days=30)
+        all_reminders = NotificationLog.objects.filter(
+            parent=parent,
+            scheduled_date__gte=thirty_days_ago,
+            status='SENT'
+        ).order_by('-sent_at')
+
+        # Get today's notifications
+        today = timezone.localdate()
+        today_reminders = all_reminders.filter(scheduled_date=today)
+
+        # If no today's reminders, show recent ones (for better display)
+        if not today_reminders.exists():
+            context['today_reminders'] = all_reminders[:5]
+        else:
+            context['today_reminders'] = today_reminders
+
+        context['recent_reminders'] = all_reminders[:20]
+        context['reminders_count'] = all_reminders.count()
+
         return context
 
 
@@ -1395,7 +1610,8 @@ def initiate_return(request, cycle_id):
         success, message = return_subscription_books(cycle, condition_notes)
 
         if success:
-            return redirect('portal:my_books')
+            # Redirect to feedback page for the returned cycle
+            return redirect('feedback:cycle_feedback', cycle_id=cycle.id)
         else:
             return render(request, 'portal/my_books.html', {
                 'error': message,
@@ -1706,3 +1922,632 @@ class UpdateDeliveryAddressView(LoginRequiredMixin, OnboardingRequiredMixin, Tem
         # Default redirect to profile
         return redirect('portal:profile')
 
+
+# ===========================
+# Profile Enhancement Flow
+# ===========================
+
+@onboarding_required
+def profile_enhance_parent(request):
+    """
+    Step 1 of profile enhancement: collect ParentProfileExtra data.
+    GET: render form. POST (HTMX): save and redirect to child enhancement.
+    """
+    from django.urls import reverse
+    parent_profile = request.user.parent_profile
+    extra, _ = ParentProfileExtra.objects.get_or_create(parent=parent_profile)
+
+    if request.method == 'POST':
+        # Validate required fields
+        reading_frequency = request.POST.get('reading_frequency', '').strip()
+        preferred_reading_time = request.POST.get('preferred_reading_time', '').strip()
+        duration_raw = request.POST.get('reading_duration_minutes', '').strip()
+
+        errors = []
+        if not reading_frequency:
+            errors.append('How often you read with your child is required')
+        if not preferred_reading_time:
+            errors.append('Preferred reading time is required')
+        if not duration_raw or not duration_raw.isdigit():
+            errors.append('Reading session duration is required')
+
+        if errors:
+            return render(request, 'portal/profile_enhance_parent.html', {
+                'extra': extra,
+                'parent_profile': parent_profile,
+                'errors': errors,
+            }, status=400)
+
+        # Save validated data
+        extra.reading_frequency = reading_frequency
+        extra.provides_assistance = request.POST.get('provides_assistance') == 'true'
+        books_raw = request.POST.get('books_at_home', '').strip()
+        extra.books_at_home = int(books_raw) if books_raw.isdigit() else None
+        extra.preferred_reading_time = preferred_reading_time
+        extra.reading_duration_minutes = int(duration_raw)
+
+        # Home Learning Environment fields (optional)
+        reading_companion = request.POST.get('reading_companion', '').strip()
+        extra.reading_companion = reading_companion if reading_companion else None
+
+        reading_space = request.POST.get('reading_space', '').strip()
+        extra.reading_space = reading_space if reading_space else None
+
+        study_environment = request.POST.get('study_environment', '').strip()
+        extra.study_environment = study_environment if study_environment else None
+
+        supervision_level = request.POST.get('supervision_level', '').strip()
+        extra.supervision_level = supervision_level if supervision_level else None
+
+        motivation_method = request.POST.get('motivation_method', '').strip()
+        extra.motivation_method = motivation_method if motivation_method else None
+
+        extra.profile_completed = True
+        extra.save()
+
+        active_child = parent_profile.children.filter(is_active=True).first()
+        if active_child:
+            redirect_url = reverse('portal:profile_enhance_child', kwargs={'child_id': active_child.id})
+        else:
+            redirect_url = reverse('portal:dashboard')
+
+        if request.headers.get('HX-Request'):
+            response = HttpResponse(status=204)
+            response['HX-Redirect'] = redirect_url
+            return response
+        return redirect(redirect_url)
+
+    return render(request, 'portal/profile_enhance_parent.html', {
+        'extra': extra,
+        'parent_profile': parent_profile,
+    })
+
+
+@onboarding_required
+def profile_enhance_child(request, child_id):
+    """
+    Step 2 of profile enhancement: collect ChildProfileExtra data for one child.
+    GET: render form. POST (HTMX): save and redirect to dashboard.
+    """
+    from django.urls import reverse
+    parent_profile = request.user.parent_profile
+    child = get_object_or_404(Child, id=child_id, parent=parent_profile)
+    extra, _ = ChildProfileExtra.objects.get_or_create(child=child)
+
+    if request.method == 'POST':
+        # Validate required fields
+        medium = request.POST.get('medium', '').strip()
+        primary_language = request.POST.get('primary_language', '').strip()
+        comprehension_level = request.POST.get('comprehension_level', '').strip()
+
+        errors = []
+        if not medium:
+            errors.append('School language medium is required')
+        if not primary_language:
+            errors.append('Primary language is required')
+        if not comprehension_level:
+            errors.append('Comprehension level is required')
+
+        if errors:
+            return render(request, 'portal/profile_enhance_child.html', {
+                'child': child,
+                'extra': extra,
+                'errors': errors,
+            }, status=400)
+
+        # Save validated data
+        extra.medium = medium
+        extra.primary_language = primary_language
+        extra.other_languages = request.POST.get('other_languages', '').strip() or None
+        extra.comprehension_level = comprehension_level
+        extra.reads_aloud = request.POST.get('reads_aloud') == 'true'
+        extra.skips_words = request.POST.get('skips_words') == 'true'
+        extra.reading_speed_perception = request.POST.get('reading_speed_perception') or None
+        screen_raw = request.POST.get('avg_screen_time_hours', '').strip()
+        try:
+            extra.avg_screen_time_hours = float(screen_raw) if screen_raw else None
+        except ValueError:
+            extra.avg_screen_time_hours = None
+        extra.save()
+
+        redirect_url = reverse('portal:dashboard')
+        if request.headers.get('HX-Request'):
+            response = HttpResponse(status=204)
+            response['HX-Redirect'] = redirect_url
+            return response
+        return redirect(redirect_url)
+
+    return render(request, 'portal/profile_enhance_child.html', {
+        'child': child,
+        'extra': extra,
+    })
+
+
+@login_required
+def profile_enhance_check(request):
+    """
+    HTMX lazy-load endpoint: returns nudge fragment if enhancement is pending.
+    Used by the dashboard to lazy-load the profile completion prompt.
+    """
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return HttpResponse('')
+
+    try:
+        extra = parent_profile.extra_profile
+        completed = extra.profile_completed
+    except ParentProfileExtra.DoesNotExist:
+        completed = False
+
+    return render(request, 'portal/components/profile_enhance_nudge.html', {
+        'enhancement_completed': completed,
+        'parent_profile': parent_profile,
+    })
+
+
+# ============================================================================
+# Community Progress Feature - API Endpoints & Views
+# ============================================================================
+
+@login_required
+def api_address_status(request):
+    """
+    GET /api/address-status/
+    Returns the current parent's address completion status.
+    """
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return JsonResponse({'error': 'Parent profile not found'}, status=404)
+
+    # Check if address is completed (has city + pincode)
+    is_address_completed = bool(parent_profile.city and parent_profile.pincode)
+
+    return JsonResponse({
+        'is_completed': is_address_completed,
+        'city': parent_profile.city or '',
+        'locality': getattr(parent_profile, 'locality', '') or '',
+        'address': parent_profile.address or '',
+        'state': parent_profile.state or '',
+        'pincode': parent_profile.pincode or '',
+        'verified_at': getattr(parent_profile, 'address_verified_at', None).isoformat() if getattr(parent_profile, 'address_verified_at', None) else None,
+        'last_updated': parent_profile.updated_at.isoformat(),
+    })
+
+
+@login_required
+def api_user_address(request):
+    """
+    POST /api/user/address/
+    Validate and save parent's address.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    from services.community_service import AddressValidator
+    from django.utils import timezone
+
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return JsonResponse({'error': 'Parent profile not found'}, status=404)
+
+    # Get and validate address data
+    data = {
+        'address': request.POST.get('address', '').strip(),
+        'city': request.POST.get('city', '').strip(),
+        'locality': request.POST.get('locality', '').strip(),
+        'state': request.POST.get('state', '').strip(),
+        'pincode': request.POST.get('pincode', '').strip(),
+    }
+
+    is_valid, errors = AddressValidator.validate_address(data)
+    if not is_valid:
+        return JsonResponse({
+            'success': False,
+            'errors': errors,
+        }, status=400)
+
+    # Normalize and save
+    normalized = AddressValidator.normalize_address(data)
+    parent_profile.address = normalized['address']
+    parent_profile.city = normalized['city']
+    parent_profile.state = normalized['state']
+    parent_profile.pincode = normalized['pincode']
+    parent_profile.save()
+
+    messages.success(request, 'Address saved successfully!')
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Address saved successfully',
+        'address_completed': True,
+        'verified_at': timezone.now().isoformat(),
+    })
+
+
+@login_required
+def api_community_progress(request):
+    """
+    GET /api/community-progress/
+    Returns aggregated community progress for a location.
+    Query params: city (required), locality (optional), level (optional)
+    """
+    from services.community_service import CommunityProgressService
+
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return JsonResponse({'error': 'Parent profile not found'}, status=404)
+
+    # Check if address is completed (has city + pincode)
+    is_address_completed = bool(parent_profile.city and parent_profile.pincode)
+    if not is_address_completed:
+        return JsonResponse({
+            'error': 'Address required to view community progress'
+        }, status=400)
+
+    # Get query parameters
+    city = request.GET.get('city', '').strip()
+    locality = request.GET.get('locality', '').strip() or None
+    level = request.GET.get('level', '').strip() or None
+
+    # Use parent's location if not specified
+    if not city:
+        city = parent_profile.city
+        # locality is a form input, not stored in parent_profile
+        locality = getattr(parent_profile, 'locality', None)
+
+    if not city:
+        return JsonResponse({
+            'error': 'City not specified and parent address incomplete'
+        }, status=400)
+
+    # Fetch community progress
+    progress_data = CommunityProgressService.get_community_progress(
+        city, locality, level
+    )
+
+    return JsonResponse(progress_data)
+
+
+@login_required
+def community_progress_page(request):
+    """
+    GET /community-progress/
+    Displays the community progress page with stats and charts.
+    """
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return redirect('portal:onboarding')
+
+    # Ensure address is completed (check for city and pincode)
+    if not (parent_profile.city and parent_profile.pincode):
+        messages.info(request, 'Please complete your address to view community progress.')
+        return redirect('portal:dashboard')
+
+    # Get context
+    children = parent_profile.children.filter(is_active=True)
+    active_child = children.first()
+
+    from services.community_service import STATE_TO_CITIES
+
+    # Get cities for parent's state from STATE_TO_CITIES mapping
+    parent_state = parent_profile.state or ''
+    state_cities = STATE_TO_CITIES.get(parent_state, [])
+
+    # Use state cities if available, otherwise show all major cities
+    db_cities = state_cities if state_cities else list(set(
+        city for cities in STATE_TO_CITIES.values()
+        for city in cities
+    ))
+
+    context = {
+        'parent_profile': parent_profile,
+        'active_child': active_child,
+        'children': children,
+        'state_to_cities': json.dumps(STATE_TO_CITIES),
+        'db_cities': json.dumps(db_cities),
+        'parent_city': parent_profile.city or '',
+    }
+
+    return render(request, 'portal/community_progress.html', context)
+
+
+
+@login_required
+def address_banner_check(request):
+    """
+    GET /address-banner/ (HTMX endpoint)
+    Returns address banner fragment if address is incomplete.
+    Used for lazy-loading on dashboard with hx-trigger="load".
+    """
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return HttpResponse('')
+
+    # Return empty if address completed (has city + pincode)
+    if parent_profile.city and parent_profile.pincode:
+        return HttpResponse('')
+
+    # Return banner fragment
+    return render(request, 'portal/components/address_banner_fragment.html', {
+        'parent_profile': parent_profile,
+    })
+
+
+@login_required
+def api_young_readers(request):
+    """
+    GET /api/young-readers/?city=X
+    Returns anonymized individual reader cards for a city.
+    """
+    from services.community_service import CommunityProgressService
+
+    try:
+        parent_profile = request.user.parent_profile
+    except ParentProfile.DoesNotExist:
+        return JsonResponse({'error': 'Parent profile not found'}, status=404)
+
+    # Check if address is completed (has city + pincode)
+    is_address_completed = bool(parent_profile.city and parent_profile.pincode)
+    if not is_address_completed:
+        return JsonResponse({
+            'error': 'Address required to view community progress'
+        }, status=400)
+
+    # Get query parameters
+    city = request.GET.get('city', '').strip()
+
+    # Use parent's location if not specified
+    if not city:
+        city = parent_profile.city
+
+    if not city:
+        return JsonResponse({
+            'error': 'City not specified and parent address incomplete'
+        }, status=400)
+
+    # Fetch young readers
+    readers_data = CommunityProgressService.get_young_readers(
+        city, current_user_id=request.user.id
+    )
+
+    return JsonResponse(readers_data)
+
+
+@login_required
+def api_cities_by_state(request):
+    """
+    GET /api/cities-by-state/?state=X
+    Returns cities for a given state.
+    """
+    from services.community_service import STATE_TO_CITIES
+
+    state = request.GET.get('state', '').strip()
+
+    if not state:
+        return JsonResponse({'error': 'State not provided'}, status=400)
+
+    cities = STATE_TO_CITIES.get(state, [])
+
+    return JsonResponse({
+        'state': state,
+        'cities': cities,
+    })
+
+
+@login_required
+def api_community_stats(request):
+    """
+    GET /api/community-stats/?city=X
+    Returns real-time statistics for a city:
+    - Total books read
+    - Active readers this week
+    - Total learners
+    """
+    from django.utils import timezone
+    from datetime import timedelta
+    from django.db.models import Count
+
+    city = request.GET.get('city', '').strip()
+
+    if not city:
+        return JsonResponse({'error': 'City not provided'}, status=400)
+
+    try:
+        # Fuzzy city matching: find all DB-stored variants of the requested city.
+        # Handles typos like 'Banglore' vs dropdown 'Bangalore' (SequenceMatcher ≥ 0.85).
+        from services.community_service import resolve_city_variants
+        city_variants = resolve_city_variants(city)
+        if city not in city_variants:
+            city_variants.append(city)
+
+        # Get all children in the matched city variants who have completed reading test
+        children_in_city = Child.objects.filter(
+            parent__city__in=city_variants,
+            reading_test_completed=True
+        )
+
+
+        total_learners = children_in_city.count()
+
+        # Calculate total books read (assessments count)
+        total_assessments = ReadingAssessment.objects.filter(
+            child__in=children_in_city
+        ).count()
+
+        # Active readers this week (assessments in last 7 days)
+        week_ago = timezone.now() - timedelta(days=7)
+        active_this_week = ReadingAssessment.objects.filter(
+            child__in=children_in_city,
+            assessed_at__gte=week_ago
+        ).values('child').distinct().count()
+
+        # Calculate growth percentage (compare this week to previous week)
+        two_weeks_ago = timezone.now() - timedelta(days=14)
+        previous_week_start = two_weeks_ago
+        previous_week_end = week_ago
+
+        assessments_previous_week = ReadingAssessment.objects.filter(
+            child__in=children_in_city,
+            assessed_at__gte=previous_week_start,
+            assessed_at__lt=previous_week_end
+        ).count()
+
+        assessments_current_week = ReadingAssessment.objects.filter(
+            child__in=children_in_city,
+            assessed_at__gte=week_ago
+        ).count()
+
+        growth_percent = 0
+        if assessments_previous_week > 0:
+            growth_percent = int(
+                ((assessments_current_week - assessments_previous_week) / assessments_previous_week) * 100
+            )
+
+        return JsonResponse({
+            'city': city,
+            'total_books': total_assessments,
+            'active_readers': active_this_week,
+            'total_learners': total_learners,
+            'growth_percent': growth_percent,
+        })
+
+    except Exception as e:
+        logger.error(f"Error calculating community stats: {str(e)}")
+        return JsonResponse({
+            'city': city,
+            'total_books': 0,
+            'active_readers': 0,
+            'total_learners': 0,
+            'growth_percent': 0,
+        })
+
+
+@login_required
+def api_community_states(request):
+    """
+    GET /api/community-states/
+    Returns all states and their cities (used for city selection dropdown).
+    """
+    from services.community_service import STATE_TO_CITIES
+
+    try:
+        states = sorted(STATE_TO_CITIES.keys())
+        states_with_cities = {
+            state: STATE_TO_CITIES[state]
+            for state in states
+        }
+
+        return JsonResponse({
+            'states': states,
+            'states_with_cities': states_with_cities,
+        })
+
+    except Exception as e:
+        logger.error(f"Error fetching states: {str(e)}")
+        return JsonResponse({'error': 'Failed to fetch states'}, status=500)
+
+
+@login_required
+def api_reading_reminders(request):
+    """
+    GET /api/reading-reminders/
+    Returns unread/recent reading reminder notifications for the logged-in parent.
+    Used for in-app notification badge and notifications page.
+    """
+    from apps.notifications.models import NotificationLog
+    from django.utils import timezone
+
+    try:
+        parent = request.user.parent_profile
+        today = timezone.localdate()
+
+        # Get today's notifications
+        today_reminders = NotificationLog.objects.filter(
+            parent=parent,
+            scheduled_date=today,
+            status='SENT'
+        ).order_by('-sent_at').values('notification_type', 'sent_at')
+
+        # Count by type
+        weekday_count = today_reminders.filter(notification_type='WEEKDAY_REMINDER').count()
+        weekend_count = today_reminders.filter(notification_type='WEEKEND_REMINDER').count()
+        total_unread = weekday_count + weekend_count
+
+        return JsonResponse({
+            'total': total_unread,
+            'weekday_count': weekday_count,
+            'weekend_count': weekend_count,
+            'today_date': str(today),
+            'messages': [
+                f"📚 {weekday_count} weekday reading reminders sent today" if weekday_count else None,
+                f"🌟 {weekend_count} weekend reading reminders sent today" if weekend_count else None,
+            ]
+        })
+
+    except Exception as e:
+        logger.error(f"Error fetching reading reminders: {str(e)}")
+        return JsonResponse({'error': 'Failed to fetch reminders', 'total': 0}, status=500)
+
+
+@login_required
+def update_notification_preferences(request):
+    """
+    HTMX-compatible view to update a parent's notification time and preferences.
+    GET: Returns the form fragment.
+    POST: Saves and returns success confirmation fragment.
+    """
+    from apps.notifications.forms import NotificationPreferenceForm
+    from apps.profiles.models import ParentProfile, ParentProfileExtra
+
+    parent = get_object_or_404(ParentProfile, user=request.user)
+    extra, _ = ParentProfileExtra.objects.get_or_create(parent=parent)
+
+    if request.method == 'POST':
+        form = NotificationPreferenceForm(request.POST, instance=extra)
+        if form.is_valid():
+            form.save()
+            if request.headers.get('HX-Request'):
+                return render(request, 'partials/notification_success.html', {
+                    'extra': extra
+                })
+            messages.success(request, 'Notification preferences updated.')
+            return redirect('portal:profile')
+    else:
+        form = NotificationPreferenceForm(instance=extra)
+
+    return render(request, 'partials/notification_form.html', {
+        'form': form,
+        'extra': extra,
+    })
+
+
+def firebase_messaging_sw(request):
+    """
+    Serve the Firebase Messaging service worker from the root path.
+    Browsers require the SW to be served from a path whose directory is at
+    or above the scope (/). Since our static files live under /static/, we
+    expose the file via this view at /firebase-messaging-sw.js and set the
+    Service-Worker-Allowed header to grant the full-origin scope.
+    """
+    import os
+    from django.templatetags.static import static
+
+    sw_path = os.path.join(settings.BASE_DIR, 'static', 'js', 'firebase-messaging-sw.js')
+
+    try:
+        with open(sw_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except FileNotFoundError:
+        return HttpResponse('// Service worker not found', content_type='application/javascript', status=404)
+
+    response = HttpResponse(content, content_type='application/javascript; charset=utf-8')
+    # Allow the SW to control the entire origin (required for FCM)
+    response['Service-Worker-Allowed'] = '/'
+    response['Cache-Control'] = 'no-cache'
+    return response

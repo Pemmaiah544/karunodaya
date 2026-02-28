@@ -141,8 +141,9 @@ def transcribe(audio_file_path, language='EN'):
         result = pipe(
             {"raw": audio_data, "sampling_rate": sample_rate},
             generate_kwargs=generate_kwargs,
-            chunk_length_s=30,
-            batch_size=1,
+            chunk_length_s=15,      # Smaller chunks → faster first results
+            stride_length_s=3,      # Overlap prevents words at chunk boundaries from being dropped
+            batch_size=4,           # Process chunks in parallel (faster on multi-core CPU)
         )
 
         transcript = result.get("text", "").strip()
@@ -234,13 +235,18 @@ def compare_transcript_to_passage(transcript_text, passage_text):
     previously skipped words.
 
     Returns:
-        dict with words_read, total_words, accuracy, missed_words
+        dict with words_read, total_words, accuracy, missed_words,
+        transcript_word_count (actual spoken words, used for accurate WPM),
+        matched_indices, skipped_indices
     """
     passage_words = passage_text.strip().split()
     passage_clean = [_clean_word(w) for w in passage_words]
 
     transcript_words = transcript_text.strip().split()
     transcript_clean = [_clean_word(w) for w in transcript_words]
+
+    # Count actual non-empty words in the transcript — used for real WPM
+    transcript_word_count = sum(1 for w in transcript_clean if w)
 
     current_pos = 0
     matched = set()
@@ -294,5 +300,7 @@ def compare_transcript_to_passage(transcript_text, passage_text):
         'total_words': total_words,
         'accuracy': accuracy,
         'missed_words': missed_words,
+        'transcript_word_count': transcript_word_count,
         'matched_indices': sorted(matched),
+        'skipped_indices': sorted(skipped),
     }

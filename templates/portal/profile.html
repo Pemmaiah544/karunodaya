@@ -424,6 +424,26 @@
     </div>
 </form>
 
+<!-- Feedback Card -->
+<div class="mt-8">
+    <a href="{% url 'feedback:app_feedback' %}" class="block">
+        <div class="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-3xl border border-teal-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+            <div class="p-6 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-teal-100 flex items-center justify-center text-xl">⭐</div>
+                    <div>
+                        <h3 class="font-bold text-gray-900">Help Us Improve</h3>
+                        <p class="text-sm text-gray-500">Share how Karunodaya is helping your child</p>
+                    </div>
+                </div>
+                <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </div>
+        </div>
+    </a>
+</div>
+
 <!-- Edit Child Modal -->
 <div id="edit-child-modal"
     class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">

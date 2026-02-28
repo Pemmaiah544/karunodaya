@@ -31,12 +31,21 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 # Allow all hosts in development for tunnel access
 ALLOWED_HOSTS = ['*']
 
+# Security settings — safe defaults for dev, set to True in production via env vars
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
+SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=False, cast=bool)
+SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=False, cast=bool)
+
 # Trust all origins in development for tunnel/mobile access
 CSRF_TRUSTED_ORIGINS = [
     'https://*.github.dev',
     'https://*.ngrok-free.app',
     'https://*.trycloudflare.com',
     'https://*.app.github.dev',
+    'https://*.devtunnels.ms',
     'http://*.127.0.0.1',
 ]
 
@@ -61,6 +70,7 @@ INSTALLED_APPS = [
     # Third-party apps
     'django_htmx',
     'debug_toolbar',
+    'django_q',
 
     # Local apps
     'apps.profiles',
@@ -70,6 +80,8 @@ INSTALLED_APPS = [
     'apps.payments',
     'apps.portal',
     'apps.core',  # Enhanced table system
+    'apps.feedback',
+    'apps.notifications',
 ]
 
 MIDDLEWARE = [
@@ -215,6 +227,48 @@ EMAIL_TIMEOUT = 10
 
 # Site Configuration
 SITE_ID = 1
+
+
+# Django-Q2 Task Queue Configuration
+Q_CLUSTER = {
+    'name': 'karunodaya',
+    'workers': config('Q_WORKERS', default=2, cast=int),
+    'recycle': 500,
+    'timeout': config('Q_TASK_TIMEOUT', default=60, cast=int),
+    'retry': config('Q_TASK_RETRY', default=120, cast=int),
+    'max_attempts': config('Q_MAX_ATTEMPTS', default=3, cast=int),
+    'orm': 'default',   # Uses existing PostgreSQL DB as broker
+    'label': 'Django Q',
+    'catch_up': False,  # Don't fire missed schedules on restart
+}
+
+# Notification Scheduling Configuration
+WEEKEND_NOTIFICATION_INTERVAL_HOURS = config('WEEKEND_NOTIFICATION_INTERVAL_HOURS', default=3, cast=int)
+NOTIFICATION_WINDOW_MINUTES = config('NOTIFICATION_WINDOW_MINUTES', default=5, cast=int)
+DEFAULT_NOTIFICATION_TIMEZONE = config('DEFAULT_NOTIFICATION_TIMEZONE', default='Asia/Kolkata')
+
+
+# ─── Firebase / FCM Push Notifications ───────────────────────────────────────
+# VAPID public key: used by the browser (JS SDK) to subscribe for web push.
+FIREBASE_VAPID_KEY = config(
+    'FIREBASE_VAPID_KEY',
+    default='BIfUz2nuc43kkETbISqSeipbFdZ8dmrO2dsVuylKrIhAjL0tbRj8rSRRP37yK8ifdYk_L85YXcHN4N1PGDdFKpA'
+)
+
+# Optional: path to Google service-account JSON for server-side firebase-admin SDK.
+# If set, the backend can send push to Android/iOS in addition to web.
+FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='')
+
+# Firebase project config for the JS SDK (injected into templates).
+# Fill in from your Firebase console → Project settings → Your apps → Web app.
+FIREBASE_WEB_CONFIG = {
+    'apiKey':            config('FIREBASE_API_KEY',            default=''),
+    'authDomain':        config('FIREBASE_AUTH_DOMAIN',        default=''),
+    'projectId':         config('FIREBASE_PROJECT_ID',         default=''),
+    'storageBucket':     config('FIREBASE_STORAGE_BUCKET',     default=''),
+    'messagingSenderId': config('FIREBASE_MESSAGING_SENDER_ID', default=''),
+    'appId':             config('FIREBASE_APP_ID',             default=''),
+}
 
 
 # Debug Toolbar Configuration (for development)
@@ -397,6 +451,16 @@ UNFOLD = {
                         "icon": "report_problem",
                         "link": reverse_lazy("admin:portal_complaint_changelist"),
                         "permission": make_section_permission('portal'),
+                    },
+                    {
+                        "title": _("App Feedback"),
+                        "icon": "feedback",
+                        "link": reverse_lazy("admin:feedback_appfeedback_changelist"),
+                    },
+                    {
+                        "title": _("Cycle Feedback"),
+                        "icon": "rate_review",
+                        "link": reverse_lazy("admin:feedback_cyclefeedback_changelist"),
                     },
                 ],
             },

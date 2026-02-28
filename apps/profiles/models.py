@@ -121,3 +121,337 @@ class Child(models.Model):
             if self.parent.children.count() >= 5:
                 raise ValueError("A parent can have a maximum of 5 children.")
         super().save(*args, **kwargs)
+
+
+class ChildProfileExtra(models.Model):
+    """
+    Extended child profile data collected after onboarding.
+    OneToOne extension of Child — use get_or_create pattern.
+    Captures language background, reading behaviour, and digital habits.
+    """
+    MEDIUM_CHOICES = [
+        ('ENGLISH', 'English Medium'),
+        ('HINDI', 'Hindi Medium'),
+        ('KANNADA', 'Kannada Medium'),
+        ('MARATHI', 'Marathi Medium'),
+        ('TAMIL', 'Tamil Medium'),
+        ('TELUGU', 'Telugu Medium'),
+        ('BENGALI', 'Bengali Medium'),
+        ('GUJARATI', 'Gujarati Medium'),
+        ('PUNJABI', 'Punjabi Medium'),
+        ('OTHER', 'Other'),
+    ]
+
+    LANGUAGE_CHOICES = [
+        ('ENGLISH', 'English'),
+        ('HINDI', 'Hindi'),
+        ('KANNADA', 'Kannada'),
+        ('MARATHI', 'Marathi'),
+        ('TAMIL', 'Tamil'),
+        ('TELUGU', 'Telugu'),
+        ('BENGALI', 'Bengali'),
+        ('GUJARATI', 'Gujarati'),
+        ('PUNJABI', 'Punjabi'),
+        ('OTHER', 'Other'),
+    ]
+
+    COMPREHENSION_CHOICES = [
+        ('BASIC', 'Basic – understands simple sentences'),
+        ('DEVELOPING', 'Developing – follows short stories'),
+        ('PROFICIENT', 'Proficient – understands complex texts'),
+        ('ADVANCED', 'Advanced – critical comprehension'),
+    ]
+
+    SPEED_CHOICES = [
+        ('SLOW', 'Slow – reads carefully, word by word'),
+        ('AVERAGE', 'Average – normal pace'),
+        ('FAST', 'Fast – reads quickly'),
+        ('VARIES', 'Varies – depends on material'),
+    ]
+
+    child = models.OneToOneField(
+        Child,
+        on_delete=models.CASCADE,
+        related_name='extra_profile'
+    )
+
+    # Basic
+    medium = models.CharField(
+        max_length=20,
+        choices=MEDIUM_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Language of instruction at school"
+    )
+
+    # Language background
+    primary_language = models.CharField(
+        max_length=20,
+        choices=LANGUAGE_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Child's primary reading/home language"
+    )
+    other_languages = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Other languages the child knows (comma-separated)"
+    )
+    comprehension_level = models.CharField(
+        max_length=20,
+        choices=COMPREHENSION_CHOICES,
+        blank=True,
+        null=True
+    )
+
+    # Reading behaviour
+    reads_aloud = models.BooleanField(
+        default=False,
+        help_text="Child typically reads aloud rather than silently"
+    )
+    skips_words = models.BooleanField(
+        default=False,
+        help_text="Child tends to skip unfamiliar words"
+    )
+    reading_speed_perception = models.CharField(
+        max_length=10,
+        choices=SPEED_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Parent's perception of child's reading speed"
+    )
+
+    # Digital habits
+    avg_screen_time_hours = models.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(0), MaxValueValidator(24)],
+        help_text="Average daily screen time in hours"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Child Profile Extra"
+        verbose_name_plural = "Child Profile Extras"
+
+    def __str__(self):
+        return f"Extra profile – {self.child.name}"
+
+
+class ParentProfileExtra(models.Model):
+    """
+    Extended parent profile data collected after onboarding.
+    Captures reading support habits and routine.
+    """
+    FREQUENCY_CHOICES = [
+        ('DAILY', 'Daily'),
+        ('SEVERAL_WEEK', 'Several times a week'),
+        ('ONCE_WEEK', 'Once a week'),
+        ('RARELY', 'Rarely'),
+        ('NEVER', 'Never'),
+    ]
+
+    TIME_CHOICES = [
+        ('MORNING', 'Morning'),
+        ('AFTERNOON', 'Afternoon'),
+        ('EVENING', 'Evening'),
+        ('BEDTIME', 'Bedtime'),
+        ('WEEKEND', 'Weekends only'),
+    ]
+
+    COMPANION_CHOICES = [
+        ('FATHER', 'Father'),
+        ('MOTHER', 'Mother'),
+        ('BOTH', 'Both Parents'),
+        ('GRANDPARENT', 'Grandparent'),
+        ('SIBLING', 'Sibling'),
+        ('TUTOR', 'Tutor'),
+        ('SELF', 'Self-Reading'),
+    ]
+
+    SPACE_CHOICES = [
+        ('SEPARATE_ROOM', 'Separate Room'),
+        ('SHARED_SPACE', 'Shared Space'),
+        ('NO_FIXED', 'No Fixed Place'),
+    ]
+
+    ENVIRONMENT_CHOICES = [
+        ('QUIET', 'Always Quiet'),
+        ('SOMETIMES_NOISY', 'Sometimes Noisy'),
+        ('MOSTLY_NOISY', 'Mostly Noisy'),
+    ]
+
+    SUPERVISION_CHOICES = [
+        ('ALWAYS', 'Always Monitored'),
+        ('SOMETIMES', 'Sometimes Monitored'),
+        ('RARELY', 'Rarely Monitored'),
+    ]
+
+    parent = models.OneToOneField(
+        ParentProfile,
+        on_delete=models.CASCADE,
+        related_name='extra_profile'
+    )
+
+    # Support
+    reading_frequency = models.CharField(
+        max_length=20,
+        choices=FREQUENCY_CHOICES,
+        blank=True,
+        null=True,
+        help_text="How often parent reads with child"
+    )
+    provides_assistance = models.BooleanField(
+        default=False,
+        help_text="Parent actively assists child during reading sessions"
+    )
+    books_at_home = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        validators=[MaxValueValidator(500)],
+        help_text="Approximate number of books at home"
+    )
+
+    # Routine
+    preferred_reading_time = models.CharField(
+        max_length=20,
+        choices=TIME_CHOICES,
+        blank=True,
+        null=True
+    )
+    reading_duration_minutes = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        validators=[MaxValueValidator(180)],
+        help_text="Typical reading session duration in minutes"
+    )
+
+    # Home Learning Environment
+    reading_companion = models.CharField(
+        max_length=20,
+        choices=COMPANION_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Who typically helps the child read"
+    )
+    reading_space = models.CharField(
+        max_length=20,
+        choices=SPACE_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Where the child usually reads"
+    )
+    study_environment = models.CharField(
+        max_length=20,
+        choices=ENVIRONMENT_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Quietness level of reading environment"
+    )
+    supervision_level = models.CharField(
+        max_length=20,
+        choices=SUPERVISION_CHOICES,
+        blank=True,
+        null=True,
+        help_text="How closely parent monitors reading"
+    )
+    motivation_method = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Comma-separated list of motivation methods (rewards, praise, routine, etc.)"
+    )
+
+    profile_completed = models.BooleanField(
+        default=False,
+        help_text="Whether the parent has completed the enhanced profile form"
+    )
+
+    # Notification Scheduling
+    notification_time = models.TimeField(
+        null=True,
+        blank=True,
+        help_text="Exact time (HH:MM) for weekday reading reminders"
+    )
+    timezone = models.CharField(
+        max_length=50,
+        default='Asia/Kolkata',
+        help_text="Timezone for notification schedule (e.g. Asia/Kolkata)"
+    )
+    notifications_enabled = models.BooleanField(
+        default=True,
+        help_text="Whether this parent wants reading reminder emails"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Parent Profile Extra"
+        verbose_name_plural = "Parent Profile Extras"
+
+    def __str__(self):
+        return f"Extra profile – {self.parent.user.get_full_name() or self.parent.user.username}"
+
+
+class ReadingAssessment(models.Model):
+    """
+    Historical record of each fluency check attempt.
+    FK to Child (not OneToOne) — accumulates over time.
+    """
+    child = models.ForeignKey(
+        Child,
+        on_delete=models.CASCADE,
+        related_name='reading_assessments'
+    )
+    passage = models.ForeignKey(
+        'portal.ReadingPassage',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assessments',
+        help_text="DB passage used (null when static passage was used)"
+    )
+    wpm = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(500)],
+        help_text="Words per minute"
+    )
+    accuracy = models.FloatField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="Accuracy percentage"
+    )
+    level = models.CharField(
+        max_length=20,
+        choices=Child.DIFFICULTY_LEVEL_CHOICES,
+        help_text="Reading level assigned at time of assessment"
+    )
+    strengths = models.TextField(blank=True, null=True)
+    gaps = models.TextField(blank=True, null=True)
+    language = models.CharField(
+        max_length=5,
+        choices=[('EN', 'English'), ('HI', 'Hindi'), ('KN', 'Kannada')],
+        default='EN'
+    )
+    improvement_percent = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(-100), MaxValueValidator(100)],
+        help_text="% change in WPM compared to previous assessment"
+    )
+    assessed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Reading Assessment"
+        verbose_name_plural = "Reading Assessments"
+        ordering = ['-assessed_at']
+        indexes = [
+            models.Index(fields=['child', '-assessed_at']),
+            models.Index(fields=['level']),
+        ]
+
+    def __str__(self):
+        return f"{self.child.name} – {self.wpm} WPM – {self.assessed_at.strftime('%d %b %Y')}"

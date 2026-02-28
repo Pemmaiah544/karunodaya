@@ -7,7 +7,7 @@ based on their reading level, grade, and subscription plan.
 
 from django.db.models import Q, Count
 from apps.catalog.models import Book
-from apps.profiles.models import Child
+from apps.profiles.models import Child, ChildProfileExtra
 from apps.inventory.models import PhysicalCopy
 from apps.orders.models import SubscriptionCycle
 from datetime import date, timedelta
@@ -32,7 +32,7 @@ def get_curated_books(child_id, limit=20, exclude_currently_issued=True):
     Get curated book recommendations for a child.
     """
     try:
-        child = Child.objects.get(id=child_id)
+        child = Child.objects.select_related('extra_profile').get(id=child_id)
     except Child.DoesNotExist:
         return Book.objects.none()
 
@@ -48,6 +48,26 @@ def get_curated_books(child_id, limit=20, exclude_currently_issued=True):
         difficulty_books = books.filter(difficulty_rating=child.reading_difficulty_level)
         if difficulty_books.exists():
             books = difficulty_books
+
+    # 1.5 Comprehension-level refinement (uses ChildProfileExtra if available)
+    # Maps comprehension self-assessment to difficulty level — refines selection
+    # when comprehension suggests a different level than fluency-based difficulty_level.
+    try:
+        extra = child.extra_profile
+        if extra and extra.comprehension_level:
+            COMP_MAP = {
+                'BASIC': 'BEGINNER',
+                'DEVELOPING': 'BEGINNER',
+                'PROFICIENT': 'INTERMEDIATE',
+                'ADVANCED': 'ADVANCED',
+            }
+            comp_difficulty = COMP_MAP.get(extra.comprehension_level)
+            if comp_difficulty and comp_difficulty != child.reading_difficulty_level:
+                comp_books = books.filter(difficulty_rating=comp_difficulty)
+                if comp_books.exists():
+                    books = comp_books
+    except ChildProfileExtra.DoesNotExist:
+        pass
 
     # 2. Filter by grade range (if set)
     child_grade_value = GRADE_ORDER.get(child.grade)

@@ -1,0 +1,164 @@
+<!-- Notification Toast Container -->
+<div id="notification-container" class="fixed top-4 left-0 right-0 z-[9999] flex flex-col gap-2 px-4 pointer-events-none">
+    <!-- Banners will be inserted here via JavaScript -->
+</div>
+
+<style>
+    @keyframes dropIn {
+        from {
+            transform: translateY(-120%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes dropOut {
+        from {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateY(-120%);
+            opacity: 0;
+        }
+    }
+
+    .notification-toast {
+        animation: dropIn 0.35s ease-out;
+        pointer-events: auto;
+    }
+
+    .notification-toast.removing {
+        animation: dropOut 0.25s ease-in forwards;
+    }
+</style>
+
+<script>
+    window.NotificationToast = {
+        show: function(message, type, duration) {
+            if (type === undefined) type = 'info';
+            if (duration === undefined) duration = 6000;
+
+            const container = document.getElementById('notification-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = 'notification-toast max-w-sm mx-auto w-full';
+
+            let gradientClass, shadowClass, iconSvg;
+            if (type === 'error') {
+                gradientClass = 'bg-gradient-to-r from-red-500 to-red-600';
+                shadowClass = 'shadow-xl shadow-red-200';
+                iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>';
+            } else if (type === 'success') {
+                gradientClass = 'bg-gradient-to-r from-orange-500 to-amber-500';
+                shadowClass = 'shadow-xl shadow-orange-200';
+                iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+            } else {
+                gradientClass = 'bg-gradient-to-r from-orange-500 to-amber-500';
+                shadowClass = 'shadow-xl shadow-orange-200';
+                iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>';
+            }
+
+            toast.innerHTML =
+                '<div class="relative overflow-hidden rounded-2xl ' + gradientClass + ' ' + shadowClass + '">' +
+                    '<div class="absolute inset-0 bg-gradient-to-b from-white/15 to-transparent rounded-2xl pointer-events-none"></div>' +
+                    '<div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>' +
+                    '<div class="relative flex items-center gap-3 px-4 py-3">' +
+                        '<div class="flex-shrink-0 w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">' +
+                            iconSvg +
+                        '</div>' +
+                        '<div class="flex-1 min-w-0">' +
+                            '<div class="text-[10px] font-bold uppercase tracking-wider text-white/80">Karunodaya</div>' +
+                            '<div class="text-sm font-semibold text-white leading-tight">' + message + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+
+            const inner = toast.querySelector('.relative.overflow-hidden');
+
+            const dismiss = function() {
+                toast.classList.add('removing');
+                setTimeout(function() { toast.remove(); }, 250);
+            };
+
+            // Swipe to dismiss
+            let startX = 0, currentX = 0, isDragging = false;
+
+            const onMouseMove = function(e) {
+                if (!isDragging) return;
+                currentX = e.clientX - startX;
+                inner.style.transform = 'translateX(' + currentX + 'px)';
+                inner.style.opacity = Math.max(0, 1 - Math.abs(currentX) / 200);
+            };
+
+            const onMouseUp = function() {
+                if (!isDragging) return;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                finishDrag();
+            };
+
+            const finishDrag = function() {
+                isDragging = false;
+                if (Math.abs(currentX) > 80) {
+                    inner.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+                    inner.style.transform = 'translateX(' + (currentX > 0 ? 500 : -500) + 'px)';
+                    inner.style.opacity = '0';
+                    setTimeout(function() { toast.remove(); }, 200);
+                } else {
+                    inner.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+                    inner.style.transform = 'translateX(0)';
+                    inner.style.opacity = '1';
+                }
+                currentX = 0;
+            };
+
+            inner.addEventListener('mousedown', function(e) {
+                startX = e.clientX;
+                isDragging = true;
+                inner.style.transition = 'none';
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+
+            inner.addEventListener('touchstart', function(e) {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+                inner.style.transition = 'none';
+            }, { passive: true });
+
+            inner.addEventListener('touchmove', function(e) {
+                if (!isDragging) return;
+                currentX = e.touches[0].clientX - startX;
+                inner.style.transform = 'translateX(' + currentX + 'px)';
+                inner.style.opacity = Math.max(0, 1 - Math.abs(currentX) / 200);
+            }, { passive: true });
+
+            inner.addEventListener('touchend', finishDrag);
+
+            container.appendChild(toast);
+        },
+
+        success: function(message, duration) {
+            this.show(message, 'success', duration);
+        },
+
+        error: function(message, duration) {
+            this.show(message, 'error', duration);
+        },
+
+        info: function(message, duration) {
+            this.show(message, 'info', duration);
+        }
+    };
+
+    // Global function to trigger notification toast (called by firebase-push.js)
+    function showNotificationToast(title, message, type) {
+        if (type === undefined) type = 'info';
+        window.NotificationToast.show(message, type, 6000);
+    }
+</script>

@@ -1,0 +1,26 @@
+<!-- Community Progress Card - Compact Design -->
+{% if parent_profile.city and parent_profile.pincode %}
+<div class="mb-6 bg-white rounded-2xl p-4 shadow-sm border border-orange-100 hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between gap-4">
+        <!-- Icon and Text -->
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center flex-shrink-0">
+                <span class="text-xl">🌍</span>
+            </div>
+            <div class="min-w-0">
+                <h3 class="text-sm font-bold text-gray-900 truncate">Nearby Learners</h3>
+                <p class="text-xs text-gray-500 truncate">See your community's reading progress</p>
+            </div>
+        </div>
+
+        <!-- CTA Button -->
+        <a href="{% url 'portal:community_progress_page' %}"
+           class="flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2 rounded-lg font-semibold text-xs whitespace-nowrap shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex-shrink-0">
+            View
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </a>
+    </div>
+</div>
+{% endif %}

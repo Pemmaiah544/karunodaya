@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,6 +23,45 @@
         {% block content %}{% endblock %}
     </div>
     {% endblock %}
+
+    <!-- Notification Toast System -->
+    {% include 'partials/notification_toast.html' %}
+
+    <!-- Notification Polling (Real-time notifications) -->
+    {% if user.is_authenticated %}
+    <script>
+        // Poll for new notifications every 10 seconds
+        let lastNotificationCount = 0;
+
+        function checkForNewNotifications() {
+            fetch('/api/reading-reminders/')
+                .then(r => r.json())
+                .then(data => {
+                    const newCount = data.total || 0;
+                    if (newCount > lastNotificationCount) {
+                        // New notifications arrived!
+                        const notificationType = data.messages && data.messages[0] ? data.messages[0] : 'New reading reminder';
+                        window.NotificationToast.info(`📚 ${notificationType}`, 6000);
+
+                        // Update badge
+                        const badge = document.querySelector('[data-notification-badge]');
+                        if (badge) {
+                            badge.textContent = newCount;
+                            badge.style.display = newCount > 0 ? 'block' : 'none';
+                        }
+                    }
+                    lastNotificationCount = newCount;
+                })
+                .catch(err => console.log('Notification poll error:', err));
+        }
+
+        // Check immediately on page load
+        checkForNewNotifications();
+
+        // Then check every 30 seconds
+        setInterval(checkForNewNotifications, 30000);
+    </script>
+    {% endif %}
 
     {% block extra_scripts %}{% endblock %}
 </body>

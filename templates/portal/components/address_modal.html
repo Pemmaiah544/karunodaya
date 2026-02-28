@@ -1,0 +1,241 @@
+<!-- Address Form Modal Component -->
+<style>
+    @keyframes modalBackdropIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+    @keyframes modalBackdropOut {
+        from { opacity: 1; }
+        to   { opacity: 0; }
+    }
+    @keyframes modalPanelIn {
+        from { opacity: 0; transform: scale(0.95) translateY(10px); }
+        to   { opacity: 1; transform: scale(1)    translateY(0);    }
+    }
+    @keyframes modalPanelOut {
+        from { opacity: 1; transform: scale(1)    translateY(0);    }
+        to   { opacity: 0; transform: scale(0.95) translateY(10px); }
+    }
+    #address-modal:not(.hidden) {
+        animation: modalBackdropIn 0.2s ease forwards;
+    }
+    #address-modal.is-closing {
+        animation: modalBackdropOut 0.15s ease forwards;
+        pointer-events: none;
+    }
+    #address-modal:not(.hidden) .modal-panel {
+        animation: modalPanelIn 0.2s ease forwards;
+    }
+    #address-modal.is-closing .modal-panel {
+        animation: modalPanelOut 0.15s ease forwards;
+    }
+</style>
+
+<div id="address-modal"
+     class="hidden fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4">
+    <!-- Modal panel — always centered -->
+    <div class="modal-panel bg-white rounded-[24px] w-full max-w-md max-h-[90vh] overflow-y-auto relative shadow-2xl">
+
+        <!-- Close button — outside the header so it's never clipped -->
+        <button id="address-modal-close-btn"
+                class="absolute top-3 right-3 w-8 h-8 bg-white hover:bg-gray-100 text-gray-500 rounded-full flex items-center justify-center transition-colors shadow-sm border border-gray-100 z-20">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        <!-- Header: Orange gradient -->
+        <div class="relative overflow-hidden rounded-t-[24px] bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-white">
+            <div class="relative z-10">
+                <span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/10 inline-block">
+                    Complete Address
+                </span>
+                <h2 class="text-2xl font-black mt-2 mb-1">Local Community</h2>
+                <p class="text-sm text-white/90">Complete your address to join your community's reading progress</p>
+            </div>
+            <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="absolute -left-8 -top-8 w-32 h-32 bg-orange-400/20 rounded-full blur-3xl"></div>
+        </div>
+
+        <!-- Form content -->
+        <div class="p-6 space-y-4">
+            <form id="address-form"
+                  hx-post="{% url 'portal:api_user_address' %}"
+                  hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                  class="space-y-4">
+
+                <div>
+                    <label for="address" class="block text-sm font-bold text-gray-900 mb-2">Street Address *</label>
+                    <textarea name="address" id="address"
+                              placeholder="e.g., 123 Main Street, Apt 4B"
+                              class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium resize-none"
+                              rows="2"></textarea>
+                    <p id="address-error" class="text-red-500 text-xs font-bold mt-1 hidden"></p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="city" class="block text-sm font-bold text-gray-900 mb-2">City *</label>
+                        <input type="text" name="city" id="city" placeholder="e.g., Bangalore"
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium">
+                        <p id="city-error" class="text-red-500 text-xs font-bold mt-1 hidden"></p>
+                    </div>
+                    <div>
+                        <label for="state" class="block text-sm font-bold text-gray-900 mb-2">State *</label>
+                        <input type="text" name="state" id="state" placeholder="e.g., Karnataka"
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium">
+                        <p id="state-error" class="text-red-500 text-xs font-bold mt-1 hidden"></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="locality" class="block text-sm font-bold text-gray-900 mb-2">Locality *</label>
+                        <input type="text" name="locality" id="locality" placeholder="e.g., Whitefield"
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium">
+                        <p id="locality-error" class="text-red-500 text-xs font-bold mt-1 hidden"></p>
+                    </div>
+                    <div>
+                        <label for="pincode" class="block text-sm font-bold text-gray-900 mb-2">PIN Code *</label>
+                        <input type="text" name="pincode" id="pincode" placeholder="e.g., 560066"
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium"
+                               inputmode="numeric" maxlength="6">
+                        <p id="pincode-error" class="text-red-500 text-xs font-bold mt-1 hidden"></p>
+                    </div>
+                </div>
+
+                <button type="submit" id="address-submit-btn"
+                        class="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-2xl font-bold text-base shadow-lg hover:shadow-xl active:scale-95 transition-all">
+                    Save Address
+                </button>
+            </form>
+
+            <div class="bg-orange-50 border border-orange-100 rounded-xl p-3 mt-4">
+                <p class="text-xs text-orange-900 font-medium">
+                    <span class="font-bold">🔒 Your privacy:</span> Your exact address is not shared. We only use city & locality to show community reading progress.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    var modal     = document.getElementById('address-modal');
+    var form      = document.getElementById('address-form');
+    var submitBtn = document.getElementById('address-submit-btn');
+    var closeBtn  = document.getElementById('address-modal-close-btn');
+    var fields    = ['address', 'city', 'state', 'locality', 'pincode'];
+
+    var validators = {
+        address:  function(v) { return v.length >= 5 && v.length <= 500 ? null : 'Address must be 5-500 characters'; },
+        city:     function(v) { return v.length >= 2 && v.length <= 100 ? null : 'City must be 2-100 characters'; },
+        state:    function(v) { return v.length >= 2 && v.length <= 100 ? null : 'State must be 2-100 characters'; },
+        locality: function(v) { return v.length >= 2 && v.length <= 100 ? null : 'Locality must be 2-100 characters'; },
+        pincode:  function(v) { return /^\d{6}$/.test(v) ? null : 'PIN code must be 6 digits'; }
+    };
+
+    function validateField(name) {
+        var field   = document.getElementById(name);
+        var errorEl = document.getElementById(name + '-error');
+        var error   = validators[name](field.value.trim());
+        if (error) {
+            errorEl.textContent = error;
+            errorEl.classList.remove('hidden');
+            field.classList.add('border-red-300');
+            return false;
+        }
+        errorEl.classList.add('hidden');
+        field.classList.remove('border-red-300');
+        return true;
+    }
+
+    function isFormValid() {
+        return fields.every(function(f) { return validateField(f); });
+    }
+
+    function updateButtonState() {
+        var valid = isFormValid();
+        submitBtn.disabled = !valid;
+        submitBtn.classList.toggle('opacity-50', !valid);
+        submitBtn.classList.toggle('cursor-not-allowed', !valid);
+    }
+
+    fields.forEach(function(name) {
+        var field = document.getElementById(name);
+        field.addEventListener('blur',  function() { validateField(name); });
+        field.addEventListener('input', function() { validateField(name); updateButtonState(); });
+    });
+
+    form.addEventListener('htmx:beforeRequest', function(e) {
+        if (!isFormValid()) { e.preventDefault(); return; }
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving…';
+    });
+
+    form.addEventListener('htmx:afterRequest', function(e) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Address';
+        if (e.detail.successful) {
+            window.closeAddressModal();
+            setTimeout(function() { window.location.reload(); }, 800);
+        } else if (e.detail.xhr.status === 400) {
+            try {
+                var resp = JSON.parse(e.detail.xhr.responseText);
+                if (resp.errors) {
+                    fields.forEach(function(name) {
+                        var el = document.getElementById(name + '-error');
+                        if (resp.errors[name]) { el.textContent = resp.errors[name]; el.classList.remove('hidden'); }
+                        else { el.classList.add('hidden'); }
+                    });
+                }
+            } catch (err) { console.error('Error parsing response', err); }
+        }
+    });
+
+    form.addEventListener('htmx:responseError', function(e) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Address';
+        console.error('Form error:', e);
+    });
+
+    // ── Open ──────────────────────────────────────────────────────────────────
+    window.openAddressModal = function() {
+        var buddy = document.getElementById('reading-buddy-widget');
+        if (buddy) buddy.classList.add('hidden');
+
+        fields.forEach(function(f) {
+            document.getElementById(f).value = '';
+            document.getElementById(f + '-error').classList.add('hidden');
+            document.getElementById(f).classList.remove('border-red-300');
+        });
+        updateButtonState();
+
+        modal.classList.remove('hidden', 'is-closing');
+        document.body.style.overflow = 'hidden';
+    };
+
+    // ── Close ─────────────────────────────────────────────────────────────────
+    function doClose() {
+        modal.classList.add('is-closing');
+        setTimeout(function() {
+            modal.classList.add('hidden');
+            modal.classList.remove('is-closing');
+            document.body.style.overflow = '';
+            if (typeof checkFluencyNudge === 'function') checkFluencyNudge();
+        }, 150);
+    }
+
+    window.closeAddressModal = doClose;
+
+    // Close button (dedicated listener — no inline onclick needed)
+    closeBtn.addEventListener('click', doClose);
+
+    // Backdrop click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) doClose();
+    });
+})();
+</script>
