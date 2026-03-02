@@ -27,9 +27,17 @@ GRADE_ORDER = {
 }
 
 
-def get_curated_books(child_id, limit=20, exclude_currently_issued=True):
+def get_curated_books(child_id, limit=20, exclude_currently_issued=True,
+                      parent_city=None, parent_state=None):
     """
     Get curated book recommendations for a child.
+
+    Args:
+        child_id: ID of the Child record.
+        limit: Maximum number of books to return.
+        exclude_currently_issued: Skip books already issued to this child.
+        parent_city: Parent's city for locality-aware filtering (FR-03).
+        parent_state: Parent's state for locality-aware filtering (FR-03).
     """
     try:
         child = Child.objects.select_related('extra_profile').get(id=child_id)
@@ -41,6 +49,20 @@ def get_curated_books(child_id, limit=20, exclude_currently_issued=True):
         is_subscription_eligible=True,
         is_active=True
     )
+
+    # 0.5 Frustration / Ease-in Mode (FR-02)
+    # If the child is in frustration mode, step difficulty down one level
+    # so they build confidence before returning to their normal level.
+    if getattr(child, 'frustration_mode', False):
+        _STEP_DOWN = {
+            'ADVANCED': 'INTERMEDIATE',
+            'INTERMEDIATE': 'BEGINNER',
+            'BEGINNER': 'BEGINNER',
+        }
+        stepped_down = _STEP_DOWN.get(child.reading_difficulty_level, 'BEGINNER')
+        ease_books = books.filter(difficulty_rating=stepped_down)
+        if ease_books.exists():
+            books = ease_books
 
     # 1. Start with high-quality matching
     # Filter by difficulty rating matching child's reading level (if set)
@@ -84,6 +106,29 @@ def get_curated_books(child_id, limit=20, exclude_currently_issued=True):
         # Only apply if it doesn't empty our candidates completely
         if matching_books:
             books = books.filter(id__in=matching_books)
+
+    # 2.5 Locality-Aware Curation (FR-03)
+    # Filter books whose locality_tags match the parent's city or state.
+    # Falls back gracefully if no books match (never leaves child with empty list).
+    if parent_city or parent_state:
+        city_lower = (parent_city or '').lower().strip()
+        state_lower = (parent_state or '').lower().strip()
+        locality_book_ids = []
+        for book in books:
+            tags = [str(t).lower() for t in (book.locality_tags or [])]
+            city_match = city_lower and any(
+                city_lower in t or t in city_lower for t in tags
+            )
+            state_match = state_lower and any(
+                state_lower in t or t in state_lower for t in tags
+            )
+            if city_match or state_match:
+                locality_book_ids.append(book.id)
+
+        if locality_book_ids:
+            locality_filtered = books.filter(id__in=locality_book_ids)
+            if locality_filtered.exists():
+                books = locality_filtered
 
     # 3. Exclude books currently issued to this child
     if exclude_currently_issued:

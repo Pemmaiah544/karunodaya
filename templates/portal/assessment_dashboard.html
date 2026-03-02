@@ -1,0 +1,487 @@
+{% extends "portal/base.html" %}
+{% load static %}
+
+{% block title %}Reading Report — {{ child.name }} | Karunodaya{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ── Card system ── */
+    .intel-card {
+        background: #fff;
+        border-radius: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        border: 1px solid #f3f4f6;
+        padding: 20px;
+        margin-bottom: 16px;
+    }
+    .intel-card-orange {
+        background: linear-gradient(135deg, #fff9f0, #fff3e0);
+        border: 1px solid #fed7aa;
+        border-radius: 24px;
+        padding: 20px;
+        margin-bottom: 16px;
+    }
+    /* ── Frustration / Ease-in alert ── */
+    .ease-in-banner {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border: 1.5px solid #fbbf24;
+        border-radius: 20px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    /* ── Phoneme bar chart ── */
+    .phoneme-bar-track {
+        height: 12px;
+        background: #f3f4f6;
+        border-radius: 99px;
+        overflow: hidden;
+        flex: 1;
+    }
+    .phoneme-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #ffa500, #f97316);
+        border-radius: 99px;
+        transition: width 1s cubic-bezier(.4,0,.2,1);
+    }
+    /* ── Reading style badge ── */
+    .style-badge-guessr {
+        background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+        color: #7c3aed;
+        border: 1px solid #c4b5fd;
+        border-radius: 99px;
+        padding: 6px 18px;
+        font-size: 13px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .style-badge-decoder {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+        border-radius: 99px;
+        padding: 6px 18px;
+        font-size: 13px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    /* ── WPM SVG chart ── */
+    .wpm-chart-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    /* ── Miscue card tiles ── */
+    .miscue-tile {
+        flex: 1;
+        border-radius: 16px;
+        padding: 14px 10px;
+        text-align: center;
+        min-width: 0;
+    }
+    .miscue-tile-nonsense { background: #fef2f2; border: 1px solid #fecaca; }
+    .miscue-tile-semantic  { background: #fffbeb; border: 1px solid #fde68a; }
+    .miscue-tile-visual    { background: #eff6ff; border: 1px solid #bfdbfe; }
+    /* ── Accuracy gauge ring (small) ── */
+    .ring-track { fill: none; stroke: #f3f4f6; stroke-width: 10; }
+    .ring-fill  { fill: none; stroke: #ffa500; stroke-width: 10; stroke-linecap: round;
+                  stroke-dasharray: 188; transition: stroke-dashoffset 1.2s ease 0.3s; }
+    /* ── Section heading ── */
+    .section-heading {
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #9ca3af;
+        margin-bottom: 12px;
+    }
+    /* ── Stat pill ── */
+    .stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #fff9f0;
+        border: 1px solid #fed7aa;
+        border-radius: 99px;
+        padding: 4px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #c2410c;
+    }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeInUp 0.4s ease both; }
+    .fade-in-d1 { animation-delay: 0.05s; }
+    .fade-in-d2 { animation-delay: 0.10s; }
+    .fade-in-d3 { animation-delay: 0.15s; }
+    .fade-in-d4 { animation-delay: 0.20s; }
+    .fade-in-d5 { animation-delay: 0.25s; }
+    .fade-in-d6 { animation-delay: 0.30s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-5 max-w-lg">
+
+    <!-- ── Back link ───────────────────────────────────────────────────────── -->
+    <div class="mb-4 flex items-center gap-2">
+        <a href="{% url 'portal:profile' %}"
+           class="flex items-center gap-1 text-sm text-gray-500 hover:text-orange-600 transition-colors font-medium">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Profile
+        </a>
+        <span class="text-gray-300">/</span>
+        <span class="text-sm text-gray-400">Reading Report</span>
+    </div>
+
+    <!-- ── Hero: Child name + level ────────────────────────────────────────── -->
+    <div class="intel-card-orange fade-in fade-in-d1 flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+            <span class="text-3xl">📖</span>
+        </div>
+        <div class="flex-1 min-w-0">
+            <h1 class="text-xl font-black text-gray-900 truncate">{{ child.name }}'s Reading Report</h1>
+            <p class="text-sm text-gray-500 mt-0.5">
+                {% if child.grade %}{{ child.get_grade_display }} · {% endif %}
+                {{ child.get_reading_difficulty_level_display|default:"Level not assessed yet" }}
+            </p>
+            <div class="flex flex-wrap gap-2 mt-2">
+                {% if child.reading_wpm %}
+                <span class="stat-pill">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+                    {{ child.reading_wpm }} WPM
+                </span>
+                {% endif %}
+                {% if child.reading_accuracy %}
+                <span class="stat-pill">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    {{ child.reading_accuracy|floatformat:0 }}% accuracy
+                </span>
+                {% endif %}
+                {% if vocab_mastered > 0 %}
+                <span class="stat-pill">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
+                    {{ vocab_mastered }} words mastered
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Ease-in Mode Alert ──────────────────────────────────────────────── -->
+    {% if frustration_mode %}
+    <div class="ease-in-banner fade-in fade-in-d1 flex items-start gap-3">
+        <div class="text-2xl flex-shrink-0">🌟</div>
+        <div>
+            <p class="font-bold text-amber-900 text-sm">Ease-in Mode Active</p>
+            <p class="text-amber-800 text-xs mt-1 leading-relaxed">
+                {{ child.name }} has found recent passages challenging. We're showing easier books
+                and passages to rebuild confidence. Keep reading daily — difficulty will step back up automatically!
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Reading Style ──────────────────────────────────────────────────── -->
+    {% if reading_style %}
+    <div class="intel-card fade-in fade-in-d2">
+        <p class="section-heading">Reading Style</p>
+        <div class="flex items-start gap-4">
+            <div class="flex-shrink-0">
+                {% if reading_style == 'GUESSR' %}
+                <div class="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-2xl">🧠</div>
+                {% else %}
+                <div class="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-2xl">🔍</div>
+                {% endif %}
+            </div>
+            <div class="flex-1 min-w-0">
+                {% if reading_style == 'GUESSR' %}
+                <span class="style-badge-guessr">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.995.68-1.985 1.325-2.81A7 7 0 1010.032 14H12z"/></svg>
+                    Meaning Guesser
+                </span>
+                <p class="text-sm text-gray-600 mt-2 leading-relaxed">
+                    {{ child.name }} uses context and meaning to guess words — a sign of strong comprehension instincts!
+                    Building phonics skills will improve accuracy further.
+                </p>
+                {% else %}
+                <span class="style-badge-decoder">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 3a1 1 0 012 0v5.5a.5.5 0 001 0V4a1 1 0 112 0v4.5a.5.5 0 001 0V6a1 1 0 112 0v5a7 7 0 11-14 0V9a1 1 0 012 0v2.5a.5.5 0 001 0V4a1 1 0 012 0v4.5a.5.5 0 001 0V3z" clip-rule="evenodd"/></svg>
+                    Sound Decoder
+                </span>
+                <p class="text-sm text-gray-600 mt-2 leading-relaxed">
+                    {{ child.name }} carefully sounds out words — excellent phonics awareness!
+                    With practice, sight-word recognition will speed up reading flow.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Phoneme Accuracy Ring ──────────────────────────────────────────── -->
+    {% if latest_phoneme_accuracy is not None %}
+    <div class="intel-card fade-in fade-in-d3">
+        <p class="section-heading">Phoneme Accuracy</p>
+        <div class="flex items-center gap-5">
+            <!-- Mini ring -->
+            <div class="flex-shrink-0 relative" style="width:72px;height:72px;">
+                <svg width="72" height="72" viewBox="0 0 72 72">
+                    <circle class="ring-track" cx="36" cy="36" r="30"/>
+                    <circle class="ring-fill" cx="36" cy="36" r="30"
+                        id="phoneme-ring"
+                        stroke-dashoffset="{{ latest_phoneme_accuracy|floatformat:0 }}"
+                        transform="rotate(-90 36 36)"/>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-sm font-black text-orange-600">{{ latest_phoneme_accuracy|floatformat:0 }}%</span>
+                </div>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-bold text-gray-900 text-base">
+                    {% if latest_phoneme_accuracy >= 90 %}Excellent phoneme accuracy!
+                    {% elif latest_phoneme_accuracy >= 75 %}Good phoneme recognition
+                    {% elif latest_phoneme_accuracy >= 60 %}Developing phoneme skills
+                    {% else %}Needs phoneme practice
+                    {% endif %}
+                </p>
+                <p class="text-sm text-gray-500 mt-0.5 leading-snug">
+                    How well {{ child.name }}'s spoken sounds matched the passage's phoneme patterns in the last session.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Phonetic Weaknesses ───────────────────────────────────────────── -->
+    {% if has_phonetic_data %}
+    <div class="intel-card fade-in fade-in-d3">
+        <p class="section-heading">Phonetic Patterns to Practise</p>
+        <div class="space-y-3">
+            {% for item in phonetic_weaknesses %}
+            <div class="flex items-center gap-3">
+                <span class="flex-shrink-0 w-14 text-right">
+                    <span class="inline-block bg-orange-50 border border-orange-200 text-orange-700 text-xs font-bold px-2 py-0.5 rounded-lg font-mono">
+                        /{{ item.phoneme }}/
+                    </span>
+                </span>
+                <div class="phoneme-bar-track">
+                    <div class="phoneme-bar-fill" style="width:{{ item.pct }}%;"></div>
+                </div>
+                <span class="flex-shrink-0 text-xs font-semibold text-gray-500 w-8 text-right">{{ item.count }}×</span>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="text-xs text-gray-400 mt-3 leading-snug">
+            Based on all reading sessions. Higher bar = more times this sound was missed.
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- ── Miscue Breakdown ──────────────────────────────────────────────── -->
+    {% if has_miscue_data %}
+    <div class="intel-card fade-in fade-in-d4">
+        <p class="section-heading">Error Pattern Analysis</p>
+        <div class="flex gap-3">
+            <!-- Nonsense -->
+            <div class="miscue-tile miscue-tile-nonsense">
+                <p class="text-2xl font-black text-red-600">{{ miscue_counts.nonsense }}</p>
+                <p class="text-xs font-bold text-red-700 mt-1">Phonics<br>Errors</p>
+                <p class="text-xs text-red-500 mt-1">{{ miscue_pcts.nonsense }}%</p>
+            </div>
+            <!-- Semantic -->
+            <div class="miscue-tile miscue-tile-semantic">
+                <p class="text-2xl font-black text-amber-600">{{ miscue_counts.semantic }}</p>
+                <p class="text-xs font-bold text-amber-700 mt-1">Context<br>Guesses</p>
+                <p class="text-xs text-amber-500 mt-1">{{ miscue_pcts.semantic }}%</p>
+            </div>
+            <!-- Visual -->
+            <div class="miscue-tile miscue-tile-visual">
+                <p class="text-2xl font-black text-blue-600">{{ miscue_counts.visual }}</p>
+                <p class="text-xs font-bold text-blue-700 mt-1">Look-alike<br>Words</p>
+                <p class="text-xs text-blue-500 mt-1">{{ miscue_pcts.visual }}%</p>
+            </div>
+        </div>
+        <div class="mt-4 space-y-1.5">
+            {% if miscue_counts.nonsense > miscue_counts.semantic and miscue_counts.nonsense > miscue_counts.visual %}
+            <p class="text-xs text-gray-600 bg-red-50 rounded-xl px-3 py-2 leading-relaxed">
+                <span class="font-bold text-red-700">Phonics support needed:</span>
+                {{ child.name }} often produces non-words when stuck. Daily phonics drills and letter-sound games will help.
+            </p>
+            {% elif miscue_counts.semantic >= miscue_counts.nonsense %}
+            <p class="text-xs text-gray-600 bg-amber-50 rounded-xl px-3 py-2 leading-relaxed">
+                <span class="font-bold text-amber-700">Great comprehension instinct:</span>
+                {{ child.name }} substitutes real words — this shows strong meaning-awareness. Encourage sounding out words letter by letter.
+            </p>
+            {% endif %}
+            {% if miscue_counts.visual > 0 %}
+            <p class="text-xs text-gray-600 bg-blue-50 rounded-xl px-3 py-2 leading-relaxed">
+                <span class="font-bold text-blue-700">Visual confusion detected:</span>
+                {{ child.name }} swaps look-alike words (e.g. "was/saw", "on/no"). Word-sorting card games can help.
+            </p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── WPM Trend Chart ───────────────────────────────────────────────── -->
+    {% if wpm_trend|length > 1 %}
+    <div class="intel-card fade-in fade-in-d5">
+        <p class="section-heading">Reading Speed Over Time</p>
+        <div class="wpm-chart-wrap">
+            <!-- Pure SVG bar chart — no JS library -->
+            <svg viewBox="0 0 {{ wpm_trend|length|add:wpm_trend|length }} 80"
+                 style="width:100%;min-width:{{ wpm_trend|length|add:"0" }}px;height:80px;display:block;"
+                 preserveAspectRatio="none">
+                {% for d in wpm_trend %}
+                <!-- Bar -->
+                <rect
+                    x="{{ forloop.counter0 }}0"
+                    y="{{ 80|add:"-"|add:d.pct|floatformat:0 }}"
+                    width="8"
+                    height="{{ d.pct|floatformat:0 }}"
+                    rx="3"
+                    fill="{% if forloop.last %}#ffa500{% else %}#fed7aa{% endif %}"
+                />
+                {% endfor %}
+            </svg>
+            <!-- Labels row -->
+            <div class="flex justify-between mt-1">
+                {% for d in wpm_trend %}
+                <div class="flex flex-col items-center" style="flex:1;min-width:0;">
+                    <span class="text-xs font-bold text-gray-700">{{ d.wpm }}</span>
+                    <span class="text-[10px] text-gray-400 truncate w-full text-center">{{ d.date }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="mt-3 flex items-center gap-2">
+            <div class="w-3 h-3 rounded-sm bg-orange-400 flex-shrink-0"></div>
+            <span class="text-xs text-gray-500">Words per minute (WPM) — latest session highlighted</span>
+        </div>
+        <!-- Grade benchmark reference -->
+        <div class="mt-2 p-3 bg-gray-50 rounded-xl">
+            <p class="text-xs text-gray-500">
+                Grade benchmark for {{ child.get_grade_display|default:"this grade" }}:
+                <span class="font-semibold text-gray-700">{{ benchmark.min }}–{{ benchmark.max }} WPM</span>
+                &nbsp;·&nbsp; Target: <span class="font-semibold text-orange-600">{{ benchmark.avg }} WPM</span>
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Recent Assessments list ──────────────────────────────────────── -->
+    {% if recent_assessments %}
+    <div class="intel-card fade-in fade-in-d6">
+        <p class="section-heading">Session History</p>
+        <div class="space-y-2">
+            {% for assessment in recent_assessments reversed %}
+            <div class="flex items-center gap-3 py-2 {% if not forloop.last %}border-b border-gray-50{% endif %}">
+                <!-- WPM circle -->
+                <div class="w-11 h-11 rounded-xl flex-shrink-0 flex flex-col items-center justify-center
+                    {% if assessment.level == 'ADVANCED' %}bg-green-50{% elif assessment.level == 'INTERMEDIATE' %}bg-orange-50{% else %}bg-red-50{% endif %}">
+                    <span class="text-sm font-black
+                        {% if assessment.level == 'ADVANCED' %}text-green-700{% elif assessment.level == 'INTERMEDIATE' %}text-orange-700{% else %}text-red-700{% endif %}">
+                        {{ assessment.wpm }}
+                    </span>
+                    <span class="text-[9px] font-semibold text-gray-400 uppercase tracking-wide">wpm</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-sm font-semibold text-gray-800">{{ assessment.accuracy|floatformat:0 }}% accuracy</span>
+                        {% if assessment.phoneme_accuracy %}
+                        <span class="text-xs bg-orange-50 text-orange-600 border border-orange-200 rounded-full px-2 py-0.5 font-semibold">
+                            {{ assessment.phoneme_accuracy|floatformat:0 }}% phoneme
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-xs text-gray-400">{{ assessment.assessed_at|date:"d M Y, g:i A" }}</span>
+                        <span class="text-xs font-medium
+                            {% if assessment.level == 'ADVANCED' %}text-green-600{% elif assessment.level == 'INTERMEDIATE' %}text-orange-600{% else %}text-red-600{% endif %}">
+                            {{ assessment.get_level_display }}
+                        </span>
+                    </div>
+                    {% if assessment.miscue_data %}
+                    <div class="flex gap-1.5 mt-1">
+                        {% if assessment.miscue_data.nonsense > 0 %}
+                        <span class="text-[10px] bg-red-50 text-red-600 rounded px-1.5 py-0.5">{{ assessment.miscue_data.nonsense }} phonics</span>
+                        {% endif %}
+                        {% if assessment.miscue_data.semantic > 0 %}
+                        <span class="text-[10px] bg-amber-50 text-amber-600 rounded px-1.5 py-0.5">{{ assessment.miscue_data.semantic }} guesses</span>
+                        {% endif %}
+                        {% if assessment.miscue_data.visual > 0 %}
+                        <span class="text-[10px] bg-blue-50 text-blue-600 rounded px-1.5 py-0.5">{{ assessment.miscue_data.visual }} visual</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── No data yet state ────────────────────────────────────────────── -->
+    {% if not recent_assessments %}
+    <div class="intel-card text-center py-10 fade-in fade-in-d2">
+        <div class="text-5xl mb-4">📝</div>
+        <p class="font-bold text-gray-800 text-lg">No assessments yet</p>
+        <p class="text-sm text-gray-500 mt-2 leading-relaxed max-w-xs mx-auto">
+            Complete a fluency check for {{ child.name }} to see their reading intelligence report here.
+        </p>
+        <a href="{% url 'portal:fluency_check' child.id %}"
+           class="mt-6 inline-flex items-center gap-2 bg-orange-500 text-white font-bold text-sm px-6 py-3 rounded-2xl shadow-sm hover:bg-orange-600 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Start Fluency Check
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- ── Action buttons ────────────────────────────────────────────────── -->
+    {% if recent_assessments %}
+    <div class="mt-2 mb-6 space-y-3 fade-in fade-in-d6">
+        <a href="{% url 'portal:fluency_check' child.id %}"
+           class="flex items-center justify-center gap-2 bg-orange-500 text-white font-bold text-sm py-4 px-6 rounded-2xl shadow-sm hover:bg-orange-600 transition-colors w-full">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Take Another Fluency Check
+        </a>
+        <a href="{% url 'portal:curated_box' child.id %}"
+           class="flex items-center justify-center gap-2 bg-white border border-orange-200 text-orange-600 font-bold text-sm py-3.5 px-6 rounded-2xl hover:bg-orange-50 transition-colors w-full">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+            </svg>
+            View Curated Book Box
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    // Animate phoneme ring: stroke-dashoffset from 188 (empty) to calculated fill
+    document.addEventListener('DOMContentLoaded', () => {
+        const ring = document.getElementById('phoneme-ring');
+        if (ring) {
+            const accuracy = parseFloat(ring.getAttribute('stroke-dashoffset')) || 0;
+            // dashoffset 0 = full circle, 188 = empty circle
+            const offset = 188 - (accuracy / 100 * 188);
+            requestAnimationFrame(() => {
+                ring.style.strokeDashoffset = offset;
+            });
+        }
+    });
+</script>
+{% endblock %}
