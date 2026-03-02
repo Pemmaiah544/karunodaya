@@ -99,6 +99,40 @@ class Child(models.Model):
     reading_accuracy = models.FloatField(blank=True, null=True, help_text="Accuracy percentage from fluency check")
     reading_strengths = models.TextField(blank=True, null=True, help_text="Strengths identified in reading")
     reading_gaps = models.TextField(blank=True, null=True, help_text="Areas for improvement identified in reading")
+
+    # ── Assessment Intelligence Fields ────────────────────────────────
+    READING_STYLE_CHOICES = [
+        ('GUESSR', 'Guesser – meaning-driven reading'),
+        ('DECODER', 'Decoder – phonics-driven, slow reading'),
+    ]
+    phonetic_weaknesses = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='Accumulated phoneme error counts e.g. {"th": 5, "sh": 2}'
+    )
+    reading_style = models.CharField(
+        max_length=10,
+        choices=READING_STYLE_CHOICES,
+        blank=True,
+        null=True,
+        help_text='Dominant reading strategy detected from miscue analysis'
+    )
+    frustration_mode = models.BooleanField(
+        default=False,
+        help_text='True when child scored below 85% accuracy on 2 consecutive pages'
+    )
+    consecutive_low_accuracy_pages = models.IntegerField(
+        default=0,
+        help_text='Counter for consecutive pages below 85% accuracy threshold'
+    )
+    vocabulary_bank = models.ManyToManyField(
+        'VocabularyWord',
+        blank=True,
+        related_name='children',
+        help_text='Words the child has demonstrated mastery of'
+    )
+    # ─────────────────────────────────────────────────────────────────
+
     is_active = models.BooleanField(default=True, help_text="Whether this child's profile is currently active")
     has_tried_other_languages = models.BooleanField(default=False, help_text="Whether the child has tried or dismissed the multilingual banner")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -121,6 +155,37 @@ class Child(models.Model):
             if self.parent.children.count() >= 5:
                 raise ValueError("A parent can have a maximum of 5 children.")
         super().save(*args, **kwargs)
+
+
+class VocabularyWord(models.Model):
+    """
+    Individual words a child has demonstrated mastery of during reading assessments.
+    Used for tracking vocabulary growth over time.
+    """
+    LANGUAGE_CHOICES = [
+        ('EN', 'English'),
+        ('HI', 'Hindi'),
+        ('KN', 'Kannada'),
+    ]
+    word = models.CharField(max_length=100)
+    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES, default='EN')
+    difficulty = models.CharField(
+        max_length=20,
+        choices=Child.DIFFICULTY_LEVEL_CHOICES,
+        blank=True,
+        null=True,
+        help_text='Approximate difficulty level of this word'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Vocabulary Word"
+        verbose_name_plural = "Vocabulary Words"
+        ordering = ['word']
+        unique_together = [('word', 'language')]
+
+    def __str__(self):
+        return f"{self.word} ({self.language})"
 
 
 class ChildProfileExtra(models.Model):
@@ -442,6 +507,23 @@ class ReadingAssessment(models.Model):
         validators=[MinValueValidator(-100), MaxValueValidator(100)],
         help_text="% change in WPM compared to previous assessment"
     )
+
+    # ── Assessment Intelligence Fields ────────────────────────────────
+    miscue_data = models.JSONField(
+        null=True, blank=True,
+        help_text='Miscue error breakdown e.g. {"nonsense": 3, "semantic": 5, "visual": 2}'
+    )
+    decoding_latency_data = models.JSONField(
+        null=True, blank=True,
+        help_text='Inter-word pause durations e.g. [{"word": "cat", "pause_before": 2.1}]'
+    )
+    phoneme_accuracy = models.FloatField(
+        null=True, blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text='Phoneme-level match rate (0–100%)'
+    )
+    # ─────────────────────────────────────────────────────────────────
+
     assessed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
