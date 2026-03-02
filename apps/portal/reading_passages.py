@@ -1,5 +1,170 @@
 import random
 
+# ── Adaptive Word Assessment Lists ────────────────────────────────────────────
+# Used in the pre-passage word-check phase of the fluency check.
+# Structure per entry: {word, emoji, syllables, hint}
+# Three tiers per grade: 'easy', 'medium', 'hard'
+# If child accuracy < 70 % on 'medium', we drop to 'easy' and show images.
+WORD_ASSESSMENT_LISTS = {
+    'PRE_K': {
+        'easy': [
+            {'word': 'cat',  'emoji': '🐱', 'hint': 'it purrs'},
+            {'word': 'dog',  'emoji': '🐶', 'hint': 'it barks'},
+            {'word': 'sun',  'emoji': '☀️',  'hint': 'it shines'},
+            {'word': 'cup',  'emoji': '☕',  'hint': 'we drink from it'},
+            {'word': 'bus',  'emoji': '🚌', 'hint': 'it has wheels'},
+        ],
+        'medium': [
+            {'word': 'red',  'emoji': '🔴', 'hint': 'a colour'},
+            {'word': 'big',  'emoji': '🐘', 'hint': 'not small'},
+            {'word': 'run',  'emoji': '🏃', 'hint': 'move fast'},
+            {'word': 'eat',  'emoji': '🍎', 'hint': 'what we do with food'},
+            {'word': 'hat',  'emoji': '🎩', 'hint': 'worn on head'},
+        ],
+        'hard': [
+            {'word': 'kite',  'emoji': '🪁', 'hint': 'flies in wind'},
+            {'word': 'frog',  'emoji': '🐸', 'hint': 'it jumps'},
+            {'word': 'boat',  'emoji': '⛵', 'hint': 'sails on water'},
+            {'word': 'milk',  'emoji': '🥛', 'hint': 'white drink'},
+            {'word': 'nest',  'emoji': '🐦', 'hint': 'bird lives here'},
+        ],
+    },
+    'KINDERGARTEN': {
+        'easy': [
+            {'word': 'fish',  'emoji': '🐟',  'hint': 'swims in water'},
+            {'word': 'rain',  'emoji': '🌧️',  'hint': 'falls from clouds'},
+            {'word': 'ball',  'emoji': '⚽',   'hint': 'we play with it'},
+            {'word': 'star',  'emoji': '⭐',   'hint': 'shines at night'},
+            {'word': 'tree',  'emoji': '🌳',   'hint': 'has leaves'},
+        ],
+        'medium': [
+            {'word': 'happy', 'emoji': '😊',  'hint': 'when you smile'},
+            {'word': 'jump',  'emoji': '🦘',  'hint': 'leap up'},
+            {'word': 'play',  'emoji': '🎮',  'hint': 'have fun'},
+            {'word': 'frog',  'emoji': '🐸',  'hint': 'green and jumpy'},
+            {'word': 'drum',  'emoji': '🥁',  'hint': 'you beat it'},
+        ],
+        'hard': [
+            {'word': 'brave',  'emoji': '🦁', 'hint': 'not afraid'},
+            {'word': 'green',  'emoji': '🌿', 'hint': 'colour of grass'},
+            {'word': 'smile',  'emoji': '😁', 'hint': 'happy face'},
+            {'word': 'cloud',  'emoji': '☁️',  'hint': 'in the sky'},
+            {'word': 'fruit',  'emoji': '🍇', 'hint': 'sweet and healthy'},
+        ],
+    },
+    'GRADE_1': {
+        'easy': [
+            {'word': 'jump',   'emoji': '🤸', 'hint': 'leap up high'},
+            {'word': 'book',   'emoji': '📖', 'hint': 'we read it'},
+            {'word': 'cake',   'emoji': '🎂', 'hint': 'birthday treat'},
+            {'word': 'lamp',   'emoji': '💡', 'hint': 'gives light'},
+            {'word': 'hand',   'emoji': '✋', 'hint': 'end of arm'},
+        ],
+        'medium': [
+            {'word': 'sleep',  'emoji': '😴', 'hint': 'close your eyes'},
+            {'word': 'river',  'emoji': '🏞️', 'hint': 'flowing water'},
+            {'word': 'stone',  'emoji': '🪨', 'hint': 'hard and heavy'},
+            {'word': 'bread',  'emoji': '🍞', 'hint': 'we eat it'},
+            {'word': 'bring',  'emoji': '🎁', 'hint': 'carry to someone'},
+        ],
+        'hard': [
+            {'word': 'forest',  'emoji': '🌲', 'hint': 'many trees'},
+            {'word': 'little',  'emoji': '🐜', 'hint': 'very small'},
+            {'word': 'butter',  'emoji': '🧈', 'hint': 'yellow and creamy'},
+            {'word': 'dinner',  'emoji': '🍽️', 'hint': 'evening meal'},
+            {'word': 'finger',  'emoji': '👆', 'hint': 'part of hand'},
+        ],
+    },
+    'GRADE_2': {
+        'easy': [
+            {'word': 'pond',    'emoji': '🦆', 'hint': 'small lake'},
+            {'word': 'chest',   'emoji': '📦', 'hint': 'box for things'},
+            {'word': 'dress',   'emoji': '👗', 'hint': 'clothing'},
+            {'word': 'bench',   'emoji': '🪑', 'hint': 'seat'},
+            {'word': 'flame',   'emoji': '🔥', 'hint': 'from fire'},
+        ],
+        'medium': [
+            {'word': 'purple',  'emoji': '💜', 'hint': 'a colour'},
+            {'word': 'spider',  'emoji': '🕷️', 'hint': 'eight legs'},
+            {'word': 'castle',  'emoji': '🏰', 'hint': 'a big fort'},
+            {'word': 'frozen',  'emoji': '🧊', 'hint': 'very cold'},
+            {'word': 'shovel',  'emoji': '⛏️',  'hint': 'for digging'},
+        ],
+        'hard': [
+            {'word': 'library',  'emoji': '📚', 'hint': 'many books'},
+            {'word': 'thunder',  'emoji': '⛈️',  'hint': 'loud storm sound'},
+            {'word': 'blanket',  'emoji': '🛏️',  'hint': 'keeps you warm'},
+            {'word': 'journey',  'emoji': '🗺️',  'hint': 'a long trip'},
+            {'word': 'discover', 'emoji': '🔭', 'hint': 'find something new'},
+        ],
+    },
+    'GRADE_3': {
+        'easy': [
+            {'word': 'brave',    'emoji': '🦸', 'hint': 'not afraid'},
+            {'word': 'signal',   'emoji': '🚦', 'hint': 'traffic light'},
+            {'word': 'market',   'emoji': '🛒', 'hint': 'place to buy things'},
+            {'word': 'planet',   'emoji': '🪐', 'hint': 'world in space'},
+            {'word': 'frozen',   'emoji': '🧊', 'hint': 'turned to ice'},
+        ],
+        'medium': [
+            {'word': 'mystery',  'emoji': '🔍', 'hint': 'unsolved puzzle'},
+            {'word': 'harvest',  'emoji': '🌾', 'hint': 'gathering crops'},
+            {'word': 'grateful', 'emoji': '🙏', 'hint': 'thankful'},
+            {'word': 'ancient',  'emoji': '🏛️',  'hint': 'very old'},
+            {'word': 'courage',  'emoji': '💪', 'hint': 'being brave'},
+        ],
+        'hard': [
+            {'word': 'adventure', 'emoji': '🗺️', 'hint': 'exciting journey'},
+            {'word': 'telescope', 'emoji': '🔭', 'hint': 'see far stars'},
+            {'word': 'community', 'emoji': '🏘️', 'hint': 'group of people'},
+            {'word': 'disappear', 'emoji': '🌫️', 'hint': 'vanish away'},
+            {'word': 'celebrate', 'emoji': '🎉', 'hint': 'have a party'},
+        ],
+    },
+    'GRADE_4': {
+        'easy': [
+            {'word': 'triumph',   'emoji': '🏆', 'hint': 'big win'},
+            {'word': 'migrate',   'emoji': '🦅', 'hint': 'move far away'},
+            {'word': 'volcano',   'emoji': '🌋', 'hint': 'erupts with lava'},
+            {'word': 'dolphin',   'emoji': '🐬', 'hint': 'smart sea animal'},
+            {'word': 'compass',   'emoji': '🧭', 'hint': 'shows direction'},
+        ],
+        'medium': [
+            {'word': 'atmosphere',  'emoji': '🌍', 'hint': 'air around earth'},
+            {'word': 'expedition',  'emoji': '🏔️',  'hint': 'exploration trip'},
+            {'word': 'microscope',  'emoji': '🔬', 'hint': 'see tiny things'},
+            {'word': 'phenomenon',  'emoji': '⭐',  'hint': 'unusual event'},
+            {'word': 'transparent', 'emoji': '🪟', 'hint': 'see through it'},
+        ],
+        'hard': [
+            {'word': 'responsibility', 'emoji': '⚖️',  'hint': 'duty and care'},
+            {'word': 'extraordinary',  'emoji': '✨',  'hint': 'beyond ordinary'},
+            {'word': 'environmental',  'emoji': '🌿',  'hint': 'about nature'},
+            {'word': 'communication',  'emoji': '📡',  'hint': 'sharing messages'},
+            {'word': 'approximately',  'emoji': '≈',   'hint': 'nearly, about'},
+        ],
+    },
+}
+
+# Grades that share a word list with a nearby grade
+_WORD_GRADE_FALLBACK = {
+    'GRADE_5': 'GRADE_4', 'GRADE_6': 'GRADE_4',
+    'GRADE_7': 'GRADE_4', 'GRADE_8': 'GRADE_4',
+}
+
+
+def get_word_list_for_grade(grade, tier='medium'):
+    """
+    Return 5 word dicts for the adaptive word-check phase.
+    tier: 'easy' | 'medium' | 'hard'
+    """
+    target_grade = grade
+    if target_grade not in WORD_ASSESSMENT_LISTS:
+        target_grade = _WORD_GRADE_FALLBACK.get(target_grade, 'GRADE_3')
+    words = WORD_ASSESSMENT_LISTS[target_grade].get(tier, WORD_ASSESSMENT_LISTS[target_grade]['medium'])
+    return list(words)   # return a copy
+
+
 READING_PASSAGES = {
     'EN': {
         'PRE_K': [

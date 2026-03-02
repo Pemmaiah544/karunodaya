@@ -498,8 +498,118 @@
         </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════
+         STEP 0 — Adaptive Word-Check (NEW, pre-passage)
+         Shows 5 words one-by-one via Web Speech API.
+         On struggling (<70%), drops to easy tier with emoji.
+         On pass, reveals existing Step 1 (mic / passage).
+    ═══════════════════════════════════════════════════════ -->
+    <div id="step-0" class="space-y-6">
+        <!-- Header -->
+        <div class="buddy-message flex items-center gap-4">
+            <div class="w-16 h-16 flex-shrink-0">
+                <img src="{% static 'images/reading_buddy.png' %}" alt="Reading Buddy"
+                    class="w-full h-full object-contain">
+            </div>
+            <div>
+                <h3 class="font-bold text-gray-900">Quick Word Warm-Up, {{ child.name }}! 🌟</h3>
+                <p class="text-sm text-gray-600" id="wc-subtitle">Say each word out loud when it appears.</p>
+            </div>
+        </div>
+
+        <!-- Progress dots -->
+        <div class="flex justify-center gap-2" id="wc-dots">
+            <span class="wc-dot w-3 h-3 rounded-full bg-gray-200 transition-all duration-300"></span>
+            <span class="wc-dot w-3 h-3 rounded-full bg-gray-200 transition-all duration-300"></span>
+            <span class="wc-dot w-3 h-3 rounded-full bg-gray-200 transition-all duration-300"></span>
+            <span class="wc-dot w-3 h-3 rounded-full bg-gray-200 transition-all duration-300"></span>
+            <span class="wc-dot w-3 h-3 rounded-full bg-gray-200 transition-all duration-300"></span>
+        </div>
+
+        <!-- Word card -->
+        <div id="wc-card"
+            class="reading-card p-8 text-center flex flex-col items-center justify-center gap-4 min-h-[220px] relative overflow-hidden">
+            <!-- Emoji (hidden until easy tier) -->
+            <div id="wc-emoji" class="text-7xl hidden transition-all duration-500"></div>
+            <!-- Hint (hidden until easy tier) -->
+            <p id="wc-hint" class="text-xs text-orange-500 font-bold uppercase tracking-wider hidden"></p>
+            <!-- The word -->
+            <div id="wc-word" class="text-6xl font-black text-gray-900 tracking-wide transition-all duration-300"></div>
+            <!-- Mic indicator + countdown -->
+            <div id="wc-listening" class="hidden flex flex-col items-center gap-2 mt-2">
+                <div class="wave-container">
+                    <div class="wave-bar active"></div>
+                    <div class="wave-bar active"></div>
+                    <div class="wave-bar active"></div>
+                    <div class="wave-bar active"></div>
+                    <div class="wave-bar active"></div>
+                </div>
+                <p class="text-xs text-orange-500 font-bold">
+                    🎙️ Recording… <span id="wc-countdown">10</span>s
+                </p>
+                <p class="text-[10px] text-gray-400">You can spell it out slowly — take your time!</p>
+            </div>
+            <!-- Result badge -->
+            <div id="wc-badge" class="hidden text-3xl"></div>
+        </div>
+
+        <!-- Score bar -->
+        <div class="flex items-center gap-3">
+            <span class="text-xs font-bold text-gray-400 w-12">Score</span>
+            <div class="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                <div id="wc-score-bar" class="h-full bg-orange-400 rounded-full transition-all duration-500"
+                    style="width:0%"></div>
+            </div>
+            <span id="wc-score-txt" class="text-xs font-bold text-gray-700 w-10 text-right">0/0</span>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="flex gap-3">
+            <button id="wc-start-btn"
+                class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-full shadow-lg transition-transform active:scale-95">
+                🎤 Start Word Check
+            </button>
+            <!-- Two-button row: Done Speaking + Skip Word -->
+            <button id="wc-done-btn"
+                class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-full shadow-lg transition-transform active:scale-95 hidden">
+                ✓ Done Speaking
+            </button>
+            <button id="wc-skip-word-btn"
+                class="bg-white border-2 border-gray-200 text-gray-400 font-bold py-4 px-5 rounded-full hover:bg-gray-50 transition-colors text-sm hidden">
+                Skip ⟩
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Word-Phase Transition Screen ──────────────────────────────────── -->
+    <div id="wc-transition" class="hidden space-y-6 text-center animate-fade-in">
+        <div class="w-20 h-20 mx-auto flex items-center justify-center text-5xl">🎯</div>
+        <h2 class="text-2xl font-black text-gray-900">Warm-Up Complete!</h2>
+        <p id="wc-trans-score" class="text-lg font-bold text-orange-600"></p>
+        <div class="buddy-message text-left">
+            <p class="text-sm text-gray-700 leading-relaxed">
+                💡 <strong>Now let's move to the next phase</strong> — we'll listen to
+                {{ child.name }} read a short story. This will give us a much clearer picture
+                of reading fluency and help us personalise the journey.
+            </p>
+        </div>
+        <div class="reading-card p-5 flex items-center gap-4 bg-orange-50/60">
+            <div class="text-4xl">📖</div>
+            <div class="text-left">
+                <p class="font-bold text-gray-900">Story Reading</p>
+                <p class="text-xs text-gray-500">Read a short passage aloud — we'll track fluency &amp; accuracy in
+                    real-time.</p>
+            </div>
+        </div>
+        <button id="wc-letgo-btn"
+            class="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-full shadow-xl shadow-orange-200 transition-transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+            <span>Let's Go! 🚀</span>
+        </button>
+    </div>
+
     <!-- Step 1: Ready / Microphone Access -->
-    <div id="step-1" class="space-y-6">
+    <div id="step-1" class="space-y-6 hidden">
+
         <div class="buddy-message flex items-center gap-4">
             <div class="w-16 h-16 flex-shrink-0">
                 <img src="{% static 'images/reading_buddy.png' %}" alt="Reading Buddy"
@@ -782,8 +892,322 @@
      * Fluency Check — Reading Assessment Module
      * Handles audio recording, server-side analysis, and performance display.
      */
+
+    /* ================================================================
+     *  STEP 0 — ADAPTIVE WORD-CHECK MODULE
+     *  Uses MediaRecorder + AI4Bharat / Whisper backend for accuracy.
+     *  Records 10 s per word — child can spell slowly (r-eee-ddd).
+     *  Smart matching: direct word | letter spelling | phonetic names.
+     * ================================================================ */
     (function () {
         'use strict';
+
+        // ── Word lists from Django ─────────────────────────────────────
+        var WC_MEDIUM = JSON.parse('{{ word_assessment_medium|escapejs }}');
+        var WC_EASY = JSON.parse('{{ word_assessment_easy|escapejs }}');
+        var WC_PHASES = [WC_MEDIUM, WC_EASY];
+
+        // ── State ──────────────────────────────────────────────────────
+        var wcPhase = 0;
+        var wcIndex = 0;
+        var wcCorrect = 0;
+        var wcTotal = 0;
+        var wcStarted = false;
+        var wcResultShown = false;
+        var wcMediaRec = null;
+        var wcChunks = [];
+        var wcCountdownId = null;
+        var wcSecsLeft = 10;
+        var wcWordAnalyzeUrl = '';
+        var wcLang = 'EN';
+        var wcCsrf = '';
+
+        // ── DOM ────────────────────────────────────────────────────────
+        var elStep0 = document.getElementById('step-0');
+        var elTransition = document.getElementById('wc-transition');
+        var elStep1 = document.getElementById('step-1');
+        var elWord = document.getElementById('wc-word');
+        var elEmoji = document.getElementById('wc-emoji');
+        var elHint = document.getElementById('wc-hint');
+        var elListenUI = document.getElementById('wc-listening');
+        var elCountdown = document.getElementById('wc-countdown');
+        var elBadge = document.getElementById('wc-badge');
+        var elScoreBar = document.getElementById('wc-score-bar');
+        var elScoreTxt = document.getElementById('wc-score-txt');
+        var elDots = document.querySelectorAll('.wc-dot');
+        var elSubtitle = document.getElementById('wc-subtitle');
+        var elStartBtn = document.getElementById('wc-start-btn');
+        var elNextBtn = document.getElementById('wc-next-btn');
+        var elTransScore = document.getElementById('wc-trans-score');
+        var elLetGoBtn = document.getElementById('wc-letgo-btn');
+        var elProgress = document.getElementById('step-progress');
+        var elStepTitle = document.getElementById('step-title');
+
+        // ── Smart matching ─────────────────────────────────────────────
+        var LETTER_NAMES = {
+            'ay': 'a', 'bee': 'b', 'see': 'c', 'cee': 'c', 'dee': 'd',
+            'ee': 'e', 'eee': 'e', 'eff': 'f', 'ef': 'f', 'gee': 'g', 'jee': 'g',
+            'aitch': 'h', 'itch': 'h', 'eye': 'i', 'aye': 'i', 'jay': 'j',
+            'kay': 'k', 'el': 'l', 'ell': 'l', 'em': 'm', 'en': 'n',
+            'oh': 'o', 'ow': 'o', 'pee': 'p', 'cue': 'q', 'queue': 'q',
+            'arr': 'r', 'ar': 'r', 'ess': 's', 'es': 's', 'tee': 't',
+            'you': 'u', 'yoo': 'u', 'vee': 'v', 'ex': 'x', 'why': 'y', 'wai': 'y',
+            'zee': 'z', 'zed': 'z'
+        };
+
+        function norm(s) { return s.toLowerCase().replace(/[^a-z]/g, ''); }
+
+        function lev(a, b) {
+            if (a === b) return 0;
+            var m = a.length, n = b.length, row = [], i, j;
+            if (!m) return n; if (!n) return m;
+            for (j = 0; j <= n; j++) row[j] = j;
+            for (i = 1; i <= m; i++) {
+                var prev = i;
+                for (j = 1; j <= n; j++) {
+                    var val = a[i - 1] === b[j - 1] ? row[j - 1] : 1 + Math.min(row[j], prev, row[j - 1]);
+                    row[j - 1] = prev; prev = val;
+                }
+                row[n] = prev;
+            }
+            return row[n];
+        }
+
+        function wcMatch(targetWord, transcript) {
+            var target = norm(targetWord);
+            var text = transcript.toLowerCase();
+            var tokens = text.split(/\s+/);
+
+            // 1. Direct word / edit-distance match
+            for (var t = 0; t < tokens.length; t++) {
+                var tok = norm(tokens[t]);
+                if (!tok) continue;
+                if (tok === target) return true;
+                if (Math.abs(tok.length - target.length) <= 2) {
+                    var allowed = target.length <= 4 ? 1 : 2;
+                    if (lev(tok, target) <= allowed) return true;
+                }
+            }
+
+            // 2. Letter-by-letter: "r e d" → single-char tokens strung together
+            var singles = tokens.filter(function (s) { return norm(s).length === 1; });
+            if (singles.length === target.length) {
+                if (singles.map(norm).join('') === target) return true;
+            }
+
+            // 3. Phonetic letter names: "arr ee dee" → r,e,d → "red"
+            var ph = '';
+            for (var p = 0; p < tokens.length; p++) {
+                var tk = tokens[p].replace(/[^a-z]/gi, '').toLowerCase();
+                var letter = LETTER_NAMES[tk] || (tk.length === 1 ? tk : null);
+                if (letter) { ph += letter; } else { ph = ''; }
+            }
+            if (ph && ph === target) return true;
+
+            // 4. Strip all spaces and see if target is contained
+            if (norm(text).indexOf(target) !== -1) return true;
+            return false;
+        }
+
+        // ── UI ─────────────────────────────────────────────────────────
+        function updateScore() {
+            var pct = wcTotal > 0 ? Math.round((wcCorrect / wcTotal) * 100) : 0;
+            elScoreBar.style.width = pct + '%';
+            elScoreBar.style.background = pct >= 70 ? '#10b981' : '#f97316';
+            elScoreTxt.textContent = wcCorrect + '/' + wcTotal;
+        }
+        function updateDot(idx, state) {
+            var d = elDots[idx]; if (!d) return;
+            var m = { correct: 'bg-green-500', wrong: 'bg-red-400', active: 'bg-orange-500 ring-2 ring-orange-300' };
+            d.className = 'wc-dot w-3 h-3 rounded-full transition-all duration-300 ' + (m[state] || 'bg-gray-200');
+        }
+        function showWordCard(entry, isEasy) {
+            wcResultShown = false;
+            elBadge.classList.add('hidden'); elBadge.textContent = '';
+            elListenUI.classList.add('hidden');
+            elWord.textContent = entry.word;
+            elWord.className = 'text-6xl font-black text-gray-900 tracking-wide transition-all duration-300';
+            elNextBtn.classList.remove('hidden');
+            if (isEasy) {
+                elEmoji.textContent = entry.emoji; elEmoji.classList.remove('hidden');
+                elHint.textContent = '💡 ' + entry.hint; elHint.classList.remove('hidden');
+            } else {
+                elEmoji.classList.add('hidden'); elHint.classList.add('hidden');
+            }
+        }
+        function showResult(correct) {
+            if (wcResultShown) return;
+            wcResultShown = true; stopRec();
+            elListenUI.classList.add('hidden'); elNextBtn.classList.add('hidden');
+            elBadge.textContent = correct ? '✅' : '❌'; elBadge.classList.remove('hidden');
+            elWord.className = correct
+                ? 'text-6xl font-black text-green-600 tracking-wide transition-all duration-300'
+                : 'text-6xl font-black text-red-500 tracking-wide transition-all duration-300';
+            updateDot(wcIndex, correct ? 'correct' : 'wrong');
+            wcTotal++; if (correct) wcCorrect++; updateScore();
+            setTimeout(advanceWord, 1500);
+        }
+        function advanceWord() {
+            wcIndex++;
+            if (wcIndex >= WC_PHASES[wcPhase].length) {
+                wcPhase++; wcIndex = 0; wcCorrect = 0; wcTotal = 0;
+                elDots.forEach(function (d) { d.className = 'wc-dot w-3 h-3 rounded-full bg-gray-200 transition-all duration-300'; });
+                if (wcPhase >= WC_PHASES.length) { showTransition(); return; }
+                elSubtitle.textContent = "Now let's try shorter words with hints! 🌟";
+                elSubtitle.style.color = '#f97316';
+                elScoreBar.style.width = '0%'; elScoreTxt.textContent = '0/0';
+            }
+            listenFor(WC_PHASES[wcPhase][wcIndex], wcPhase > 0);
+        }
+        function showTransition() {
+            elStep0.classList.add('hidden');
+            elTransScore.textContent = '🎉 You completed the warm-up!';
+            elTransition.classList.remove('hidden');
+            elProgress.style.width = '18%';
+            elStepTitle.textContent = 'Ready for Story Reading';
+        }
+        function goToPassage() {
+            elTransition.classList.add('hidden');
+            elStep1.classList.remove('hidden');
+            elProgress.style.width = '25%';
+            elStepTitle.textContent = 'Step 1 of 4: Voice Check';
+        }
+
+        // ── Recording ──────────────────────────────────────────────────
+        function stopRec() {
+            if (wcCountdownId) { clearInterval(wcCountdownId); wcCountdownId = null; }
+            if (wcMediaRec && wcMediaRec.state !== 'inactive') { try { wcMediaRec.stop(); } catch (e) { } }
+        }
+        function startCountdown() {
+            wcSecsLeft = 10; elCountdown.textContent = wcSecsLeft;
+            wcCountdownId = setInterval(function () {
+                wcSecsLeft--;
+                elCountdown.textContent = wcSecsLeft;
+                if (wcSecsLeft <= 0) {
+                    clearInterval(wcCountdownId); wcCountdownId = null;
+                    if (!wcResultShown && wcMediaRec && wcMediaRec.state === 'recording') wcMediaRec.stop();
+                }
+            }, 1000);
+        }
+        function listenFor(entry, isEasy) {
+            showWordCard(entry, isEasy); updateDot(wcIndex, 'active');
+            setTimeout(function () { elListenUI.classList.remove('hidden'); startRec(entry); }, 500);
+        }
+        function startRec(entry) {
+            wcChunks = [];
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function (stream) {
+                    if (wcResultShown) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+                    var mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+                    wcMediaRec = new MediaRecorder(stream, { mimeType: mime });
+                    wcChunks = [];
+                    wcMediaRec.ondataavailable = function (e) { if (e.data && e.data.size > 0) wcChunks.push(e.data); };
+                    wcMediaRec.onstop = function () {
+                        stream.getTracks().forEach(function (t) { t.stop(); });
+                        if (wcResultShown || !wcChunks.length) { if (!wcResultShown) showResult(false); return; }
+                        var blob = new Blob(wcChunks, { type: mime });
+                        sendAudio(blob, mime, entry);
+                    };
+                    wcMediaRec.start(500); startCountdown();
+                })
+                .catch(function () { goToPassage(); });
+        }
+        function sendAudio(blob, mime, entry) {
+            var ext = mime.indexOf('ogg') !== -1 ? 'ogg' : mime.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
+            var form = new FormData();
+            form.append('audio', blob, 'word.' + ext);
+            form.append('language', wcLang);
+            form.append('csrfmiddlewaretoken', wcCsrf);
+            elListenUI.classList.remove('hidden');
+            if (elCountdown) elCountdown.textContent = '…';
+            fetch(wcWordAnalyzeUrl, { method: 'POST', body: form })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (wcResultShown) return;
+                    showResult(data.status === 'ok' && wcMatch(entry.word, data.transcript || ''));
+                })
+                .catch(function () { if (!wcResultShown) showResult(false); });
+        }
+
+        // ── Buttons ────────────────────────────────────────────────────
+        var elDoneBtn = document.getElementById('wc-done-btn');
+        var elSkipWordBtn = document.getElementById('wc-skip-word-btn');
+        // (elNextBtn kept for safety but no longer used directly)
+
+        // Expose done/skip buttons to showWordCard
+        var _origShowWordCard = showWordCard;
+        showWordCard = function (entry, isEasy) {
+            _origShowWordCard(entry, isEasy);
+            // Show action buttons when word is displayed; Done is not clickable yet
+            // — they become active once recording starts (see startRec)
+        };
+
+        // Patch startRec to show Done Speaking once mic is live
+        var _origStartRec = startRec;
+        startRec = function (entry) {
+            elDoneBtn.classList.add('hidden');
+            elSkipWordBtn.classList.add('hidden');
+            _origStartRec(entry);
+        };
+
+        // Patch startCountdown to also reveal the buttons
+        var _origStartCountdown = startCountdown;
+        startCountdown = function () {
+            _origStartCountdown();
+            elDoneBtn.classList.remove('hidden');
+            elSkipWordBtn.classList.remove('hidden');
+            elDoneBtn.disabled = false;
+            elSkipWordBtn.disabled = false;
+        };
+
+        // Patch showResult to hide buttons
+        var _origShowResult = showResult;
+        showResult = function (correct) {
+            elDoneBtn.classList.add('hidden');
+            elSkipWordBtn.classList.add('hidden');
+            _origShowResult(correct);
+        };
+
+        elStartBtn.addEventListener('click', function () {
+            if (wcStarted) return;
+            wcStarted = true;
+            // Grab config values exposed by the main IIFE below
+            setTimeout(function () {
+                var cfg = window.__wcConfig || {};
+                wcWordAnalyzeUrl = cfg.wordAnalyzeUrl || '';
+                wcLang = cfg.lang || 'EN';
+                wcCsrf = cfg.csrfToken || '';
+                elStartBtn.disabled = true; elStartBtn.style.opacity = '0.5';
+                elStartBtn.textContent = 'Recording…';
+                elProgress.style.width = '12%'; elStepTitle.textContent = 'Word Check';
+                listenFor(WC_PHASES[0][0], false);
+            }, 50);
+        });
+
+        // "Done Speaking" — stop recording and submit to Bhashini for evaluation
+        elDoneBtn.addEventListener('click', function () {
+            if (!wcStarted || wcResultShown) return;
+            elDoneBtn.disabled = true;
+            elSkipWordBtn.disabled = true;
+            // Stop countdown and recorder → triggers onstop → sendAudio
+            stopRec();
+            // onstop in startRec will call sendAudio(blob, mime, entry)
+            // If chunks are empty (they barely spoke), sendAudio shows wrong
+        });
+
+        // "Skip" — count as wrong immediately, no audio needed
+        elSkipWordBtn.addEventListener('click', function () {
+            if (!wcStarted || wcResultShown) return;
+            showResult(false);
+        });
+
+        elLetGoBtn.addEventListener('click', goToPassage);
+
+    })();
+    (function () {
+        'use strict';
+
+
 
         /* ================================================================
          *  CONFIGURATION
@@ -796,11 +1220,16 @@
             lang: "{{ current_lang }}",
             analyzeUrl: "{% url 'portal:fluency_check_analyze' child.id %}",
             partialAnalyzeUrl: "{% url 'portal:fluency_check_partial_analyze' child.id %}",
+            wordAnalyzeUrl: "{% url 'portal:fluency_check_word_analyze' child.id %}",
             curatedBoxUrl: "{% url 'portal:curated_box' child.id %}",
             dashboardUrl: "{% url 'portal:dashboard' %}",
             csrfToken: "{{ csrf_token }}",
             currentInterest: "{{ current_interest|default:'' }}"
         };
+        // Expose for word-check IIFE (runs before this block fully initialises)
+        window.__wcConfig = config;
+
+
 
         var child = {
             id: parseInt("{{ child.id|default:0 }}", 10),
@@ -1302,7 +1731,7 @@
             }
 
             var controller = new AbortController();
-            var timeoutId = setTimeout(function () { controller.abort(); }, 25000);
+            var timeoutId = setTimeout(function () { controller.abort(); }, 120000);
 
             fetch(config.analyzeUrl, {
                 method: 'POST',

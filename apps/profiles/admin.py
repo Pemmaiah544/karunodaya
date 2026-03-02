@@ -5,7 +5,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django import forms
 from unfold.admin import ModelAdmin, TabularInline
 from apps.core.admin_mixins import AdminPaginationMixin, SectionPermissionMixin
-from .models import ParentProfile, Child
+from .models import ParentProfile, Child, ChildProfileExtra, ParentProfileExtra, ReadingAssessment, VocabularyWord
 
 
 # Custom User Admin to override the default Django User admin
@@ -117,8 +117,14 @@ class ReadingAssessmentInline(TabularInline):
     can_delete = False
     verbose_name = "Assessment History"
     verbose_name_plural = "Assessment History"
-    readonly_fields = ('assessed_at', 'wpm', 'accuracy', 'level', 'language', 'strengths', 'gaps')
-    fields = ('assessed_at', 'wpm', 'accuracy', 'level', 'language', 'strengths', 'gaps')
+    readonly_fields = (
+        'assessed_at', 'wpm', 'accuracy', 'level', 'language',
+        'phoneme_accuracy', 'miscue_data', 'strengths', 'gaps',
+    )
+    fields = (
+        'assessed_at', 'wpm', 'accuracy', 'level', 'language',
+        'phoneme_accuracy', 'miscue_data', 'strengths', 'gaps',
+    )
     ordering = ('-assessed_at',)
 
 
@@ -194,6 +200,15 @@ class ChildAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
         ('Education Details', {
             'fields': ('grade', 'reading_difficulty_level')
         }),
+        ('Assessment Intelligence', {
+            'fields': (
+                'phonetic_weaknesses', 'reading_style',
+                'frustration_mode', 'consecutive_low_accuracy_pages',
+                'vocabulary_bank',
+            ),
+            'classes': ('collapse',),
+            'description': 'Auto-populated by the assessment engine during fluency checks.',
+        }),
         ('Metadata', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
@@ -203,10 +218,14 @@ class ChildAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
 
 @admin.register(ReadingAssessment)
 class ReadingAssessmentAdmin(AdminPaginationMixin, ModelAdmin):
-    list_display = ('child_name_link', 'wpm', 'accuracy', 'level', 'language', 'assessed_at')
+    list_display = ('child_name_link', 'wpm', 'accuracy', 'phoneme_accuracy', 'level', 'language', 'assessed_at')
     list_filter = ('level', 'language', 'assessed_at')
     search_fields = ('child__name', 'child__parent__user__username')
-    readonly_fields = ('child', 'passage', 'wpm', 'accuracy', 'level', 'strengths', 'gaps', 'language', 'assessed_at')
+    readonly_fields = (
+        'child', 'passage', 'wpm', 'accuracy', 'level',
+        'strengths', 'gaps', 'language', 'assessed_at',
+        'phoneme_accuracy', 'miscue_data', 'decoding_latency_data',
+    )
     ordering = ('-assessed_at',)
 
     def child_name_link(self, obj):
@@ -227,8 +246,21 @@ class ReadingAssessmentAdmin(AdminPaginationMixin, ModelAdmin):
         ('Results', {
             'fields': ('wpm', 'accuracy', 'level')
         }),
+        ('Assessment Intelligence', {
+            'fields': ('phoneme_accuracy', 'miscue_data', 'decoding_latency_data'),
+            'description': 'Auto-populated by the phoneme analysis engine.',
+        }),
         ('Feedback', {
             'fields': ('strengths', 'gaps'),
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(VocabularyWord)
+class VocabularyWordAdmin(AdminPaginationMixin, ModelAdmin):
+    list_display = ('word', 'language', 'difficulty', 'created_at')
+    list_filter = ('language', 'difficulty')
+    search_fields = ('word',)
+    readonly_fields = ('created_at',)
+    list_per_page = 30

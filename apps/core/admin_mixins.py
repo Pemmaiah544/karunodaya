@@ -2,6 +2,11 @@ from django.contrib import admin
 
 
 class SectionPermissionMixin:
+    """
+    Mixin for role-based section access control in the admin.
+    Set  admin_section = 'some_key'  on each ModelAdmin subclass.
+    Super-admins and Django superusers bypass all checks.
+    """
     admin_section: str = None  # MUST be set on every subclass
 
     def _get_profile(self, request):
@@ -52,6 +57,7 @@ class SectionPermissionMixin:
 
 
 class AdminPaginationMixin:
+
     """
     Mixin to provide enhanced pagination with per-page selection.
     Must be used with 'admin/catalog/enhanced_book_clean.html' template.

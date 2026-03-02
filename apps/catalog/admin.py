@@ -208,6 +208,10 @@ class BookAdmin(SectionPermissionMixin, AdminPaginationMixin, ModelAdmin):
         ('Description', {
             'fields': ('description',)
         }),
+        ('Locality & Curation Tags', {
+            'fields': ('locality_tags',),
+            'description': 'Enter a JSON list of regional/cultural tags e.g. ["Tamil Nadu", "Chennai", "Idli"]. Used for locality-aware book curation.',
+        }),
         ('Curation Settings', {
             'fields': ('difficulty_rating', 'recommended_grade_min', 'recommended_grade_max')
         }),

@@ -271,6 +271,15 @@ FIREBASE_WEB_CONFIG = {
 }
 
 
+# ─── AI4Bharat / Bhashini ASR ────────────────────────────────────────────────
+# Register for free at https://bhashini.gov.in/ulca — no payment required.
+# When BHASHINI_USER_ID and BHASHINI_API_KEY are set, the cloud ASR is used
+# (much faster than local Whisper). Without them, falls back to local Whisper.
+BHASHINI_USER_ID    = config('BHASHINI_USER_ID',    default='')
+BHASHINI_API_KEY    = config('BHASHINI_API_KEY',    default='')
+BHASHINI_PIPELINE_ID = config('BHASHINI_PIPELINE_ID', default='64392f96daac500b55c543cd')
+
+
 # Debug Toolbar Configuration (for development)
 INTERNAL_IPS = []
 
@@ -480,6 +489,16 @@ UNFOLD = {
                         "icon": "account_box",
                         "link": reverse_lazy("admin:profiles_parentprofile_changelist"),
                         "permission": make_section_permission('profiles'),
+                    },
+                    {
+                        "title": _("Reading Assessments"),
+                        "icon": "analytics",
+                        "link": reverse_lazy("admin:profiles_readingassessment_changelist"),
+                    },
+                    {
+                        "title": _("Vocabulary Words"),
+                        "icon": "spellcheck",
+                        "link": reverse_lazy("admin:profiles_vocabularyword_changelist"),
                     },
                 ],
             },

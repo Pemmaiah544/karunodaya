@@ -66,6 +66,11 @@ class Book(models.Model):
 
     # Content
     description = models.TextField(blank=True)
+    locality_tags = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='Cultural/regional tags for locality-aware curation e.g. ["Tamil Nadu", "Chennai", "Idli"]'
+    )
     cover_image = models.ImageField(
         upload_to='book_covers/',
         blank=True,

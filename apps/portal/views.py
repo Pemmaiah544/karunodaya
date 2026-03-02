@@ -480,11 +480,150 @@ class FluencyCheckView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
         context['current_lang'] = lang
         context['current_passage_idx'] = passage_idx
         context['current_interest'] = interest
+
+        # ── Adaptive word-check phase data ────────────────────────────────────
+        from .reading_passages import get_word_list_for_grade
+        import json as _json
+        context['word_assessment_medium'] = _json.dumps(
+            get_word_list_for_grade(child.grade or 'GRADE_3', 'medium')
+        )
+        context['word_assessment_easy'] = _json.dumps(
+            get_word_list_for_grade(child.grade or 'GRADE_3', 'easy')
+        )
+        # ─────────────────────────────────────────────────────────────────────
+
+        return context
+
+
+class AssessmentDashboardView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
+    """
+    Assessment Intelligence Dashboard.
+    Shows phonetic weaknesses, reading style, miscue breakdown, WPM trend,
+    and ease-in mode status for a specific child.
+    This is a new, additive view — it does not replace any existing page.
+    """
+    model = Child
+    template_name = 'portal/assessment_dashboard.html'
+    pk_url_kwarg = 'child_id'
+    context_object_name = 'child'
+
+    def get_queryset(self):
+        return Child.objects.filter(parent__user=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        child = self.get_object()
+
+        # Recent assessments (up to 10, oldest first for trend chart)
+        all_recent = list(child.reading_assessments.order_by('-assessed_at')[:10])
+        context['recent_assessments'] = list(reversed(all_recent))
+
+        # Phonetic weakness — top 5 most struggled phonemes
+        weaknesses = child.phonetic_weaknesses or {}
+        sorted_weaknesses = sorted(weaknesses.items(), key=lambda x: x[1], reverse=True)[:5]
+        max_count = sorted_weaknesses[0][1] if sorted_weaknesses else 1
+        context['phonetic_weaknesses'] = [
+            {
+                'phoneme': k,
+                'count': v,
+                'pct': round(v / max_count * 100),
+                'label': k.replace('short_', 'Short /') + ('/' if k.startswith('short_') else ''),
+            }
+            for k, v in sorted_weaknesses
+        ]
+        context['has_phonetic_data'] = bool(sorted_weaknesses)
+
+        # Aggregate miscue data across recent assessments
+        total_miscues = {'nonsense': 0, 'semantic': 0, 'visual': 0}
+        for assessment in all_recent:
+            if assessment.miscue_data:
+                for k, v in assessment.miscue_data.items():
+                    total_miscues[k] = total_miscues.get(k, 0) + v
+        context['miscue_counts'] = total_miscues
+        total_errors = max(sum(total_miscues.values()), 1)
+        context['total_errors'] = total_errors
+        context['miscue_pcts'] = {
+            'nonsense': round(total_miscues['nonsense'] / total_errors * 100),
+            'semantic': round(total_miscues['semantic'] / total_errors * 100),
+            'visual': round(total_miscues['visual'] / total_errors * 100),
+        }
+        context['has_miscue_data'] = total_errors > 1
+
+        # WPM trend data for SVG chart
+        context['wpm_trend'] = [
+            {'date': a.assessed_at.strftime('%d %b'), 'wpm': a.wpm}
+            for a in context['recent_assessments']
+        ]
+        if context['wpm_trend']:
+            max_wpm = max(d['wpm'] for d in context['wpm_trend']) or 1
+            context['wpm_max'] = max_wpm
+            for d in context['wpm_trend']:
+                d['pct'] = round(d['wpm'] / max_wpm * 100)
+
+        # Vocabulary mastered count
+        context['vocab_mastered'] = child.vocabulary_bank.count()
+
+        # Frustration / ease-in mode
+        context['frustration_mode'] = child.frustration_mode
+        context['reading_style'] = child.reading_style
+
+        # Latest phoneme accuracy
+        latest_assessment = all_recent[0] if all_recent else None
+        context['latest_phoneme_accuracy'] = (
+            getattr(latest_assessment, 'phoneme_accuracy', None)
+            if latest_assessment else None
+        )
+
+        # Grade-level benchmark for context
+        grade_benchmarks = {
+            'PRE_K': (0, 10, 20), 'KINDERGARTEN': (20, 40, 60),
+            'GRADE_1': (53, 60, 111), 'GRADE_2': (89, 100, 149),
+            'GRADE_3': (107, 115, 162), 'GRADE_4': (123, 130, 180),
+            'GRADE_5': (139, 160, 194), 'GRADE_6': (150, 170, 204),
+            'GRADE_7': (150, 190, 204), 'GRADE_8': (150, 190, 204),
+        }
+        bm = grade_benchmarks.get(child.grade, (107, 115, 162))
+        context['benchmark'] = {'min': bm[0], 'avg': bm[1], 'max': bm[2]}
+
         return context
 
 
 @login_required
+def fluency_check_word_analyze(request, child_id):
+    """
+    Transcribe a short audio clip of a child reading a single word.
+    Uses AI4Bharat Bhashini (or Whisper fallback) for accurate transcription.
+    Returns {status, transcript} — the JS frontend does the matching.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+
+    get_object_or_404(Child, id=child_id, parent__user=request.user)
+
+    audio_file = request.FILES.get('audio')
+    if not audio_file:
+        return JsonResponse({'status': 'error', 'message': 'No audio'}, status=400)
+
+    language = request.POST.get('language', 'EN').upper()
+
+    from services.speech_service import _save_uploaded_audio, transcribe, cleanup_audio_files
+    audio_path = None
+    try:
+        audio_path = _save_uploaded_audio(audio_file)
+        transcript = transcribe(audio_path, language=language)
+        return JsonResponse({'status': 'ok', 'transcript': transcript})
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Word analyze failed: {e}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    finally:
+        if audio_path:
+            cleanup_audio_files(audio_path)
+
+
+@login_required
 def fluency_check_save(request, child_id):
+
     """Save results of the fluency check."""
     if request.method == 'POST':
         child = get_object_or_404(Child, id=child_id, parent__user=request.user)
@@ -615,13 +754,16 @@ def fluency_check_analyze(request, child_id):
             known_matched = []
 
     from services.speech_service import (
-        _save_uploaded_audio, transcribe, compare_transcript_to_passage, cleanup_audio_files
+        _save_uploaded_audio, transcribe_with_timestamps, compare_transcript_to_passage, cleanup_audio_files
     )
 
     audio_path = None
+    word_timestamps = []
     try:
         audio_path = _save_uploaded_audio(audio_file)
-        transcript_text = transcribe(audio_path, language=language)
+        ts_result = transcribe_with_timestamps(audio_path, language=language)
+        transcript_text = ts_result['text']
+        word_timestamps = ts_result.get('chunks', [])
     except (ValueError, RuntimeError) as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     except Exception as e:
@@ -727,6 +869,51 @@ def fluency_check_analyze(request, child_id):
         ])
     recommendations = recommendations[:4]
 
+    # ── Assessment Intelligence (additive — does not touch existing logic) ────
+    from services.phoneme_service import (
+        analyze_phoneme_errors, classify_miscue, compute_reading_style,
+        compute_phoneme_accuracy, compute_decoding_latency,
+        detect_decoding_struggles, merge_phonetic_weaknesses,
+    )
+
+    # 1. Phoneme accuracy
+    phoneme_acc = compute_phoneme_accuracy(passage_words, missed_words)
+
+    # 2. Miscue classification — classify each missed word against its nearest passage neighbour
+    miscue_counts = {'nonsense': 0, 'semantic': 0, 'visual': 0}
+    for mw in missed_words:
+        # Find the closest-match passage word by clean string proximity
+        mw_clean = re.sub(r'[^a-z]', '', mw.lower())
+        best_pw = min(passage_words, key=lambda w: abs(len(re.sub(r'[^a-z]', '', w.lower())) - len(mw_clean))) if passage_words else mw
+        error_type = classify_miscue(mw, best_pw).lower()
+        miscue_counts[error_type] = miscue_counts.get(error_type, 0) + 1
+
+    # 3. Phoneme weakness accumulation
+    new_weaknesses = analyze_phoneme_errors(missed_words, passage_words)
+
+    # 4. Reading style detection
+    reading_style = compute_reading_style(miscue_counts)
+
+    # 5. Decoding latency
+    latency_data = compute_decoding_latency(word_timestamps)
+    decoding_struggle_count = detect_decoding_struggles(latency_data)
+
+    # 6. Frustration trigger (FR-02): 2 consecutive pages below 85% → ease-in mode
+    FRUSTRATION_THRESHOLD = 85
+    if accuracy < FRUSTRATION_THRESHOLD:
+        child.consecutive_low_accuracy_pages = child.consecutive_low_accuracy_pages + 1
+        if child.consecutive_low_accuracy_pages >= 2:
+            child.frustration_mode = True
+    else:
+        child.consecutive_low_accuracy_pages = 0
+        child.frustration_mode = False
+
+    # 7. Merge new weaknesses into child's cumulative profile
+    child.phonetic_weaknesses = merge_phonetic_weaknesses(child.phonetic_weaknesses, new_weaknesses)
+    if reading_style:
+        child.reading_style = reading_style
+    # ─────────────────────────────────────────────────────────────────────────
+
     # Save to Child model
     child.reading_wpm = wpm
     child.reading_test_completed = True
@@ -741,7 +928,7 @@ def fluency_check_analyze(request, child_id):
         child.reading_difficulty_level = 'ADVANCED'
     child.save()
 
-    # Save historical assessment record
+    # Save historical assessment record (with new intelligence fields)
     ReadingAssessment.objects.create(
         child=child,
         passage=None,
@@ -751,6 +938,9 @@ def fluency_check_analyze(request, child_id):
         strengths=', '.join(strengths),
         gaps='. '.join(recommendations),
         language=language,
+        miscue_data=miscue_counts,
+        phoneme_accuracy=phoneme_acc,
+        decoding_latency_data=latency_data[:20] if latency_data else None,
     )
 
     return JsonResponse({
@@ -766,7 +956,16 @@ def fluency_check_analyze(request, child_id):
         'gaps': recommendations,
         'missed_words': missed_words,
         'benchmark': {'min': bm[0], 'avg': bm[1], 'max': bm[2]},
-        'word_results': word_results,  # For real-time highlighting reconciliation
+        'word_results': word_results,
+        # ── New assessment intelligence keys (existing UI ignores unknown keys) ──
+        'phoneme_accuracy': phoneme_acc,
+        'phoneme_weaknesses': new_weaknesses,
+        'miscue_counts': miscue_counts,
+        'reading_style': reading_style,
+        'frustration_mode': child.frustration_mode,
+        'ease_in_recommended': child.frustration_mode,
+        'decoding_struggles': decoding_struggle_count,
+        'assessment_url': f'/assessment/{child.id}/',
     })
 
 
@@ -871,9 +1070,15 @@ class CuratedBoxView(LoginRequiredMixin, OnboardingRequiredMixin, DetailView):
         ).first()
 
         # Get curated books only if test is completed AND has active subscription
+        parent = child.parent
         if child.reading_test_completed and active_subscription:
-            context['curated_books'] = get_curated_books(child.id, limit=20)
+            context['curated_books'] = get_curated_books(
+                child.id, limit=20,
+                parent_city=parent.city or '',
+                parent_state=parent.state or '',
+            )
             context['active_subscription'] = active_subscription
+            context['ease_in_mode'] = getattr(child, 'frustration_mode', False)
         elif child.reading_test_completed and not active_subscription:
             # Reading test completed but no active subscription
             context['curated_books'] = Book.objects.none()
